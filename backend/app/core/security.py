@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -10,10 +11,14 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
+    if len(password.encode()) > 72:
+        password = hashlib.sha256(password.encode()).hexdigest()
     return pwd_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    if len(plain_password.encode()) > 72:
+        plain_password = hashlib.sha256(plain_password.encode()).hexdigest()
     return pwd_context.verify(plain_password, hashed_password)
 
 
