@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPBearer
+from starlette.security import HTTPAuthCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import InvalidTokenError, decode_token
