@@ -39,22 +39,77 @@
 
     <div class="content">
         <h1>Technical Documentation ⚙️</h1>
-        <p>Architecture, CI/CD, infrastructure, tech stack, and developer guides.</p>
+        <p>Architecture, API, database, infrastructure, and developer guides for MyGym.</p>
 
-        <h2>Sections</h2>
+        <h2>Authentication & Security</h2>
         <ul>
-            <li>Architecture & Design</li>
-            <li>Tech Stack Overview</li>
-            <li>API Documentation</li>
-            <li>Database Schema</li>
-            <li>CI/CD Pipeline</li>
-            <li>Infrastructure & Deployment</li>
-            <li>Development Setup</li>
-            <li>Testing Strategies</li>
-            <li>Code Quality Standards</li>
+            <li><a href="LOGIN_SIGNUP_TECHNICAL.md">Login & Sign-Up Technical Reference</a> - JWT auth, password hashing, session management</li>
         </ul>
 
-        <p><em>Content coming soon...</em></p>
+        <h2>Database & Migrations</h2>
+        <ul>
+            <li><a href="../DATABASE_MIGRATIONS.md">Database Migrations Guide</a> - Schema versioning with Alembic</li>
+        </ul>
+
+        <h2>Setup & Development</h2>
+        <ul>
+            <li><a href="../UV_SETUP.md">UV Package Manager Setup</a> - Dependency management configuration</li>
+        </ul>
+
+        <h2>Architecture & Design (Coming Soon)</h2>
+        <ul>
+            <li>Tech Stack Overview</li>
+            <li>API Design & Standards</li>
+            <li>Database Schema</li>
+            <li>Project Structure</li>
+        </ul>
+
+        <h2>Deployment & Infrastructure (Coming Soon)</h2>
+        <ul>
+            <li>CI/CD Pipeline</li>
+            <li>Docker & Containerization</li>
+            <li>Production Deployment</li>
+            <li>Monitoring & Logging</li>
+        </ul>
+
+        <h2>Testing & Quality (Coming Soon)</h2>
+        <ul>
+            <li>Backend Testing Strategies</li>
+            <li>Frontend Testing Strategies</li>
+            <li>Code Quality Standards</li>
+            <li>Performance Optimization</li>
+        </ul>
+
+        <style>
+            .doc-sections {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+                margin-top: 30px;
+                padding-top: 30px;
+                border-top: 1px solid #eee;
+            }
+            .doc-sections a {
+                display: block;
+                padding: 20px;
+                background: #f9f9f9;
+                border-radius: 6px;
+                color: #0066cc;
+                text-decoration: none;
+                transition: background 0.2s;
+                font-weight: 500;
+            }
+            .doc-sections a:hover {
+                background: #f0f0f0;
+                text-decoration: underline;
+            }
+        </style>
+
+        <div class="doc-sections">
+            <a href="LOGIN_SIGNUP_TECHNICAL.md">🔐 Authentication & Security</a>
+            <a href="../DATABASE_MIGRATIONS.md">🗄️ Database Migrations</a>
+            <a href="../UV_SETUP.md">📦 Package Manager</a>
+        </div>
     </div>
 </body>
 </html>
