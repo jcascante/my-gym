@@ -6,7 +6,7 @@ pydantic==2.9.2
 pydantic-settings==2.3.0
 pydantic[email]==2.9.2
 python-dotenv==1.0.1
-passlib[bcrypt]==1.7.4.1
+passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
 pyjwt==2.10.1
 aiosqlite==0.20.0
