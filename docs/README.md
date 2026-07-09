@@ -1,10 +1,12 @@
 # MyGym Documentation
 
-Welcome to the MyGym documentation hub. This is your central resource for all information about the MyGym personalized workout program manager.
+Welcome to the MyGym documentation hub. Start with [index.html](index.html) for the user guide, or use the links below for technical docs and additional resources.
 
 ## 📚 Documentation Structure
 
 **All documentation is published as HTML via GitHub Pages** for professional presentation and optimal styling.
+
+**Main page**: [index.html](index.html) — User-focused guide with feature overview
 
 ### User Documentation
 **For end users who want to use MyGym**  

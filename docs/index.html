@@ -13,146 +13,232 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         header {
-            background: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 40px 20px;
+            padding: 50px 20px;
             text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         header h1 {
-            font-size: 2.5em;
+            font-size: 3em;
             margin-bottom: 10px;
+            font-weight: 700;
         }
         header p {
-            font-size: 1.1em;
-            opacity: 0.9;
+            font-size: 1.2em;
+            opacity: 0.95;
+            font-weight: 300;
         }
         nav {
-            background: #34495e;
-            padding: 15px 20px;
-            text-align: center;
+            background: rgba(0,0,0,0.1);
+            padding: 12px 20px;
+            text-align: right;
+            backdrop-filter: blur(10px);
         }
         nav a {
             color: white;
             text-decoration: none;
-            margin: 0 20px;
+            margin-left: 20px;
             font-weight: 500;
-            display: inline-block;
+            font-size: 0.9em;
+            opacity: 0.9;
+            transition: opacity 0.2s;
         }
         nav a:hover {
-            opacity: 0.8;
+            opacity: 1;
+            text-decoration: underline;
         }
         main {
+            flex: 1;
             max-width: 1000px;
             margin: 40px auto;
-            padding: 0 20px 60px;
+            padding: 0 20px;
+            width: 100%;
         }
         .content {
             background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 50px 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
-        .content h2 {
-            color: #2c3e50;
-            margin-top: 30px;
+        .intro {
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #667eea;
+        }
+        .intro h2 {
+            color: #667eea;
+            font-size: 1.8em;
             margin-bottom: 15px;
-            font-size: 1.5em;
         }
-        .content h2:first-child {
-            margin-top: 0;
+        .intro p {
+            font-size: 1.05em;
+            color: #555;
+            line-height: 1.8;
         }
-        .content ul {
-            margin-left: 20px;
-            margin-bottom: 20px;
+        .features {
+            margin-top: 40px;
         }
-        .content li {
-            margin-bottom: 10px;
+        .features h2 {
+            color: #667eea;
+            font-size: 1.6em;
+            margin-bottom: 25px;
         }
-        .section-nav {
+        .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 1px solid #eee;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
         }
-        .section-nav a {
+        .feature-card {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+            cursor: pointer;
             text-decoration: none;
-            padding: 20px;
-            background: #f9f9f9;
-            border-radius: 6px;
-            color: #0066cc;
-            transition: background 0.2s;
+            color: inherit;
         }
-        .section-nav a:hover {
-            background: #f0f0f0;
+        .feature-card:hover {
+            background: linear-gradient(135deg, #667eea25 0%, #764ba225 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .feature-card p {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        .coming-soon {
+            background: linear-gradient(135deg, #f5f5f515 0%, #e0e0e015 100%);
+            border-left-color: #ccc;
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .coming-soon:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        .badge {
+            display: inline-block;
+            background: #ffd700;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 10px;
         }
         footer {
+            background: rgba(0,0,0,0.5);
+            color: white;
             text-align: center;
-            padding: 20px;
-            color: #666;
+            padding: 30px 20px;
+            margin-top: 40px;
             font-size: 0.9em;
         }
-        .footer-links {
-            margin-top: 10px;
-        }
-        .footer-links a {
-            color: #999;
+        footer a {
+            color: #667eea;
             text-decoration: none;
-            margin: 0 10px;
-            font-size: 0.85em;
         }
-        .footer-links a:hover {
-            color: #666;
+        footer a:hover {
             text-decoration: underline;
+        }
+        .footer-section {
+            margin-bottom: 10px;
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>MyGym 🏋️</h1>
+        <h1>🏋️ MyGym</h1>
         <p>Personalized Workout Program Manager</p>
     </header>
 
+    <nav>
+        <a href="technical/">⚙️ Technical Docs</a>
+        <a href="personal/">📝 Personal Notes</a>
+        <a href="README.md">📖 Full Index</a>
+    </nav>
+
     <main>
         <div class="content">
-            <h2>Documentation Index</h2>
-            <p>Welcome to MyGym documentation. Choose a section below to get started.</p>
-
-            <div class="section-nav">
-                <a href="user/">👤 User Documentation</a>
-                <a href="technical/">⚙️ Technical Documentation</a>
-                <a href="personal/">📝 Personal Notes</a>
+            <div class="intro">
+                <h2>Welcome to MyGym</h2>
+                <p>
+                    MyGym is your personalized workout program manager. Complete your onboarding profile, receive an AI-generated workout program tailored to your goals and fitness level, and track your daily workouts with adaptive feedback to optimize your training journey.
+                </p>
             </div>
 
-            <h2>Quick Links</h2>
-            <ul>
-                <li><a href="user/LOGIN_SIGNUP.html">Login & Sign-Up Guide</a> - Get started with MyGym</li>
-                <li><a href="technical/LOGIN_SIGNUP_TECHNICAL.html">Authentication Technical Reference</a> - Implementation details</li>
-                <li><a href="DATABASE_MIGRATIONS.md">Database Migrations</a> - Schema changes and versioning</li>
-                <li><a href="UV_SETUP.md">UV Setup Guide</a> - Package manager configuration</li>
-            </ul>
+            <div class="features">
+                <h2>Features</h2>
+                <div class="feature-grid">
+                    <a href="user/LOGIN_SIGNUP.html" class="feature-card">
+                        <h3>🔐 Account Management</h3>
+                        <p>Create your MyGym account, log in securely, and manage your authentication with our secure JWT-based system.</p>
+                    </a>
 
-            <h2>Popular Topics</h2>
-            <ul>
-                <li><strong>First Time?</strong> Start with <a href="user/LOGIN_SIGNUP.md">Login & Sign-Up</a></li>
-                <li><strong>Developer?</strong> Read <a href="technical/LOGIN_SIGNUP_TECHNICAL.md">Technical Documentation</a></li>
-                <li><strong>Database Questions?</strong> See <a href="DATABASE_MIGRATIONS.md">Database Migrations</a></li>
-                <li><strong>Setup Issues?</strong> Check <a href="UV_SETUP.md">UV Setup Guide</a></li>
-            </ul>
+                    <div class="feature-card coming-soon">
+                        <h3>👤 Profile Setup</h3>
+                        <p>Set up your fitness profile with goals, experience level, and available training time. <span class="badge">Coming Soon</span></p>
+                    </div>
+
+                    <div class="feature-card coming-soon">
+                        <h3>🎯 Workout Programs</h3>
+                        <p>Receive AI-generated workout programs customized to your fitness goals and experience level. <span class="badge">Coming Soon</span></p>
+                    </div>
+
+                    <div class="feature-card coming-soon">
+                        <h3>📝 Daily Tracking</h3>
+                        <p>Log your daily workouts, record sets and reps, and track your performance over time. <span class="badge">Coming Soon</span></p>
+                    </div>
+
+                    <div class="feature-card coming-soon">
+                        <h3>📊 Progress Analytics</h3>
+                        <p>Visualize your progress with detailed analytics, charts, and performance insights. <span class="badge">Coming Soon</span></p>
+                    </div>
+
+                    <div class="feature-card coming-soon">
+                        <h3>💪 Adaptive Feedback</h3>
+                        <p>Get personalized feedback and program adjustments based on your performance and goals. <span class="badge">Coming Soon</span></p>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
     <footer>
-        <p>MyGym Documentation</p>
+        <div class="footer-section">
+            <strong>MyGym Documentation</strong>
+        </div>
         <div class="footer-links">
-            <a href="user/">User Guide</a>
-            <a href="technical/">Technical Docs</a>
+            <a href="user/">User Documentation</a>
+            <a href="technical/">Technical Documentation</a>
             <a href="personal/">Personal Notes</a>
+            <a href="DATABASE_MIGRATIONS.md">Database Migrations</a>
+            <a href="UV_SETUP.md">Setup Guide</a>
+        </div>
+        <div class="footer-section" style="margin-top: 15px; opacity: 0.8;">
+            <small>MyGym is a personalized workout program manager built with React, FastAPI, and PostgreSQL</small>
         </div>
     </footer>
 </body>

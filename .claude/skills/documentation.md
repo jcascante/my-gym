@@ -4,13 +4,14 @@ Guidance for creating and maintaining MyGym documentation for GitHub Pages. **Al
 
 ## Overview
 
-MyGym uses a dual-documentation approach:
+MyGym documentation structure:
 
-- **User Documentation** (`docs/user/*.html`) — How to use features for end users
-- **Technical Documentation** (`docs/technical/*.html`) — Architecture, implementation, and developer guides
+- **Main User Page** (`docs/index.html`) — Primary entry point with MyGym overview and feature links (user-focused, purple gradient theme)
+- **User Feature Guides** (`docs/user/*.html`) — Detailed how-to guides for each feature (purple gradient theme)
+- **Technical Documentation** (`docs/technical/*.html`) — Architecture, implementation, and developer guides (blue gradient theme, secondary/discrete links in footer)
 - **Shared Resources** (`docs/*.md`) — Database migrations, setup guides (markdown acceptable for longer reference docs)
 
-All documentation is published via GitHub Pages as HTML files for professional presentation and discoverability through index files.
+All documentation is published via GitHub Pages as HTML files. The main page is user-focused with app overview and feature links; technical and reference docs are accessible via discrete footer links.
 
 ## User Documentation
 
@@ -287,25 +288,34 @@ These are used by multiple audiences (users, developers, DevOps) so write clearl
 
 ## Index Files & Navigation
 
-### Main Index (`docs/index.html`)
+### Main Page (`docs/index.html`)
 
-Hub for all documentation:
-- Brief intro to MyGym
-- Links to user, technical, personal docs
-- Quick links to most-used docs
-- "Popular topics" section
+**Primary user-facing page** — app overview + feature links:
+- MyGym app description and value proposition
+- Feature grid with cards (current features + coming soon)
+- Discrete navigation links to technical docs in footer
+- User-friendly purple gradient theme
 
 Update when:
-- Adding a new major section
-- Creating frequently-accessed docs
-- Restructuring documentation
+- Adding a new user-facing feature
+- Adding "coming soon" placeholders
+- Updating app description
+
+**Note**: This page IS the user documentation hub. Feature-specific guides link back to this main page.
 
 ### Section Indexes (`docs/user/index.html`, `docs/technical/index.html`)
 
-Organized by feature/system:
-- Grouped by category
-- Links to all docs in section
-- Grid of quick-link cards with emoji
+Secondary hubs organized by audience:
+
+**User Docs Index** (`docs/user/index.html`):
+- Links to all user feature guides
+- Grouped by feature category
+- Quick reference cards
+
+**Technical Docs Index** (`docs/technical/index.html`):
+- Links to all technical system docs
+- Grouped by system/component
+- Developer and DevOps focused
 
 Update when:
 - Adding a new doc to that section
@@ -580,11 +590,13 @@ git push origin main
 
 ## Remember
 
+- **Main Page First**: `docs/index.html` is the primary user-facing page with app overview and feature links
 - **User Docs**: "How do I...?" → Focus on goals and tasks (non-technical)
-- **Technical Docs**: "How does...work?" → Focus on implementation and integration (precise, detailed)
+- **Technical Docs**: "How does...work?" → Focus on implementation and integration (precise, detailed, secondary navigation)
 - **HTML Only**: No markdown for feature/system docs (only shared reference docs)
-- **Consistent Styling**: Use provided templates for colors and layouts
+- **Consistent Styling**: Use provided templates (purple for user docs, blue for technical docs)
 - **Keep Updated**: Docs rot if not maintained with code changes
 - **Use Examples**: Show, don't just tell
 - **Index Everything**: All docs must be linked from appropriate index files
 - **User-Friendly**: Professional appearance with good typography and whitespace
+- **Discrete Technical Links**: Technical docs should be linked in footer, not promoted on main page
