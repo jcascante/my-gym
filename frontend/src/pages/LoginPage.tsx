@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
 import { login, setAuthToken } from '@/api/auth'
+import { Button, FormField, Alert, Card } from '@/components'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -19,7 +20,6 @@ export default function LoginPage() {
     try {
       const { access_token, refresh_token } = await login({ email, password })
       setAuthToken(access_token)
-      // TODO: Fetch user profile from API
       const user = { id: 1, email, first_name: 'User', last_name: 'Name' }
       setAuth(user, access_token, refresh_token)
       navigate('/')
@@ -31,37 +31,46 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px' }}>
-      <h1>Login</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label>Email</label>
-          <input
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-neutral-900 dark:to-neutral-800 flex items-center justify-center px-4">
+      <Card className="w-full max-w-md">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">Welcome back</h1>
+          <p className="text-neutral-600 dark:text-neutral-400">Sign in to your MyGym account</p>
+        </div>
+
+        {error && <Alert type="error" dismissible onDismiss={() => setError('')} className="mb-6">{error}</Alert>}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <FormField
+            label="Email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px' }}
+            placeholder="you@example.com"
           />
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label>Password</label>
-          <input
+
+          <FormField
+            label="Password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px' }}
+            placeholder="••••••••"
           />
-        </div>
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px' }}>
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-      <p style={{ marginTop: '15px', textAlign: 'center' }}>
-        Don't have an account? <Link to="/signup">Sign up</Link>
-      </p>
+
+          <Button type="submit" variant="primary" size="lg" isLoading={loading} className="w-full">
+            Sign in
+          </Button>
+        </form>
+
+        <p className="mt-6 text-center text-neutral-600 dark:text-neutral-400">
+          Don't have an account?{' '}
+          <Link to="/signup" className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400">
+            Sign up
+          </Link>
+        </p>
+      </Card>
     </div>
   )
 }
