@@ -1,3 +1,4 @@
+from app.core.database import Base
 from .user import (
     User,
     UserProfile,
@@ -8,6 +9,7 @@ from .user import (
 )
 
 __all__ = [
+    "Base",
     "User",
     "UserProfile",
     "ActivityLevel",

@@ -28,7 +28,7 @@ A modern web application that creates custom workout programs tailored to each u
 
 ## Tech Stack
 
-- **Backend**: FastAPI (async), SQLAlchemy 2.0, Pydantic V2, pytest
+- **Backend**: FastAPI (async), SQLAlchemy 2.0, Pydantic V2, pytest, **uv** (package manager)
 - **Frontend**: React 19, TypeScript, Vite, TanStack Query, Zustand
 - **Database**: PostgreSQL (production), SQLite (testing)
 - **Quality**: Ruff, Black, mypy, ESLint, Prettier, pre-commit hooks
@@ -37,10 +37,11 @@ A modern web application that creates custom workout programs tailored to each u
 ## Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
+- Docker & Docker Compose (recommended)
+- OR: Python 3.11+ and [uv](https://github.com/astral-sh/uv)
 - Git
 
-### Setup & Run
+### Setup & Run (with Docker — Recommended)
 
 ```bash
 # Clone and navigate
@@ -55,6 +56,28 @@ docker-compose up
 # API Docs: http://localhost:8000/docs (Swagger UI)
 ```
 
+### Local Development (without Docker)
+
+Requires Python 3.11+ and [uv](https://github.com/astral-sh/uv). Install uv:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Then set up backend and frontend:
+```bash
+# Backend
+cd backend
+uv sync
+uv run uvicorn app.main:app --reload
+
+# Frontend (in another terminal)
+cd frontend
+npm install
+npm run dev
+```
+
+**Database setup**: Ensure PostgreSQL is running on `localhost:5432` with credentials from `.env`
+
 ### Development Commands
 
 ```bash
@@ -68,11 +91,145 @@ docker-compose exec backend mypy app/                   # Type check
 docker-compose exec frontend npm run test:watch         # Tests (watch mode)
 docker-compose exec frontend npm run lint -- --fix      # Lint
 docker-compose exec frontend npm run format             # Format
+```
 
-# Database
-docker-compose exec backend alembic upgrade head        # Run migrations
-docker-compose exec backend alembic revision --autogenerate -m "description"  # Create migration
-docker-compose exec postgres psql -U postgres -d app_db # Connect to DB
+## Database Migrations
+
+Uses **Alembic** for schema version control. Migrations are stored in `backend/migrations/versions/`.
+
+### Initialize Alembic (First Time Only)
+
+**Quick Start (Automated)**
+```bash
+# Initialize with Docker Compose (recommended)
+./scripts/init-db.sh with-docker
+
+# Or without Docker
+./scripts/init-db.sh without-docker
+```
+
+The script will:
+1. Initialize Alembic (if not already done)
+2. Auto-generate initial migration from your SQLAlchemy models
+3. Apply all migrations to the database
+4. Verify the schema is ready
+
+**Manual Setup**
+
+If you prefer to do it step by step:
+
+**With Docker Compose:**
+```bash
+docker-compose exec backend alembic init alembic
+docker-compose exec backend alembic revision --autogenerate -m "initial schema"
+docker-compose exec backend alembic upgrade head
+```
+
+**Without Docker Compose:**
+```bash
+cd backend
+alembic init alembic
+alembic revision --autogenerate -m "initial schema"
+alembic upgrade head
+cd ..
+```
+
+See [Database Migrations](./docs/DATABASE_MIGRATIONS.md) for full configuration details.
+
+### Create a Migration
+
+Run this whenever you modify SQLAlchemy models in `backend/app/models/`.
+
+**With Docker Compose:**
+```bash
+# Auto-detect changes from models
+docker-compose exec backend alembic revision --autogenerate -m "add user model"
+
+# Manual migration (no auto-detection)
+docker-compose exec backend alembic revision -m "add indexes"
+```
+
+**Without Docker Compose:**
+```bash
+cd backend
+
+# Auto-detect changes from models
+alembic revision --autogenerate -m "add user model"
+
+# Manual migration (no auto-detection)
+alembic revision -m "add indexes"
+
+cd ..
+```
+
+### Run Migrations
+
+Apply pending migrations to initialize or update the database schema.
+
+**With Docker Compose:**
+```bash
+# Apply all pending migrations
+docker-compose exec backend alembic upgrade head
+
+# Apply specific number of migrations
+docker-compose exec backend alembic upgrade +2
+
+# Rollback one migration
+docker-compose exec backend alembic downgrade -1
+```
+
+**Without Docker Compose:**
+```bash
+cd backend
+
+# Apply all pending migrations
+alembic upgrade head
+
+# Apply specific number of migrations
+alembic upgrade +2
+
+# Rollback one migration
+alembic downgrade -1
+
+cd ..
+```
+
+### Check Migration Status
+
+**With Docker Compose:**
+```bash
+docker-compose exec backend alembic current    # Current schema version
+docker-compose exec backend alembic history    # All migration history
+docker-compose exec backend alembic branches   # Available branches
+```
+
+**Without Docker Compose:**
+```bash
+cd backend
+alembic current
+alembic history
+alembic branches
+cd ..
+```
+
+### Database Access
+
+**With Docker Compose:**
+```bash
+# Connect to PostgreSQL
+docker-compose exec postgres psql -U postgres -d app_db
+
+# Run SQL query
+docker-compose exec postgres psql -U postgres -d app_db -c "SELECT * FROM users;"
+```
+
+**Without Docker Compose:**
+```bash
+# Ensure PostgreSQL is running on localhost:5432
+psql -U postgres -d app_db -h localhost
+
+# Run SQL query
+psql -U postgres -d app_db -h localhost -c "SELECT * FROM users;"
 ```
 
 ## Project Structure
@@ -120,6 +277,8 @@ my-gym/
 
 - **[CLAUDE.md](./CLAUDE.md)** - Development guidelines, tech stack, key patterns
 - **[PROJECT_SCOPE.md](./PROJECT_SCOPE.md)** - MVP features, data models, API endpoints
+- **[docs/UV_SETUP.md](./docs/UV_SETUP.md)** - Python package manager setup and usage
+- **[docs/DATABASE_MIGRATIONS.md](./docs/DATABASE_MIGRATIONS.md)** - Alembic migration guide
 - **[.claude/skills/](.//.claude/skills/)** - Detailed patterns for specific domains
   - API testing, React components, database migrations, FastAPI async, etc.
 

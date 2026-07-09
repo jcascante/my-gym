@@ -1,3 +1,37 @@
+[project]
+name = "my-gym"
+version = "0.1.0"
+description = "Personalized workout program manager"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.2",
+    "uvicorn==0.32.1",
+    "sqlalchemy==2.0.37",
+    "sqlalchemy[asyncio]==2.0.37",
+    "alembic==1.14.1",
+    "pydantic==2.10.4",
+    "pydantic-settings==2.4.0",
+    "pydantic[email]==2.10.4",
+    "python-dotenv==1.0.1",
+    "passlib[bcrypt]==1.7.4",
+    "python-jose[cryptography]==3.3.0",
+    "pyjwt==2.10.1",
+    "aiosqlite==0.20.0",
+    "aiopg==1.4.0",
+    "asyncpg==0.31.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==8.3.3",
+    "pytest-asyncio==0.24.0",
+    "httpx==0.28.1",
+    "black==24.10.0",
+    "ruff==0.9.0",
+    "mypy==1.14.1",
+    "types-python-jose==3.5.0.20260408",
+]
+
 [tool.black]
 line-length = 120
 target-version = ['py311']
