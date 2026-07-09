@@ -1,6 +1,5 @@
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer
-from starlette.security import HTTPAuthCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import InvalidTokenError, decode_token
@@ -12,7 +11,7 @@ security = HTTPBearer()
 
 
 async def get_current_user(
-    credentials: HTTPAuthCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
 ) -> User:
     token = credentials.credentials
