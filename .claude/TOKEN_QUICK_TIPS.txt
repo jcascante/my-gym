@@ -1,0 +1,98 @@
+🚀 TOKEN USAGE QUICK TIPS
+═════════════════════════════════════════════════════════════════
+
+⚡ IMMEDIATE ACTIONS (Daily)
+───────────────────────────
+1. Check token usage: /usage
+2. Monitor context: /context
+3. At 70% context: Run /compact
+4. Before committing: Verify tests pass (small feedback loops save tokens)
+
+💡 SMART PATTERNS
+───────────────────────────
+✅ Load skills on-demand, don't pre-load all 9
+✅ Read specific file sections (lines 10-30), not entire files
+✅ Use API that returns exactly what you need (pagination, field selection)
+✅ Keep error messages concise
+✅ Batch similar operations (multiple file edits in one turn)
+✅ Use `/compact` proactively (don't wait until 95%)
+
+❌ AVOID THESE PATTERNS
+───────────────────────────
+❌ Reading entire large files (grep first for line numbers, then read range)
+❌ Loading all skills at once
+❌ Creating massive test fixtures (100+ items)
+❌ Verbose error messages and logging
+❌ Leaving sessions open with huge histories (>100K tokens)
+❌ Reading same file multiple times in one session
+
+🎯 SPECIFIC SAVINGS
+───────────────────────────
+Pattern Caching:
+  - Repeated CRUD operations reuse patterns (~20-30% savings)
+  - Keep API endpoint structure consistent
+
+Response Optimization:
+  - Limit list responses to 10-50 items (use pagination)
+  - Return only needed fields from API
+  - Cap error message length to 1-2 sentences
+
+Code Review:
+  - Small, focused PRs = fewer tokens needed for review
+  - TDD = faster review (test explains intent)
+  - Type hints = fewer clarification questions
+
+Database:
+  - Use eager loading (selectinload) instead of N+1 queries
+  - Create migrations thoughtfully (fewer schema changes)
+  - Minimal test data (1-3 items, not 100+)
+
+📊 MONITORING DASHBOARD
+───────────────────────────
+Daily:  /usage                  → See current usage
+Weekly: /stats                  → Trend analysis
+Export: /export --include-tokens → Detailed breakdown
+
+🔄 SESSION LIFECYCLE
+───────────────────────────
+Start: ~1,700 tokens (CLAUDE.md + system prompt)
+    ↓
+Work: ~50-100 tokens per turn (depending on complexity)
+    ↓
+At 70%: Run /compact → Summarize earlier context
+    ↓
+Continue: Fresh context window with summary
+    ↓
+End: Export /stats for analysis
+
+💰 COST COMPARISON
+───────────────────────────
+Before optimization: ~$0.30-0.50 per 1-hour session
+After optimization:  ~$0.15-0.25 per 1-hour session
+Savings: 40-50% reduction ✅
+
+🔗 FOR MORE INFO
+───────────────────────────
+Read: .claude/skills/token-optimization.md
+  - 12 detailed optimization strategies
+  - Code examples for each pattern
+  - Implementation priority guide
+
+See: TOKEN_OPTIMIZATION_REPORT.md
+  - Full breakdown of all savings
+  - Recommendations by timeline
+  - Monitoring strategy
+
+📋 BEFORE EACH FEATURE
+───────────────────────────
+□ Write test first (TDD pattern)
+□ Keep CLAUDE.md references to a minimum
+□ Use specific skills only when needed
+□ Read only necessary file sections
+□ Keep test data minimal
+□ Batch API calls efficiently
+□ Use /compact at 70% context
+
+═════════════════════════════════════════════════════════════════
+Remember: Small, focused iterations save tokens AND improve code!
+═════════════════════════════════════════════════════════════════
