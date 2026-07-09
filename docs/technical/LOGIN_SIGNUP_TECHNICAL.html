@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication & Login/Sign-Up Technical Documentation - MyGym</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px 20px;
+            margin: -20px -20px 40px -20px;
+            border-radius: 0 0 8px 8px;
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        nav {
+            margin: 30px 0;
+            padding: 15px 20px;
+            background: white;
+            border-left: 4px solid #2a5298;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        nav a {
+            display: inline-block;
+            margin-right: 15px;
+            color: #2a5298;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9em;
+            transition: color 0.2s;
+            white-space: nowrap;
+        }
+
+        nav a:hover {
+            color: #1e3c72;
+            text-decoration: underline;
+        }
+
+        .content {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #2a5298;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        h2:first-of-type {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #1e3c72;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+
+        h4 {
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        ol, ul {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        strong {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .endpoint {
+            background: #f9f9f9;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #2a5298;
+            border-radius: 4px;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .code-block code {
+            color: #d4d4d4;
+        }
+
+        .keyword { color: #569cd6; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .number { color: #b5cea8; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+
+        table th {
+            background: #2a5298;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .diagram {
+            background: #f0f4ff;
+            padding: 20px;
+            border-left: 4px solid #2a5298;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.85em;
+        }
+
+        .note {
+            background: #e3f2fd;
+            padding: 15px;
+            border-left: 4px solid #1976d2;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .note strong {
+            color: #1565c0;
+        }
+
+        .warning {
+            background: #fff3e0;
+            padding: 15px;
+            border-left: 4px solid #f57c00;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .warning strong {
+            color: #e65100;
+        }
+
+        .success {
+            background: #e8f5e9;
+            padding: 15px;
+            border-left: 4px solid #4caf50;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .success strong {
+            color: #2e7d32;
+        }
+
+        .troubleshooting-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .troubleshooting-item strong {
+            display: block;
+            color: #2a5298;
+            margin-bottom: 8px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background: #2a5298;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .back-button:hover {
+            background: #1e3c72;
+        }
+
+        .toc {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #2a5298;
+        }
+
+        .toc ol {
+            margin-left: 20px;
+        }
+
+        .toc li {
+            margin-bottom: 8px;
+        }
+
+        .toc a {
+            color: #2a5298;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            header {
+                margin: -15px -15px 30px -15px;
+            }
+
+            header h1 {
+                font-size: 1.5em;
+            }
+
+            nav {
+                overflow-x: scroll;
+            }
+
+            nav a {
+                margin-right: 10px;
+                font-size: 0.85em;
+            }
+
+            .code-block {
+                font-size: 0.8em;
+            }
+
+            table {
+                font-size: 0.85em;
+            }
+
+            table th, table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-button">← Back to Technical Docs</a>
+
+        <header>
+            <h1>🔐 Authentication & Login/Sign-Up</h1>
+            <p>Technical Documentation for JWT-based Authentication System</p>
+        </header>
+
+        <nav>
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#endpoints">API Endpoints</a>
+            <a href="#models">Models & Schemas</a>
+            <a href="#implementation">Implementation</a>
+            <a href="#dataflow">Data Flow</a>
+            <a href="#testing">Testing</a>
+            <a href="#deployment">Deployment</a>
+            <a href="#troubleshooting">Troubleshooting</a>
+            <a href="#references">References</a>
+        </nav>
+
+        <div class="content">
+            <!-- Overview -->
+            <h2 id="overview">Overview</h2>
+            <p>MyGym implements JWT-based authentication with secure password hashing to provide user account management and session handling. Users can sign up with email/password, receive JWT tokens for subsequent requests, and log out to end their session. The system uses bcrypt for password hashing with SHA-256 pre-hashing for passwords exceeding bcrypt's 72-byte limit.</p>
+
+            <h3>Key Features:</h3>
+            <ul>
+                <li>User registration with email validation</li>
+                <li>Secure password hashing (SHA-256 + bcrypt)</li>
+                <li>JWT access and refresh tokens</li>
+                <li>HTTP-only cookie storage</li>
+                <li>Async/await database operations</li>
+                <li>Protected routes with dependency injection</li>
+            </ul>
+
+            <!-- Architecture -->
+            <h2 id="architecture">Architecture</h2>
+
+            <h3>Authentication Flow</h3>
+            <div class="diagram">Sign-Up                          Login
+   |                              |
+   v                              v
+POST /api/v1/auth/signup   POST /api/v1/auth/login
+   |                              |
+   +---> Hash Password            +---> Verify Password
+   |     (SHA256 + bcrypt)         |     (SHA256 + bcrypt)
+   |                              |
+   +---> Create User              +---> Validate Credentials
+   |     (DB insert)              |
+   |                              |
+   +---> Generate Tokens          +---> Generate Tokens
+   |     (Access + Refresh)       |     (Access + Refresh)
+   |                              |
+   v                              v
+Set HTTP-Only Cookies        Set HTTP-Only Cookies
+Redirect to Onboarding       Redirect to Dashboard</div>
+
+            <h3>Component Interaction</h3>
+            <div class="diagram">Frontend              Backend           Database
+   |                    |                  |
+   |-- POST /signup --->|                  |
+   |                    |-- INSERT user -->|
+   |                    |<-- user_id -------|
+   |                    |-- JWT tokens ----|
+   |<-- tokens ---------|                  |
+   |                    |                  |
+   |-- POST /login ---->|                  |
+   |                    |-- SELECT user -->|
+   |                    |<-- user ---------|
+   |                    |-- JWT tokens ----|
+   |<-- tokens ---------|                  |</div>
+
+            <h3>Security Mechanisms</h3>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><strong>Password Hashing</strong></td>
+                    <td>SHA-256 pre-hashing for passwords > 72 bytes, then bcrypt with 12 rounds</td>
+                </tr>
+                <tr>
+                    <td><strong>JWT Tokens</strong></td>
+                    <td>Access tokens (15 min) + Refresh tokens (7 days)</td>
+                </tr>
+                <tr>
+                    <td><strong>HTTP-Only Cookies</strong></td>
+                    <td>Secure token storage, prevents XSS attacks</td>
+                </tr>
+                <tr>
+                    <td><strong>CORS</strong></td>
+                    <td>Cross-origin requests validated against allowed origins</td>
+                </tr>
+                <tr>
+                    <td><strong>Token Validation</strong></td>
+                    <td>All protected routes require valid, non-expired JWT</td>
+                </tr>
+            </table>
+
+            <!-- API Endpoints -->
+            <h2 id="endpoints">API Endpoints</h2>
+
+            <h3>Sign-Up</h3>
+            <p>Create a new user account.</p>
+            <div class="endpoint">
+                <strong>POST /api/v1/auth/signup</strong>
+                <div class="code-block"><span class="keyword">Content-Type:</span> application/json
+
+{
+  <span class="string">"email"</span>: <span class="string">"user@example.com"</span>,
+  <span class="string">"password"</span>: <span class="string">"secure_password_123"</span>,
+  <span class="string">"first_name"</span>: <span class="string">"John"</span>,
+  <span class="string">"last_name"</span>: <span class="string">"Doe"</span>
+}</div>
+
+                <strong>Response (201 Created):</strong>
+                <div class="code-block">{
+  <span class="string">"access_token"</span>: <span class="string">"eyJ0eXAiOiJKV1QiLCJhbGc..."</span>,
+  <span class="string">"refresh_token"</span>: <span class="string">"eyJ0eXAiOiJKV1QiLCJhbGc..."</span>,
+  <span class="string">"token_type"</span>: <span class="string">"bearer"</span>
+}</div>
+
+                <strong>Validation:</strong>
+                <ul>
+                    <li><code>email</code>: Required, valid email format, unique</li>
+                    <li><code>password</code>: Required, minimum 8 characters</li>
+                    <li><code>first_name</code>: Required</li>
+                    <li><code>last_name</code>: Optional</li>
+                </ul>
+
+                <strong>Error Responses:</strong>
+                <ul>
+                    <li><code>400 Bad Request</code>: Invalid email, password too short, email exists</li>
+                    <li><code>422 Unprocessable Entity</code>: Missing required fields</li>
+                    <li><code>500 Internal Server Error</code>: Database error</li>
+                </ul>
+            </div>
+
+            <h3>Login</h3>
+            <p>Authenticate and receive tokens.</p>
+            <div class="endpoint">
+                <strong>POST /api/v1/auth/login</strong>
+                <div class="code-block"><span class="keyword">Content-Type:</span> application/json
+
+{
+  <span class="string">"email"</span>: <span class="string">"user@example.com"</span>,
+  <span class="string">"password"</span>: <span class="string">"secure_password_123"</span>
+}</div>
+
+                <strong>Response (200 OK):</strong>
+                <div class="code-block">{
+  <span class="string">"access_token"</span>: <span class="string">"eyJ0eXAiOiJKV1QiLCJhbGc..."</span>,
+  <span class="string">"refresh_token"</span>: <span class="string">"eyJ0eXAiOiJKV1QiLCJhbGc..."</span>,
+  <span class="string">"token_type"</span>: <span class="string">"bearer"</span>
+}</div>
+
+                <strong>Error Responses:</strong>
+                <ul>
+                    <li><code>401 Unauthorized</code>: Invalid email or password</li>
+                    <li><code>422 Unprocessable Entity</code>: Missing required fields</li>
+                </ul>
+            </div>
+
+            <h3>Logout</h3>
+            <p>End user's session.</p>
+            <div class="endpoint">
+                <strong>POST /api/v1/auth/logout</strong>
+                <div class="code-block"><span class="success">Response (200 OK):</span>
+{
+  <span class="string">"message"</span>: <span class="string">"Successfully logged out"</span>
+}</div>
+                <div class="note"><strong>Note:</strong> Logout signals frontend to clear tokens. Tokens expire naturally via JWT <code>exp</code> claim.</div>
+            </div>
+
+            <!-- Models & Schemas -->
+            <h2 id="models">Models & Schemas</h2>
+
+            <h3>User Model</h3>
+            <p><strong>Location:</strong> <code>backend/app/models/user.py</code></p>
+            <div class="code-block"><span class="keyword">class</span> <span class="number">User</span>(<span class="number">Base</span>):
+    __tablename__ = <span class="string">"users"</span>
+
+    id: <span class="number">Mapped</span>[<span class="number">int</span>] = mapped_column(primary_key=<span class="keyword">True</span>)
+    email: <span class="number">Mapped</span>[<span class="number">str</span>] = mapped_column(<span class="number">String</span>(<span class="number">255</span>), unique=<span class="keyword">True</span>, index=<span class="keyword">True</span>)
+    first_name: <span class="number">Mapped</span>[<span class="number">str</span>] = mapped_column(<span class="number">String</span>(<span class="number">100</span>))
+    last_name: <span class="number">Mapped</span>[<span class="number">str</span> | <span class="keyword">None</span>] = mapped_column(<span class="number">String</span>(<span class="number">100</span>))
+    hashed_password: <span class="number">Mapped</span>[<span class="number">str</span>] = mapped_column(<span class="number">String</span>(<span class="number">255</span>))
+    is_active: <span class="number">Mapped</span>[<span class="number">bool</span>] = mapped_column(default=<span class="keyword">True</span>)
+    created_at: <span class="number">Mapped</span>[<span class="number">datetime</span>] = mapped_column(default=<span class="number">datetime</span>.utcnow)
+    updated_at: <span class="number">Mapped</span>[<span class="number">datetime</span>] = mapped_column(default=<span class="number">datetime</span>.utcnow, onupdate=<span class="number">datetime</span>.utcnow)</div>
+
+            <h3>Request Schemas</h3>
+            <p><strong>Location:</strong> <code>backend/app/schemas/user.py</code></p>
+            <div class="code-block"><span class="keyword">class</span> <span class="number">UserSignUpRequest</span>:
+    email: <span class="number">EmailStr</span>
+    password: <span class="number">str</span>  <span class="comment"># min 8 chars</span>
+    first_name: <span class="number">str</span>
+    last_name: <span class="number">str</span> | <span class="keyword">None</span> = <span class="keyword">None</span>
+
+<span class="keyword">class</span> <span class="number">UserLoginRequest</span>:
+    email: <span class="number">EmailStr</span>
+    password: <span class="number">str</span></div>
+
+            <!-- Implementation Details -->
+            <h2 id="implementation">Implementation Details</h2>
+
+            <h3>Password Hashing</h3>
+            <p><strong>Location:</strong> <code>backend/app/core/security.py:13-16</code></p>
+            <div class="code-block"><span class="keyword">def</span> <span class="number">hash_password</span>(password: <span class="number">str</span>) -> <span class="number">str</span>:
+    <span class="keyword">if</span> <span class="number">len</span>(password.encode()) > <span class="number">72</span>:
+        password = <span class="number">hashlib</span>.<span class="number">sha256</span>(password.encode()).hexdigest()
+    <span class="keyword">return</span> <span class="number">pwd_context</span>.hash(password)</div>
+
+            <h4>Why SHA-256 pre-hashing?</h4>
+            <ul>
+                <li>Bcrypt has a 72-byte password limit</li>
+                <li>Converting to 64-char hex string ensures compatibility</li>
+                <li>No security loss: bcrypt still provides strong hashing</li>
+                <li>Backward compatible with systems enforcing 72-byte limit</li>
+            </ul>
+
+            <h3>Protected Routes</h3>
+            <p><strong>Location:</strong> <code>backend/app/core/dependencies.py</code></p>
+            <div class="code-block"><span class="keyword">async def</span> <span class="number">get_current_user</span>(
+    token: <span class="number">str</span> = <span class="number">Depends</span>(<span class="number">oauth2_scheme</span>),
+    session: <span class="number">AsyncSession</span> = <span class="number">Depends</span>(<span class="number">get_session</span>)
+) -> <span class="number">User</span>:
+    <span class="number">payload</span> = <span class="number">decode_token</span>(<span class="number">token</span>)
+    <span class="number">user_id</span> = <span class="number">payload</span>.get(<span class="string">"sub"</span>)
+
+    <span class="number">user</span> = <span class="keyword">await</span> <span class="number">session</span>.get(<span class="number">User</span>, <span class="number">int</span>(<span class="number">user_id</span>))
+
+    <span class="keyword">if</span> <span class="keyword">not</span> <span class="number">user</span> <span class="keyword">or</span> <span class="keyword">not</span> <span class="number">user</span>.is_active:
+        <span class="keyword">raise</span> <span class="number">HTTPException</span>(status_code=<span class="number">401</span>)
+
+    <span class="keyword">return</span> <span class="number">user</span></div>
+
+            <!-- Data Flow -->
+            <h2 id="dataflow">Data Flow</h2>
+
+            <h3>Sign-Up Flow</h3>
+            <ol>
+                <li><strong>User Action:</strong> User fills sign-up form and clicks "Sign Up"</li>
+                <li><strong>Frontend Validation:</strong> Check email format, password length, password match</li>
+                <li><strong>API Request:</strong> POST /api/v1/auth/signup with email, password, name</li>
+                <li><strong>Backend Processing:</strong>
+                    <ul>
+                        <li>Validate email is unique</li>
+                        <li>Hash password (SHA-256 + bcrypt)</li>
+                        <li>Insert User record into database</li>
+                        <li>Generate access + refresh tokens</li>
+                        <li>Set HTTP-only cookies</li>
+                    </ul>
+                </li>
+                <li><strong>Frontend Update:</strong> Store tokens, redirect to onboarding</li>
+            </ol>
+
+            <h3>Login Flow</h3>
+            <ol>
+                <li><strong>User Action:</strong> User fills login form and clicks "Log In"</li>
+                <li><strong>Frontend Validation:</strong> Check email format, password not empty</li>
+                <li><strong>API Request:</strong> POST /api/v1/auth/login with email, password</li>
+                <li><strong>Backend Processing:</strong>
+                    <ul>
+                        <li>Query database for user by email</li>
+                        <li>Verify password matches</li>
+                        <li>Generate tokens</li>
+                        <li>Set HTTP-only cookies</li>
+                    </ul>
+                </li>
+                <li><strong>Frontend Update:</strong> Store tokens, redirect to dashboard</li>
+            </ol>
+
+            <!-- Testing -->
+            <h2 id="testing">Testing</h2>
+
+            <h3>Backend Tests</h3>
+            <p><strong>Location:</strong> <code>backend/tests/test_auth.py</code></p>
+            <div class="code-block">docker-compose exec backend pytest backend/tests/test_auth.py -v</div>
+
+            <strong>Test Coverage:</strong>
+            <ul>
+                <li>✅ User creation with valid/invalid data</li>
+                <li>✅ Password hashing consistency</li>
+                <li>✅ Password verification</li>
+                <li>✅ JWT token creation and validation</li>
+                <li>✅ Login with correct/incorrect credentials</li>
+                <li>✅ Protected endpoint access</li>
+                <li>✅ Token expiration handling</li>
+                <li>✅ Token refresh functionality</li>
+            </ul>
+
+            <div class="note"><strong>Target Coverage:</strong> > 80%</div>
+
+            <h3>Frontend Tests</h3>
+            <p><strong>Location:</strong> <code>frontend/src/tests/</code></p>
+            <div class="code-block">docker-compose exec frontend npm run test:watch</div>
+
+            <!-- Deployment -->
+            <h2 id="deployment">Deployment Considerations</h2>
+
+            <h3>Environment Variables</h3>
+            <p>Production requires these environment variables:</p>
+            <div class="code-block">SECRET_KEY=<span class="string">"&lt;strong-random-string-min-32-chars&gt;"</span>
+DATABASE_URL=<span class="string">"postgresql://user:pass@host:5432/db"</span>
+CORS_ORIGINS=<span class="string">'["https://yourdomain.com"]'</span>
+ACCESS_TOKEN_EXPIRE_MINUTES=<span class="number">15</span>
+REFRESH_TOKEN_EXPIRE_DAYS=<span class="number">7</span></div>
+
+            <strong>Generate SECRET_KEY:</strong>
+            <div class="code-block">python -c <span class="string">"import secrets; print(secrets.token_urlsafe(32))"</span></div>
+
+            <h3>Security Headers</h3>
+            <p>Enable in production ASGI middleware:</p>
+            <ul>
+                <li>Set cookie flags: <code>secure=True</code>, <code>httponly=True</code>, <code>samesite="Strict"</code></li>
+                <li>Add headers: <code>Strict-Transport-Security</code>, <code>X-Content-Type-Options</code>, <code>X-Frame-Options</code></li>
+            </ul>
+
+            <h3>Rate Limiting</h3>
+            <p>Protect against brute force:</p>
+            <ul>
+                <li>Limit login attempts: 5 per minute per IP</li>
+                <li>Implement CAPTCHA after 3 failed attempts</li>
+                <li>Log suspicious patterns</li>
+            </ul>
+
+            <!-- Troubleshooting -->
+            <h2 id="troubleshooting">Troubleshooting</h2>
+
+            <div class="troubleshooting-item">
+                <strong>❌ "Password cannot be longer than 72 bytes"</strong>
+                <p><strong>Cause:</strong> Old password hashing without SHA-256 pre-hashing</p>
+                <p><strong>Fix:</strong> Update to latest <code>security.py</code> with pre-hashing</p>
+                <p><strong>Location:</strong> <code>backend/app/core/security.py:14-15</code></p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ "Invalid credentials" with correct password</strong>
+                <p><strong>Cause:</strong> Password hashing mismatch or bcrypt version incompatibility</p>
+                <p><strong>Fix:</strong></p>
+                <ul>
+                    <li>Check <code>pyproject.toml</code> has <code>bcrypt&lt;5.0.0</code></li>
+                    <li>Verify both hash and verify functions have same pre-hashing logic</li>
+                    <li>User may need password reset if stored with old algorithm</li>
+                </ul>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ Tokens not persisted across requests</strong>
+                <p><strong>Cause:</strong> Missing <code>credentials: 'include'</code> or CORS issues</p>
+                <p><strong>Fix:</strong></p>
+                <ul>
+                    <li>Check <code>fetch()</code> includes <code>credentials: 'include'</code></li>
+                    <li>Verify CORS allows credentials</li>
+                    <li>Check cookies set with <code>httponly=True</code></li>
+                </ul>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ User not authenticated after login</strong>
+                <p><strong>Cause:</strong> Token expired or JWT secret changed</p>
+                <p><strong>Fix:</strong></p>
+                <ul>
+                    <li>Check token not expired</li>
+                    <li>Verify <code>SECRET_KEY</code> is consistent</li>
+                    <li>Ensure database session active in <code>get_current_user()</code></li>
+                </ul>
+            </div>
+
+            <!-- References -->
+            <h2 id="references">References</h2>
+
+            <h3>Standards & Specifications</h3>
+            <ul>
+                <li><a href="https://jwt.io" target="_blank">JWT.io</a> — JWT standard and debugging</li>
+                <li><a href="https://en.wikipedia.org/wiki/Bcrypt" target="_blank">bcrypt</a> — Password hashing algorithm</li>
+                <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html" target="_blank">OWASP Authentication Cheat Sheet</a> — Security best practices</li>
+            </ul>
+
+            <h3>Framework Documentation</h3>
+            <ul>
+                <li><a href="https://fastapi.tiangolo.com/tutorial/security/" target="_blank">FastAPI Security</a> — FastAPI auth patterns</li>
+                <li><a href="https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html" target="_blank">SQLAlchemy Async</a> — Async database operations</li>
+                <li><a href="https://docs.pydantic.dev/" target="_blank">Pydantic</a> — Data validation</li>
+            </ul>
+
+            <h3>Related Documentation</h3>
+            <ul>
+                <li><a href="../DATABASE_MIGRATIONS.md">Database Migrations</a> — Schema management</li>
+                <li><a href="../README.md">Code Quality Standards</a> — Testing and linting</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>MyGym Documentation — Technical Reference</p>
+            <p><a href="index.html">← Back to Technical Docs Index</a></p>
+        </footer>
+    </div>
+</body>
+</html>

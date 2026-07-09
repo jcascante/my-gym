@@ -64,6 +64,14 @@ This directory contains specialized skills to guide Claude Code when working on 
 - IDE configuration
 - GitHub Actions workflows
 
+### 9. **documentation** - User & Technical Documentation
+- User documentation (feature guides, step-by-step instructions)
+- Technical documentation (architecture, implementation, API reference)
+- GitHub Pages structure and indexing
+- Documentation patterns and templates
+- Navigation and cross-linking
+- Writing guidelines for different audiences
+
 ## How to Use Skills
 
 Skills are invoked automatically when relevant to your work. You can also explicitly request them:
@@ -77,6 +85,7 @@ Or type the skill name as a command:
 /api-testing
 /react-component-testing
 /database-migrations
+/documentation
 ```
 
 ## Development Workflow
@@ -86,7 +95,10 @@ Or type the skill name as a command:
 3. **Run quality checks** - refer to `code-quality`
 4. **Database changes** - use `database-migrations`
 5. **API design** - follow `rest-api-design`
-6. **Deployment** - use `docker-workflows`
+6. **Document feature** - use `documentation`
+   - User documentation: How to use the feature
+   - Technical documentation: Implementation details
+7. **Deployment** - use `docker-workflows`
 
 ## Quick Commands
 

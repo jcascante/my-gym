@@ -4,10 +4,13 @@ Welcome to the MyGym documentation hub. This is your central resource for all in
 
 ## 📚 Documentation Structure
 
-### User Documentation
-**For end users who want to use MyGym**
+**All documentation is published as HTML via GitHub Pages** for professional presentation and optimal styling.
 
-- **[Login & Sign-Up Guide](user/LOGIN_SIGNUP.md)** — How to create an account, log in, and manage your account securely
+### User Documentation
+**For end users who want to use MyGym**  
+**Format: HTML** — Styled with friendly colors, emoji headers, and interactive elements
+
+- **[Login & Sign-Up Guide](user/LOGIN_SIGNUP.html)** — How to create an account, log in, and manage your account securely
   - Account creation
   - Login process
   - Logout functionality
@@ -15,15 +18,20 @@ Welcome to the MyGym documentation hub. This is your central resource for all in
   - Account recovery
 
 ### Technical Documentation
-**For developers and system administrators**
+**For developers and system administrators**  
+**Format: HTML** — Syntax-highlighted code blocks, navigation sidebar, flow diagrams
 
-- **[Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.md)** — Deep dive into JWT auth, password hashing, and session management
+- **[Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.html)** — Deep dive into JWT auth, password hashing, and session management
   - JWT token implementation
   - Password hashing with SHA-256 + bcrypt
   - API endpoints (sign-up, login, logout, refresh)
   - Frontend/backend architecture
   - Testing strategies
   - Deployment considerations
+
+### Shared Reference Documentation
+**For all audiences**  
+**Format: Markdown** — For longer reference docs (migrations, setup guides)
 
 - **[Database Migrations Guide](DATABASE_MIGRATIONS.md)** — Using Alembic for database schema versioning
   - Migration workflow
@@ -73,8 +81,8 @@ See the `personal/` directory for development notes, architectural decisions, an
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [Login & Sign-Up Guide](user/LOGIN_SIGNUP.md) | User-friendly authentication guide | End users |
-| [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.md) | Implementation details and architecture | Developers |
+| [Login & Sign-Up Guide](user/LOGIN_SIGNUP.html) | User-friendly authentication guide | End users |
+| [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.html) | Implementation details and architecture | Developers |
 | [Database Migrations Guide](DATABASE_MIGRATIONS.md) | Schema versioning with Alembic | DevOps, Developers |
 | [UV Setup Guide](UV_SETUP.md) | Package manager configuration | Developers |
 | [README.md](../README.md) | Project overview and quick start | Everyone |

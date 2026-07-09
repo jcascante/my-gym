@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Sign-Up - MyGym</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            margin: -20px -20px 40px -20px;
+            border-radius: 0 0 8px 8px;
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        nav {
+            margin: 30px 0;
+            padding: 15px 20px;
+            background: white;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+
+        nav a {
+            display: inline-block;
+            margin-right: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .content {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #667eea;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        h2:first-of-type {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #764ba2;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        ol, ul {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        strong {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .step {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .tip {
+            background: #e8f5e9;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #4caf50;
+            border-radius: 4px;
+        }
+
+        .tip::before {
+            content: "💡 Tip: ";
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        .warning {
+            background: #fff3e0;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #ff9800;
+            border-radius: 4px;
+        }
+
+        .warning::before {
+            content: "⚠️ ";
+            font-weight: bold;
+            color: #e65100;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .faq {
+            margin: 20px 0;
+        }
+
+        .faq-item {
+            margin-bottom: 20px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .faq-item strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .related-features {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .related-features ul {
+            margin-left: 20px;
+        }
+
+        .related-features li {
+            margin-bottom: 10px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .back-button:hover {
+            background: #764ba2;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            header {
+                margin: -15px -15px 30px -15px;
+            }
+
+            header h1 {
+                font-size: 1.5em;
+            }
+
+            nav a {
+                display: block;
+                margin: 8px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-button">← Back to User Docs</a>
+
+        <header>
+            <h1>🔐 Login & Sign-Up</h1>
+            <p>Get started with MyGym and manage your account securely</p>
+        </header>
+
+        <div class="content">
+            <!-- Overview -->
+            <h2>Overview</h2>
+            <p>MyGym is a personalized workout program manager that creates custom workout programs tailored to your fitness goals, experience level, and available time. To use MyGym, you need to create an account with a unique email address and password. This guide walks you through creating your account, logging in, and managing your session securely.</p>
+
+            <!-- Before You Start -->
+            <h2>Before You Start</h2>
+            <ul>
+                <li><strong>Email Address</strong>: You'll need a valid email address. This is how you log in to MyGym</li>
+                <li><strong>Password</strong>: Create a strong password that you haven't used elsewhere</li>
+                <li><strong>Browser</strong>: Have a modern web browser open (Chrome, Firefox, Safari, Edge)</li>
+            </ul>
+
+            <!-- How to Create an Account -->
+            <h2>How to Create an Account</h2>
+            <p>Creating a new MyGym account takes just a few minutes.</p>
+
+            <h3>Step 1: Go to the Sign-Up Page</h3>
+            <div class="step">
+                <ol>
+                    <li>Open the MyGym application</li>
+                    <li>Click "Sign Up" if you see the login page</li>
+                </ol>
+            </div>
+
+            <h3>Step 2: Enter Your Email</h3>
+            <div class="step">
+                <ul>
+                    <li>Type an email address you have access to</li>
+                    <li>This email will be how you log in from now on</li>
+                    <li>Make sure you've typed it correctly</li>
+                </ul>
+            </div>
+
+            <h3>Step 3: Create Your Password</h3>
+            <div class="step">
+                <ul>
+                    <li>Type a password (at least 8 characters)</li>
+                    <li>Mix uppercase, lowercase, numbers, and symbols (like !@#) for better security</li>
+                    <li>Confirm your password by typing it again</li>
+                </ul>
+                <div class="tip">Passwords are case-sensitive, so remember how you typed it</div>
+            </div>
+
+            <h3>Step 4: Add Your Name</h3>
+            <div class="step">
+                <ul>
+                    <li><strong>First Name</strong>: Your first name (required)</li>
+                    <li><strong>Last Name</strong>: Your last name (optional but helpful)</li>
+                    <li>These will be used to personalize your experience</li>
+                </ul>
+            </div>
+
+            <h3>Step 5: Complete Sign-Up</h3>
+            <div class="step">
+                <ol>
+                    <li>Click the "Sign Up" button</li>
+                    <li>You're automatically logged in and sent to set up your profile</li>
+                    <li>Continue through the onboarding to tell us about your fitness goals</li>
+                </ol>
+            </div>
+
+            <p><strong>✅ You're done!</strong> Your account is created and you're ready to start using MyGym.</p>
+
+            <!-- How to Log In -->
+            <h2>How to Log In</h2>
+            <p>Ready to start a workout? Log in to your account anytime.</p>
+
+            <h3>Step 1: Go to the Login Page</h3>
+            <div class="step">
+                <ul>
+                    <li>Open the MyGym application</li>
+                    <li>You'll see the login page if you're not already logged in</li>
+                </ul>
+            </div>
+
+            <h3>Step 2: Enter Your Email and Password</h3>
+            <div class="step">
+                <ul>
+                    <li><strong>Email</strong>: Type the email address you used when creating your account</li>
+                    <li><strong>Password</strong>: Type your password</li>
+                    <li>Double-check for typos—passwords are case-sensitive</li>
+                </ul>
+            </div>
+
+            <h3>Step 3: Click "Log In"</h3>
+            <div class="step">
+                <ul>
+                    <li>If your details are correct, you'll be logged in</li>
+                    <li>You'll see your dashboard and can start using MyGym</li>
+                </ul>
+            </div>
+
+            <!-- How to Log Out -->
+            <h2>How to Log Out</h2>
+            <p>Always log out when you're done, especially on shared devices.</p>
+
+            <h3>Step 1: Find the Logout Button</h3>
+            <div class="step">
+                <ul>
+                    <li>Look in the top-right corner of your dashboard</li>
+                    <li>You'll see a "Logout" button</li>
+                </ul>
+            </div>
+
+            <h3>Step 2: Click Logout</h3>
+            <div class="step">
+                <ul>
+                    <li>Your session ends immediately</li>
+                    <li>You're returned to the login page</li>
+                    <li>Your account is secure</li>
+                </ul>
+            </div>
+
+            <!-- Troubleshooting -->
+            <h2>Troubleshooting</h2>
+
+            <div class="faq">
+                <div class="faq-item">
+                    <strong>❓ I forgot my password</strong>
+                    <p><strong>Solution:</strong> Contact MyGym support with the email from your account. We'll help you reset your password and regain access.</p>
+                </div>
+
+                <div class="faq-item">
+                    <strong>❓ I can't log in with my email</strong>
+                    <p><strong>Solution:</strong></p>
+                    <ol>
+                        <li>Check you're using the exact email from sign-up (uppercase/lowercase matters)</li>
+                        <li>Make sure Caps Lock is off on your keyboard</li>
+                        <li>Verify you typed the password correctly</li>
+                        <li>Try resetting your password (contact support)</li>
+                    </ol>
+                </div>
+
+                <div class="faq-item">
+                    <strong>❓ I don't recognize my email anymore</strong>
+                    <p><strong>Solution:</strong> If you signed up with an old email you no longer use, contact support. We can help verify your identity and update your account.</p>
+                </div>
+
+                <div class="faq-item">
+                    <strong>❓ The login button doesn't work</strong>
+                    <p><strong>Solution:</strong></p>
+                    <ol>
+                        <li>Check your internet connection</li>
+                        <li>Try refreshing the page (press F5 or Cmd+R)</li>
+                        <li>Try a different browser</li>
+                        <li>Clear your browser cache and cookies</li>
+                    </ol>
+                </div>
+
+                <div class="faq-item">
+                    <strong>❓ My session keeps timing out</strong>
+                    <p><strong>Solution:</strong> You're logged out after a period of inactivity for security. Just log back in—your data is safe. If you'll be away, log out manually instead.</p>
+                </div>
+            </div>
+
+            <!-- Tips & Tricks -->
+            <h2>Tips & Tricks</h2>
+            <ul>
+                <li><div class="tip">Use a mix of letters, numbers, and symbols. Avoid birthdays or common words</div></li>
+                <li><div class="tip">Consider using a password manager to securely store your MyGym password</div></li>
+                <li><div class="tip">Make sure you remember which email you signed up with</div></li>
+                <li><div class="tip">Always log out on shared computers or phones</div></li>
+                <li><div class="tip">Check your email for any MyGym account notifications</div></li>
+            </ul>
+
+            <!-- Related Features -->
+            <h2>Related Features</h2>
+            <div class="related-features">
+                <p>After you've logged in, you might want to:</p>
+                <ul>
+                    <li>Set up your fitness profile — Tell MyGym about your goals and experience</li>
+                    <li>Generate your first workout program — Get a personalized routine</li>
+                    <li>Start tracking workouts — Log your daily exercises</li>
+                </ul>
+            </div>
+
+            <!-- Security Notes -->
+            <h2>Security Notes</h2>
+            <ul>
+                <li>Your password is encrypted when transmitted and stored securely on our servers</li>
+                <li>We never share your account information with third parties</li>
+                <li>Log out on shared devices to protect your account</li>
+                <li>If you suspect suspicious activity, change your password immediately</li>
+            </ul>
+
+            <div class="warning">Contact MyGym support if you have any questions about logging in or signing up.</div>
+        </div>
+
+        <footer>
+            <p>MyGym Documentation — User Guides</p>
+            <p><a href="index.html">← Back to User Docs Index</a></p>
+        </footer>
+    </div>
+</body>
+</html>
