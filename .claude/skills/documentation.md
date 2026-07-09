@@ -6,8 +6,8 @@ Guidance for creating and maintaining MyGym documentation for GitHub Pages. **Al
 
 MyGym documentation structure:
 
-- **Main User Page** (`docs/index.html`) — Primary entry point with MyGym overview and feature links (user-focused, purple gradient theme)
-- **User Feature Guides** (`docs/user/*.html`) — Detailed how-to guides for each feature (purple gradient theme)
+- **Main User Page** (`docs/index.html`) — Primary entry point with MyGym overview and feature links (user-focused, navy gradient theme)
+- **User Feature Guides** (`docs/user/*.html`) — Detailed how-to guides for each feature (navy/slate theme)
 - **Technical Documentation** (`docs/technical/*.html`) — Architecture, implementation, and developer guides (blue gradient theme, secondary/discrete links in footer)
 - **Shared Resources** (`docs/*.md`) — Database migrations, setup guides (markdown acceptable for longer reference docs)
 
@@ -90,11 +90,12 @@ docs/user/
 ```
 
 **Styling Guidelines**:
-- Use color scheme: `#667eea` (primary), `#764ba2` (secondary)
+- Use color scheme: `#1a3a52` (primary navy), `#2c5282` (secondary blue)
 - Include emoji in headers for visual appeal
 - Use callout boxes for tips (green), warnings (orange), notes (blue)
 - Responsive design with `max-width: 900px`
-- Reference existing `LOGIN_SIGNUP.html` for style template
+- Reference existing `index.html` for main page style template
+- Reference existing `LOGIN_SIGNUP.html` for feature guide style template
 
 **Content Guidelines**:
 
@@ -571,7 +572,7 @@ git push origin main
 
 ### Format Requirements
 - ✅ **All documentation must be HTML** (not markdown) for GitHub Pages
-- ✅ User docs use **purple gradient** theme (`#667eea`, `#764ba2`)
+- ✅ User docs use **navy gradient** theme (`#1a3a52`, `#2c5282`) — professional and sober
 - ✅ Technical docs use **blue gradient** theme (`#2a5298`, `#1e3c72`)
 - ✅ **Responsive design** — works on desktop, tablet, mobile
 - ✅ **Styled callout boxes** — tips (green), warnings (orange), notes (blue)
@@ -594,7 +595,7 @@ git push origin main
 - **User Docs**: "How do I...?" → Focus on goals and tasks (non-technical)
 - **Technical Docs**: "How does...work?" → Focus on implementation and integration (precise, detailed, secondary navigation)
 - **HTML Only**: No markdown for feature/system docs (only shared reference docs)
-- **Consistent Styling**: Use provided templates (purple for user docs, blue for technical docs)
+- **Consistent Styling**: Use provided templates (navy/slate for user docs, blue for technical docs)
 - **Keep Updated**: Docs rot if not maintained with code changes
 - **Use Examples**: Show, don't just tell
 - **Index Everything**: All docs must be linked from appropriate index files
