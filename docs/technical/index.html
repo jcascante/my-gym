@@ -5,117 +5,270 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Technical Documentation - MyGym</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        a.back {
-            color: #0066cc;
+        header {
+            background: linear-gradient(135deg, #1a3a52 0%, #2c5282 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        nav {
+            background: rgba(0,0,0,0.1);
+            padding: 12px 20px;
+            text-align: left;
+            backdrop-filter: blur(10px);
+        }
+        nav a {
+            color: white;
             text-decoration: none;
-            margin-bottom: 20px;
-            display: inline-block;
+            margin-right: 20px;
+            font-weight: 500;
+            font-size: 0.9em;
+            opacity: 0.9;
+            transition: opacity 0.2s;
         }
-        a.back:hover {
+        nav a:hover {
+            opacity: 1;
             text-decoration: underline;
         }
-        h1 {
-            color: #2c3e50;
+        main {
+            flex: 1;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+            width: 100%;
         }
         .content {
             background: white;
-            padding: 30px;
+            padding: 50px 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .intro {
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #1a3a52;
+        }
+        .intro h2 {
+            color: #1a3a52;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+        .intro p {
+            font-size: 1.05em;
+            color: #555;
+            line-height: 1.8;
+        }
+        .sections {
+            margin-top: 40px;
+        }
+        .sections h2 {
+            color: #1a3a52;
+            font-size: 1.4em;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1a3a52;
+            padding-left: 15px;
+        }
+        .sections ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        .sections li {
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+        }
+        .sections li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #2c5282;
+            font-weight: bold;
+        }
+        .sections a {
+            color: #0066cc;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .sections a:hover {
+            text-decoration: underline;
+        }
+        .doc-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+        .doc-card {
+            background: linear-gradient(135deg, #1a3a5215 0%, #2c528215 100%);
+            padding: 25px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #1a3a52;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .doc-card:hover {
+            background: linear-gradient(135deg, #1a3a5225 0%, #2c528225 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(26, 58, 82, 0.2);
+        }
+        .doc-card h3 {
+            color: #1a3a52;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        .doc-card p {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        .badge {
+            display: inline-block;
+            background: #e0e0e0;
+            color: #555;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        footer {
+            background: rgba(0,0,0,0.5);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 40px;
+            font-size: 0.9em;
+        }
+        footer a {
+            color: #6eb3d1;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <a href="../" class="back">← Back to MyGym</a>
+    <header>
+        <h1>⚙️ Technical Documentation</h1>
+        <p>Architecture, API, database, and developer guides</p>
+    </header>
 
-    <div class="content">
-        <h1>Technical Documentation ⚙️</h1>
-        <p>Architecture, API, database, infrastructure, and developer guides for MyGym developers and DevOps engineers.</p>
+    <nav>
+        <a href="../">← Back to User Guide</a>
+        <a href="../personal/">📝 Personal Notes</a>
+        <a href="../README.md">📖 Full Index</a>
+    </nav>
 
-        <h2>Authentication & Security</h2>
-        <ul>
-            <li><a href="LOGIN_SIGNUP_TECHNICAL.html">Login & Sign-Up Technical Reference</a> - JWT auth, password hashing, session management</li>
-        </ul>
+    <main>
+        <div class="content">
+            <div class="intro">
+                <h2>Developer & DevOps Reference</h2>
+                <p>Complete technical documentation for MyGym developers and DevOps engineers. Learn about authentication, API design, database management, infrastructure, and deployment strategies.</p>
+            </div>
 
-        <h2>User Profile Management</h2>
-        <ul>
-            <li><a href="PROFILE_MANAGEMENT_TECHNICAL.html">Profile Management Technical Reference</a> - CRUD operations, partial updates, null-value persistence, API endpoints</li>
-        </ul>
+            <div class="sections">
+                <h2>Authentication & Security</h2>
+                <ul>
+                    <li><a href="LOGIN_SIGNUP_TECHNICAL.html">Login & Sign-Up Technical Reference</a> - JWT auth, password hashing, session management</li>
+                </ul>
 
-        <h2>Database & Migrations</h2>
-        <ul>
-            <li><a href="../DATABASE_MIGRATIONS.md">Database Migrations Guide</a> - Schema versioning with Alembic</li>
-        </ul>
+                <h2>User Profile Management</h2>
+                <ul>
+                    <li><a href="PROFILE_MANAGEMENT_TECHNICAL.html">Profile Management Technical Reference</a> - CRUD operations, partial updates, null-value persistence, API endpoints</li>
+                </ul>
 
-        <h2>Setup & Development</h2>
-        <ul>
-            <li><a href="../UV_SETUP.md">UV Package Manager Setup</a> - Dependency management configuration</li>
-        </ul>
+                <h2>Database & Migrations</h2>
+                <ul>
+                    <li><a href="../DATABASE_MIGRATIONS.md">Database Migrations Guide</a> - Schema versioning with Alembic</li>
+                </ul>
 
-        <h2>Architecture & Design (Coming Soon)</h2>
-        <ul>
-            <li>Tech Stack Overview</li>
-            <li>API Design & Standards</li>
-            <li>Database Schema</li>
-            <li>Project Structure</li>
-        </ul>
+                <h2>Setup & Development</h2>
+                <ul>
+                    <li><a href="../UV_SETUP.md">UV Package Manager Setup</a> - Dependency management configuration</li>
+                </ul>
 
-        <h2>Deployment & Infrastructure (Coming Soon)</h2>
-        <ul>
-            <li>CI/CD Pipeline</li>
-            <li>Docker & Containerization</li>
-            <li>Production Deployment</li>
-            <li>Monitoring & Logging</li>
-        </ul>
+                <h2>Architecture & Design <span class="badge">Coming Soon</span></h2>
+                <ul>
+                    <li>Tech Stack Overview</li>
+                    <li>API Design & Standards</li>
+                    <li>Database Schema</li>
+                    <li>Project Structure</li>
+                </ul>
 
-        <h2>Testing & Quality (Coming Soon)</h2>
-        <ul>
-            <li>Backend Testing Strategies</li>
-            <li>Frontend Testing Strategies</li>
-            <li>Code Quality Standards</li>
-            <li>Performance Optimization</li>
-        </ul>
+                <h2>Deployment & Infrastructure <span class="badge">Coming Soon</span></h2>
+                <ul>
+                    <li>CI/CD Pipeline</li>
+                    <li>Docker & Containerization</li>
+                    <li>Production Deployment</li>
+                    <li>Monitoring & Logging</li>
+                </ul>
 
-        <style>
-            .doc-sections {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 15px;
-                margin-top: 30px;
-                padding-top: 30px;
-                border-top: 1px solid #eee;
-            }
-            .doc-sections a {
-                display: block;
-                padding: 20px;
-                background: #f9f9f9;
-                border-radius: 6px;
-                color: #0066cc;
-                text-decoration: none;
-                transition: background 0.2s;
-                font-weight: 500;
-            }
-            .doc-sections a:hover {
-                background: #f0f0f0;
-                text-decoration: underline;
-            }
-        </style>
+                <h2>Testing & Quality <span class="badge">Coming Soon</span></h2>
+                <ul>
+                    <li>Backend Testing Strategies</li>
+                    <li>Frontend Testing Strategies</li>
+                    <li>Code Quality Standards</li>
+                    <li>Performance Optimization</li>
+                </ul>
+            </div>
 
-        <div class="doc-sections">
-            <a href="LOGIN_SIGNUP_TECHNICAL.html">🔐 Authentication & Security</a>
-            <a href="PROFILE_MANAGEMENT_TECHNICAL.html">👤 Profile Management</a>
-            <a href="../DATABASE_MIGRATIONS.md">🗄️ Database Migrations</a>
-            <a href="../UV_SETUP.md">📦 Package Manager</a>
+            <div class="doc-cards">
+                <a href="LOGIN_SIGNUP_TECHNICAL.html" class="doc-card">
+                    <h3>🔐 Authentication & Security</h3>
+                    <p>JWT auth, password hashing, and session management</p>
+                </a>
+                <a href="PROFILE_MANAGEMENT_TECHNICAL.html" class="doc-card">
+                    <h3>👤 Profile Management</h3>
+                    <p>CRUD operations and API endpoints</p>
+                </a>
+                <a href="../DATABASE_MIGRATIONS.md" class="doc-card">
+                    <h3>🗄️ Database Migrations</h3>
+                    <p>Schema versioning with Alembic</p>
+                </a>
+                <a href="../UV_SETUP.md" class="doc-card">
+                    <h3>📦 Package Manager</h3>
+                    <p>Dependency management configuration</p>
+                </a>
+            </div>
         </div>
-    </div>
+    </main>
+
+    <footer>
+        <strong>MyGym Technical Documentation</strong><br><br>
+        <a href="../">User Guide</a> |
+        <a href="../personal/">Personal Notes</a> |
+        <a href="../README.md">Full Index</a>
+    </footer>
 </body>
 </html>

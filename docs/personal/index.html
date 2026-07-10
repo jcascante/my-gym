@@ -5,50 +5,189 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Documentation - MyGym</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        a.back {
-            color: #0066cc;
+        header {
+            background: linear-gradient(135deg, #1a3a52 0%, #2c5282 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        nav {
+            background: rgba(0,0,0,0.1);
+            padding: 12px 20px;
+            text-align: left;
+            backdrop-filter: blur(10px);
+        }
+        nav a {
+            color: white;
             text-decoration: none;
-            margin-bottom: 20px;
-            display: inline-block;
+            margin-right: 20px;
+            font-weight: 500;
+            font-size: 0.9em;
+            opacity: 0.9;
+            transition: opacity 0.2s;
         }
-        a.back:hover {
+        nav a:hover {
+            opacity: 1;
             text-decoration: underline;
         }
-        h1 {
-            color: #2c3e50;
+        main {
+            flex: 1;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+            width: 100%;
         }
         .content {
             background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 50px 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .intro {
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #1a3a52;
+        }
+        .intro h2 {
+            color: #1a3a52;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+        .intro p {
+            font-size: 1.05em;
+            color: #555;
+            line-height: 1.8;
+        }
+        .sections {
+            margin-top: 40px;
+        }
+        .sections h2 {
+            color: #1a3a52;
+            font-size: 1.4em;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1a3a52;
+            padding-left: 15px;
+        }
+        .sections ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        .sections li {
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+        }
+        .sections li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #2c5282;
+            font-weight: bold;
+        }
+        .sections p {
+            color: #666;
+            font-size: 0.95em;
+            font-style: italic;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #ddd;
+            border-radius: 4px;
+        }
+        footer {
+            background: rgba(0,0,0,0.5);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 40px;
+            font-size: 0.9em;
+        }
+        footer a {
+            color: #6eb3d1;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <a href="../" class="back">← Back to Documentation</a>
+    <header>
+        <h1>📝 Personal Notes</h1>
+        <p>Project decisions, learning notes, and observations</p>
+    </header>
 
-    <div class="content">
-        <h1>Personal Documentation 📝</h1>
-        <p>Project notes, personal learning, and project decisions.</p>
+    <nav>
+        <a href="../">← Back to User Guide</a>
+        <a href="../technical/">⚙️ Technical Docs</a>
+        <a href="../README.md">📖 Full Index</a>
+    </nav>
 
-        <h2>Sections</h2>
-        <ul>
-            <li>Project decisions and rationale</li>
-            <li>Learning notes</li>
-            <li>Personal observations</li>
-        </ul>
+    <main>
+        <div class="content">
+            <div class="intro">
+                <h2>Project Notes & Observations</h2>
+                <p>Personal learning notes, project decisions, design rationale, and development insights for MyGym.</p>
+            </div>
 
-        <p><em>Content coming soon...</em></p>
-    </div>
+            <div class="sections">
+                <h2>Project Decisions</h2>
+                <ul>
+                    <li>Architecture and design choices</li>
+                    <li>Technology decisions and rationale</li>
+                    <li>Feature prioritization and scope</li>
+                </ul>
+
+                <h2>Learning Notes</h2>
+                <ul>
+                    <li>Technical discoveries and patterns</li>
+                    <li>Development insights</li>
+                    <li>Best practices and lessons learned</li>
+                </ul>
+
+                <h2>Personal Observations</h2>
+                <ul>
+                    <li>Development workflow notes</li>
+                    <li>Project progress tracking</li>
+                    <li>Future considerations</li>
+                </ul>
+
+                <p>Content coming soon...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <strong>MyGym Personal Notes</strong><br><br>
+        <a href="../">User Guide</a> |
+        <a href="../technical/">Technical Docs</a> |
+        <a href="../README.md">Full Index</a>
+    </footer>
 </body>
 </html>
