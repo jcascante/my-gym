@@ -44,9 +44,13 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex-shrink-0">
+          <button
+            onClick={() => navigate('/')}
+            className="flex-shrink-0 hover:opacity-80 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 rounded"
+            aria-label="Go to dashboard"
+          >
             <h1 className="text-2xl font-bold text-primary-600">MyGym</h1>
-          </div>
+          </button>
 
           {/* User Menu */}
           <div className="relative" ref={dropdownRef}>
