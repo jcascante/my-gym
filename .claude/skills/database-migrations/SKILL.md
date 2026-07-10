@@ -49,7 +49,7 @@ def upgrade():
     # Backward compatible: add column as nullable first
     op.add_column('users', sa.Column('email', sa.String(255), nullable=True))
     op.create_unique_constraint('uq_users_email', 'users', ['email'])
-    
+
 def downgrade():
     op.drop_constraint('uq_users_email', 'users')
     op.drop_column('users', 'email')
@@ -63,11 +63,11 @@ For data changes (not just schema):
 def upgrade():
     # Add new column
     op.add_column('users', sa.Column('full_name', sa.String(255)))
-    
+
     # Migrate existing data
     connection = op.get_bind()
     connection.execute("""
-        UPDATE users 
+        UPDATE users
         SET full_name = first_name || ' ' || last_name
         WHERE first_name IS NOT NULL
     """)

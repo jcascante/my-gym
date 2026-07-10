@@ -1,12 +1,12 @@
-import { useAuthStore } from '@/store/auth'
-import Header from './Header'
+import { useAuthStore } from '@/store/auth';
+import Header from './Header';
 
 interface LayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -15,5 +15,5 @@ export default function Layout({ children }: LayoutProps) {
         {children}
       </main>
     </div>
-  )
+  );
 }

@@ -4,18 +4,18 @@ Guidance for developing **MyGym** — a personalized workout program manager. Us
 
 ## Stack: React 19 + FastAPI + PostgreSQL + Docker
 
-**Backend**: FastAPI (async), Pydantic V2, SQLAlchemy 2.0+ async, Alembic migrations, pytest  
-**Frontend**: React + TypeScript, Vite, Zustand, TanStack Query, Vitest  
-**Database**: PostgreSQL (prod), SQLite (testing)  
-**Testing**: TDD - write tests before code (>80% coverage)  
+**Backend**: FastAPI (async), Pydantic V2, SQLAlchemy 2.0+ async, Alembic migrations, pytest
+**Frontend**: React + TypeScript, Vite, Zustand, TanStack Query, Vitest
+**Database**: PostgreSQL (prod), SQLite (testing)
+**Testing**: TDD - write tests before code (>80% coverage)
 **Quality**: Ruff, Black, mypy (strict), ESLint, Prettier, pre-commit hooks
 
 ## Core Domain
 
 **MyGym MVP**: User auth → onboarding (profile + goals) → AI program generation → daily tracking + feedback
 
-**Key Models**: User, UserProfile, WorkoutProgram, Workout (daily), Exercise, UserWorkoutLog, Feedback  
-**Key Flows**: Signup/Login → Onboarding → Create Program → Track Workouts → View Progress  
+**Key Models**: User, UserProfile, WorkoutProgram, Workout (daily), Exercise, UserWorkoutLog, Feedback
+**Key Flows**: Signup/Login → Onboarding → Create Program → Track Workouts → View Progress
 See [PROJECT_SCOPE.md](./PROJECT_SCOPE.md) for full data models and features.
 
 ## Architecture
@@ -76,7 +76,7 @@ docker-compose up  # Starts everything
 
 ## Project Structure
 
-**Backend**: `backend/app/` 
+**Backend**: `backend/app/`
 - `models/` - SQLAlchemy models (User, UserProfile, WorkoutProgram, Workout, Exercise, UserWorkoutLog)
 - `schemas/` - Pydantic schemas (request/response types)
 - `api/v1/endpoints/` - Routes (auth, user, programs, workouts, logs, feedback)
@@ -92,8 +92,8 @@ docker-compose up  # Starts everything
 - `store/` - Zustand stores (auth, user, workout)
 - `types/` - TypeScript interfaces
 
-**Tests**: `backend/tests/`, `frontend/src/tests/` (unit + integration)  
-**Migrations**: `backend/migrations/` (Alembic version control)  
+**Tests**: `backend/tests/`, `frontend/src/tests/` (unit + integration)
+**Migrations**: `backend/migrations/` (Alembic version control)
 **Docs**: `PROJECT_SCOPE.md` (features + data models), `README.md` (quickstart)
 
 ## MyGym-Specific Patterns
@@ -119,7 +119,7 @@ docker-compose up  # Starts everything
 
 Use `.claude/skills/` for detailed guidance:
 - `api-testing` - Backend testing patterns
-- `react-component-testing` - Frontend testing patterns  
+- `react-component-testing` - Frontend testing patterns
 - `fastapi-async-patterns` - Async/await, dependency injection
 - `react-typescript-patterns` - React + TypeScript patterns
 - `rest-api-design` - API standards, status codes, error handling

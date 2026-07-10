@@ -133,6 +133,6 @@ export const theme = {
     xl: 1280,
     '2xl': 1536,
   },
-} as const
+} as const;
 
-export type Theme = typeof theme
+export type Theme = typeof theme;

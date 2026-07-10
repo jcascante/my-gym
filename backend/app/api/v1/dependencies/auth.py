@@ -1,32 +1,32 @@
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import jwt
+from fastapi import Cookie, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core import InvalidTokenError, decode_token
+from app.core import decode_token
 from app.core.database import get_db
 from app.crud.user import get_user_by_id
 from app.models import User
 
-security = HTTPBearer()
-
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    access_token: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    token = credentials.credentials
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     try:
-        payload = decode_token(token)
-        sub: str = payload.get("sub")
-        if not sub:
-            raise InvalidTokenError()
-        user_id: int = int(sub)
-    except InvalidTokenError:
+        payload = decode_token(access_token, expected_type="access")
+    except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    sub = payload.get("sub")
+    if not sub:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    try:
+        user_id = int(sub)
     except (ValueError, TypeError):
         raise HTTPException(status_code=401, detail="Invalid token format")
-    except Exception as e:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     user = await get_user_by_id(db, user_id)
     if not user:

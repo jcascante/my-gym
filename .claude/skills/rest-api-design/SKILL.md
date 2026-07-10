@@ -182,12 +182,12 @@ async def create_user(
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Email already exists")
-    
+
     user = User(**user_data.dict())
     db.add(user)
     await db.commit()
     await db.refresh(user)
-    
+
     return DataResponse(data=user)
 
 @router.get("", response_model=PaginatedResponse[UserSchema])
@@ -200,25 +200,25 @@ async def list_users(
 ):
     """List all users with pagination and filtering"""
     query = select(User)
-    
+
     # Filtering
     if status:
         query = query.filter(User.status == status)
-    
+
     # Sorting
     for field in sort.split(','):
         if field.startswith('-'):
             query = query.order_by(getattr(User, field[1:]).desc())
         else:
             query = query.order_by(getattr(User, field))
-    
+
     # Pagination
     total = await db.scalar(select(func.count()).select_from(User))
     result = await db.execute(
         query.offset((page - 1) * limit).limit(limit)
     )
     users = result.scalars().all()
-    
+
     return PaginatedResponse(
         data=users,
         pagination={
@@ -250,10 +250,10 @@ async def update_user(
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail=f"User {user_id} not found")
-    
+
     for key, value in user_data.dict(exclude_unset=True).items():
         setattr(user, key, value)
-    
+
     await db.commit()
     await db.refresh(user)
     return DataResponse(data=user)
@@ -267,7 +267,7 @@ async def delete_user(
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail=f"User {user_id} not found")
-    
+
     await db.delete(user)
     await db.commit()
     # 204 No Content - no response body
@@ -394,7 +394,7 @@ async def test_create_user_success(client: AsyncClient):
 async def test_create_user_conflict(client: AsyncClient):
     # Create user
     await client.post("/api/v1/users", json={"email": "test@example.com", "name": "Test"})
-    
+
     # Try to create duplicate
     response = await client.post(
         "/api/v1/users",

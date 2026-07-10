@@ -1,22 +1,24 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import axios from 'axios'
-import {
-  signup,
-  login,
-  logout,
-  getCurrentUser,
-  saveUserProfile,
-  setAuthToken,
-  clearAuthToken,
-} from '@/api/auth'
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { signup, login, getCurrentUser, saveUserProfile } from '@/api/auth';
 
-vi.mock('axios')
+const mockAxiosInstance = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  defaults: { headers: { common: {} } },
+  interceptors: { response: { use: vi.fn() } },
+}));
+
+vi.mock('axios', () => ({
+  default: {
+    create: vi.fn(() => mockAxiosInstance),
+  },
+}));
 
 describe('Auth API', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    localStorage.clear()
-  })
+    vi.clearAllMocks();
+    localStorage.clear();
+  });
 
   describe('signup', () => {
     it('should call signup endpoint with correct payload', async () => {
@@ -27,41 +29,42 @@ describe('Auth API', () => {
           first_name: 'John',
           last_name: 'Doe',
         },
-      }
+      };
 
-      vi.mocked(axios.create().post).mockResolvedValueOnce(mockResponse)
+      vi.mocked(mockAxiosInstance.post).mockResolvedValueOnce(mockResponse);
 
       const result = await signup({
         email: 'test@example.com',
         password: 'password123',
         first_name: 'John',
         last_name: 'Doe',
-      })
+      });
 
-      expect(result).toEqual(mockResponse.data)
-    })
-  })
+      expect(result).toEqual(mockResponse.data);
+    });
+  });
 
   describe('login', () => {
-    it('should call login endpoint and return tokens', async () => {
+    it('should call login endpoint and return the logged-in user', async () => {
       const mockResponse = {
         data: {
-          access_token: 'test_access_token',
-          refresh_token: 'test_refresh_token',
-          token_type: 'bearer',
+          id: 1,
+          email: 'test@example.com',
+          first_name: 'John',
+          last_name: 'Doe',
         },
-      }
+      };
 
-      vi.mocked(axios.create().post).mockResolvedValueOnce(mockResponse)
+      vi.mocked(mockAxiosInstance.post).mockResolvedValueOnce(mockResponse);
 
       const result = await login({
         email: 'test@example.com',
         password: 'password123',
-      })
+      });
 
-      expect(result).toEqual(mockResponse.data)
-    })
-  })
+      expect(result).toEqual(mockResponse.data);
+    });
+  });
 
   describe('getCurrentUser', () => {
     it('should fetch current user with profile', async () => {
@@ -78,14 +81,14 @@ describe('Auth API', () => {
             weight_kg: 75.5,
           },
         },
-      }
+      };
 
-      vi.mocked(axios.create().get).mockResolvedValueOnce(mockResponse)
+      vi.mocked(mockAxiosInstance.get).mockResolvedValueOnce(mockResponse);
 
-      const result = await getCurrentUser()
+      const result = await getCurrentUser();
 
-      expect(result).toEqual(mockResponse.data)
-    })
+      expect(result).toEqual(mockResponse.data);
+    });
 
     it('should fetch current user without profile', async () => {
       const mockResponse = {
@@ -96,16 +99,16 @@ describe('Auth API', () => {
           last_name: 'Doe',
           profile: null,
         },
-      }
+      };
 
-      vi.mocked(axios.create().get).mockResolvedValueOnce(mockResponse)
+      vi.mocked(mockAxiosInstance.get).mockResolvedValueOnce(mockResponse);
 
-      const result = await getCurrentUser()
+      const result = await getCurrentUser();
 
-      expect(result).toEqual(mockResponse.data)
-      expect(result.profile).toBeNull()
-    })
-  })
+      expect(result).toEqual(mockResponse.data);
+      expect(result.profile).toBeNull();
+    });
+  });
 
   describe('saveUserProfile', () => {
     it('should save user profile and return updated user', async () => {
@@ -113,7 +116,7 @@ describe('Auth API', () => {
         age: 28,
         gender: 'female',
         weight_kg: 65.0,
-      }
+      };
 
       const mockResponse = {
         data: {
@@ -126,34 +129,14 @@ describe('Auth API', () => {
             ...profileData,
           },
         },
-      }
+      };
 
-      vi.mocked(axios.create().post).mockResolvedValueOnce(mockResponse)
+      vi.mocked(mockAxiosInstance.post).mockResolvedValueOnce(mockResponse);
 
-      const result = await saveUserProfile(profileData)
+      const result = await saveUserProfile(profileData);
 
-      expect(result).toEqual(mockResponse.data)
-      expect(result.profile).toBeDefined()
-    })
-  })
-
-  describe('setAuthToken', () => {
-    it('should set auth token in localStorage', () => {
-      const token = 'test_token_123'
-
-      setAuthToken(token)
-
-      expect(localStorage.getItem('authToken')).toBe(token)
-    })
-  })
-
-  describe('clearAuthToken', () => {
-    it('should clear auth token from localStorage', () => {
-      localStorage.setItem('authToken', 'test_token')
-
-      clearAuthToken()
-
-      expect(localStorage.getItem('authToken')).toBeNull()
-    })
-  })
-})
+      expect(result).toEqual(mockResponse.data);
+      expect(result.profile).toBeDefined();
+    });
+  });
+});

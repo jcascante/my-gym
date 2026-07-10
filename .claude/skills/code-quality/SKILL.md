@@ -143,7 +143,7 @@ testpaths = tests
 python_files = test_*.py
 python_classes = Test*
 python_functions = test_*
-addopts = 
+addopts =
     -v
     --strict-markers
     --tb=short
@@ -394,49 +394,49 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-      
+
       - name: Run linting
         run: ruff check .
-      
+
       - name: Run type check
         run: mypy app/
-      
+
       - name: Run tests
         run: pytest --cov=app
 
   frontend:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Type check
         run: npm run type-check
-      
+
       - name: Lint
         run: npm run lint
-      
+
       - name: Test
         run: npm run test -- --run
 ```

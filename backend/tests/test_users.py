@@ -3,18 +3,13 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import hash_password
-from app.models import User, UserProfile
 from app.crud.user import create_or_update_user_profile, get_user_profile
+from app.models import User
 
 
 @pytest.mark.asyncio
-async def test_get_current_user_without_profile(
-    client: AsyncClient, test_user: User, test_user_token: str
-):
-    response = await client.get(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {test_user_token}"},
-    )
+async def test_get_current_user_without_profile(authenticated_client: AsyncClient, test_user: User):
+    response = await authenticated_client.get("/api/v1/users/me")
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == test_user.id
@@ -26,9 +21,8 @@ async def test_get_current_user_without_profile(
 
 @pytest.mark.asyncio
 async def test_get_current_user_with_profile(
-    client: AsyncClient,
+    authenticated_client: AsyncClient,
     test_user: User,
-    test_user_token: str,
     db: AsyncSession,
 ):
     profile_data = {
@@ -49,10 +43,7 @@ async def test_get_current_user_with_profile(
 
     await create_or_update_user_profile(db, test_user.id, profile_data)
 
-    response = await client.get(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {test_user_token}"},
-    )
+    response = await authenticated_client.get("/api/v1/users/me")
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == test_user.id
@@ -65,20 +56,18 @@ async def test_get_current_user_with_profile(
 @pytest.mark.asyncio
 async def test_get_current_user_unauthorized(client: AsyncClient):
     response = await client.get("/api/v1/users/me")
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 @pytest.mark.asyncio
-async def test_create_user_profile(
-    client: AsyncClient, test_user: User, test_user_token: str
-):
+async def test_create_user_profile(authenticated_client: AsyncClient, test_user: User):
     profile_payload = {
         "age": 28,
         "gender": "female",
         "weight_kg": 65.0,
         "height_cm": 165,
         "activity_level": "very_active",
-        "fitness_focus": "cardio",
+        "fitness_focus": "endurance",
         "experience_level": "beginner",
         "days_per_week": 5,
         "workout_duration_min": 45,
@@ -88,11 +77,7 @@ async def test_create_user_profile(
         "medium_term_goals": "Improve endurance",
     }
 
-    response = await client.post(
-        "/api/v1/users/profile",
-        json=profile_payload,
-        headers={"Authorization": f"Bearer {test_user_token}"},
-    )
+    response = await authenticated_client.post("/api/v1/users/profile", json=profile_payload)
     assert response.status_code == 200
     data = response.json()
     assert data["profile"] is not None
@@ -104,9 +89,8 @@ async def test_create_user_profile(
 
 @pytest.mark.asyncio
 async def test_update_user_profile(
-    client: AsyncClient,
+    authenticated_client: AsyncClient,
     test_user: User,
-    test_user_token: str,
     db: AsyncSession,
 ):
     initial_profile = {
@@ -122,11 +106,7 @@ async def test_update_user_profile(
         "weight_kg": 78.5,
     }
 
-    response = await client.post(
-        "/api/v1/users/profile",
-        json=updated_payload,
-        headers={"Authorization": f"Bearer {test_user_token}"},
-    )
+    response = await authenticated_client.post("/api/v1/users/profile", json=updated_payload)
     assert response.status_code == 200
     data = response.json()
     assert data["profile"]["age"] == 31
@@ -135,9 +115,7 @@ async def test_update_user_profile(
 
 
 @pytest.mark.asyncio
-async def test_create_profile_with_null_values(
-    client: AsyncClient, test_user: User, test_user_token: str
-):
+async def test_create_profile_with_null_values(authenticated_client: AsyncClient, test_user: User):
     profile_payload = {
         "age": 25,
         "gender": "male",
@@ -147,11 +125,7 @@ async def test_create_profile_with_null_values(
         "fitness_focus": "strength",
     }
 
-    response = await client.post(
-        "/api/v1/users/profile",
-        json=profile_payload,
-        headers={"Authorization": f"Bearer {test_user_token}"},
-    )
+    response = await authenticated_client.post("/api/v1/users/profile", json=profile_payload)
     assert response.status_code == 200
     data = response.json()
     assert data["profile"]["age"] == 25
@@ -164,7 +138,7 @@ async def test_create_profile_unauthorized(client: AsyncClient):
         "/api/v1/users/profile",
         json={"age": 30},
     )
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 @pytest.mark.asyncio

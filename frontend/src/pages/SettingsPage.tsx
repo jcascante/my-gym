@@ -1,4 +1,4 @@
-import { Card } from '@/components'
+import { Card } from '@/components';
 
 export default function SettingsPage() {
   return (
@@ -11,7 +11,8 @@ export default function SettingsPage() {
           Account Settings
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400">
-          Settings coming soon. You'll be able to manage your account preferences, notifications, and more.
+          Settings coming soon. You'll be able to manage your account preferences, notifications,
+          and more.
         </p>
       </Card>
 
@@ -33,5 +34,5 @@ export default function SettingsPage() {
         </p>
       </Card>
     </div>
-  )
+  );
 }

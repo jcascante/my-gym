@@ -1,8 +1,7 @@
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core import hash_password
 from app.core.database import Base, get_db
@@ -21,9 +20,8 @@ async def db_session():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    async_session_local = sessionmaker(
+    async_session_local = async_sessionmaker(
         engine,
-        class_=AsyncSession,
         expire_on_commit=False,
         autoflush=False,
     )
@@ -40,7 +38,7 @@ async def client(db_session: AsyncSession):
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
 
 
@@ -62,6 +60,12 @@ async def test_user(db_session: AsyncSession) -> User:
 async def test_user_token(test_user: User) -> str:
     tokens = create_tokens(test_user.id)
     return tokens["access_token"]
+
+
+@pytest_asyncio.fixture
+async def authenticated_client(client: AsyncClient, test_user_token: str) -> AsyncClient:
+    client.cookies.set("access_token", test_user_token)
+    return client
 
 
 @pytest.fixture

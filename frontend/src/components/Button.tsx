@@ -1,24 +1,25 @@
-import { FC, ButtonHTMLAttributes, ReactNode } from 'react'
+import { FC, ButtonHTMLAttributes, ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger'
-  size?: 'sm' | 'md' | 'lg'
-  isLoading?: boolean
-  children: ReactNode
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  isLoading?: boolean;
+  children: ReactNode;
 }
 
 const variantStyles = {
-  primary: 'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 disabled:bg-primary-400',
+  primary:
+    'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 disabled:bg-primary-400',
   secondary:
     'bg-neutral-200 text-neutral-900 hover:bg-neutral-300 active:bg-neutral-400 disabled:bg-neutral-100 dark:bg-neutral-700 dark:text-neutral-50 dark:hover:bg-neutral-600 dark:active:bg-neutral-500',
   danger: 'bg-error-600 text-white hover:bg-error-700 active:bg-error-800 disabled:bg-error-400',
-}
+};
 
 const sizeStyles = {
   sm: 'px-3 py-1.5 text-sm',
   md: 'px-4 py-2.5 text-base',
   lg: 'px-6 py-3 text-lg',
-}
+};
 
 export const Button: FC<ButtonProps> = ({
   variant = 'primary',
@@ -35,8 +36,20 @@ export const Button: FC<ButtonProps> = ({
     {...props}
   >
     {isLoading && (
-      <svg className="inline mr-2 h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <svg
+        className="inline mr-2 h-4 w-4 animate-spin"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
         <path
           className="opacity-75"
           fill="currentColor"
@@ -46,4 +59,4 @@ export const Button: FC<ButtonProps> = ({
     )}
     {children}
   </button>
-)
+);

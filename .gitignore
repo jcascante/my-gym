@@ -46,6 +46,8 @@ build/
 .cache/
 coverage/
 *.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 
 .pytest_cache/
 .mypy_cache/

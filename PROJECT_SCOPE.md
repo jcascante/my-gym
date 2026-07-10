@@ -32,12 +32,12 @@ A personalized workout program manager that builds custom exercise programs base
 
 #### Program Generation
 1. **Input**: User profile data (goals, experience, time available, equipment)
-2. **Processing**: 
+2. **Processing**:
    - Select appropriate exercises for goals
    - Create progression-based weekly structure
    - Distribute workout days (push/pull/legs, upper/lower, full-body, sport-specific)
    - Account for recovery time
-3. **Output**: 
+3. **Output**:
    - Structured workout program (4-12 weeks typical)
    - Daily workout details with exercise progression
    - Form notes and safety tips
@@ -52,7 +52,7 @@ A personalized workout program manager that builds custom exercise programs base
 
 #### Daily Tracking
 1. **Today's Workout**: Display current day's exercises
-2. **Logging**: 
+2. **Logging**:
    - Mark exercises complete/incomplete
    - Log actual weight/reps performed
    - Rate difficulty (1-10)

@@ -9,7 +9,7 @@ Welcome to the MyGym documentation hub. Start with [index.html](index.html) for 
 **Main page**: [index.html](index.html) — User-focused guide with feature overview
 
 ### User Documentation
-**For end users who want to use MyGym**  
+**For end users who want to use MyGym**
 **Format: HTML** — Styled with friendly colors, emoji headers, and interactive elements
 
 - **[Login & Sign-Up Guide](user/LOGIN_SIGNUP.html)** — How to create an account, log in, and manage your account securely
@@ -20,7 +20,7 @@ Welcome to the MyGym documentation hub. Start with [index.html](index.html) for 
   - Account recovery
 
 ### Technical Documentation
-**For developers and system administrators**  
+**For developers and system administrators**
 **Format: HTML** — Syntax-highlighted code blocks, navigation sidebar, flow diagrams
 
 - **[Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.html)** — Deep dive into JWT auth, password hashing, and session management
@@ -32,7 +32,7 @@ Welcome to the MyGym documentation hub. Start with [index.html](index.html) for 
   - Deployment considerations
 
 ### Shared Reference Documentation
-**For all audiences**  
+**For all audiences**
 **Format: Markdown** — For longer reference docs (migrations, setup guides)
 
 - **[Database Migrations Guide](DATABASE_MIGRATIONS.md)** — Using Alembic for database schema versioning

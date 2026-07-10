@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,11 +14,8 @@ async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
 
 async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
     from sqlalchemy.orm import selectinload
-    result = await db.execute(
-        select(User)
-        .options(selectinload(User.profile))
-        .where(User.id == user_id)
-    )
+
+    result = await db.execute(select(User).options(selectinload(User.profile)).where(User.id == user_id))
     return result.scalar_one_or_none()
 
 
@@ -36,16 +35,14 @@ async def create_user(db: AsyncSession, email: str, password: str, first_name: s
 
 
 async def get_user_profile(db: AsyncSession, user_id: int) -> UserProfile | None:
-    result = await db.execute(
-        select(UserProfile).where(UserProfile.user_id == user_id)
-    )
+    result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
     return result.scalar_one_or_none()
 
 
 async def create_or_update_user_profile(
     db: AsyncSession,
     user_id: int,
-    profile_data: dict,
+    profile_data: dict[str, Any],
 ) -> UserProfile:
     existing_profile = await get_user_profile(db, user_id)
 

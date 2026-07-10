@@ -1,10 +1,16 @@
-from datetime import datetime
-
-from sqlalchemy import Column, DateTime, String, Integer, Float, Enum, ForeignKey, Text
-from sqlalchemy.orm import relationship
 import enum
+from datetime import UTC, datetime
+
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+
+def _utcnow() -> datetime:
+    # Columns are `DateTime` (no timezone), so keep the stored value naive
+    # UTC rather than switching the on-disk representation.
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class ActivityLevel(str, enum.Enum):
@@ -38,15 +44,15 @@ class Equipment(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True)
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=False)
-    first_name = Column(String(100))
-    last_name = Column(String(100))
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    first_name: Mapped[str | None] = mapped_column(String(100))
+    last_name: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
 
-    profile = relationship("UserProfile", back_populates="user", uselist=False)
+    profile: Mapped["UserProfile | None"] = relationship(back_populates="user", uselist=False)
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email={self.email})>"
@@ -55,24 +61,24 @@ class User(Base):
 class UserProfile(Base):
     __tablename__ = "user_profiles"
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
-    age = Column(Integer)
-    gender = Column(String(20))
-    weight_kg = Column(Float)
-    height_cm = Column(Float)
-    activity_level = Column(Enum(ActivityLevel))
-    fitness_focus = Column(Enum(FitnessFocus))
-    experience_level = Column(Enum(ExperienceLevel))
-    days_per_week = Column(Integer)
-    workout_duration_min = Column(Integer)
-    equipment = Column(Enum(Equipment))
-    injuries_limitations = Column(Text)
-    short_term_goals = Column(Text)
-    medium_term_goals = Column(Text)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, unique=True)
+    age: Mapped[int | None] = mapped_column(Integer)
+    gender: Mapped[str | None] = mapped_column(String(20))
+    weight_kg: Mapped[float | None] = mapped_column(Float)
+    height_cm: Mapped[float | None] = mapped_column(Float)
+    activity_level: Mapped[ActivityLevel | None] = mapped_column(Enum(ActivityLevel))
+    fitness_focus: Mapped[FitnessFocus | None] = mapped_column(Enum(FitnessFocus))
+    experience_level: Mapped[ExperienceLevel | None] = mapped_column(Enum(ExperienceLevel))
+    days_per_week: Mapped[int | None] = mapped_column(Integer)
+    workout_duration_min: Mapped[int | None] = mapped_column(Integer)
+    equipment: Mapped[Equipment | None] = mapped_column(Enum(Equipment))
+    injuries_limitations: Mapped[str | None] = mapped_column(Text)
+    short_term_goals: Mapped[str | None] = mapped_column(Text)
+    medium_term_goals: Mapped[str | None] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
 
-    user = relationship("User", back_populates="profile")
+    user: Mapped["User"] = relationship(back_populates="profile")
 
     def __repr__(self) -> str:
         return f"<UserProfile(user_id={self.user_id}, focus={self.fitness_focus})>"

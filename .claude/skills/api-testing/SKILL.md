@@ -32,10 +32,10 @@ async def client():
 async def test_create_user(client):
     # Arrange
     user_data = UserCreate(email="test@example.com", name="Test")
-    
+
     # Act
     response = await client.post("/api/v1/users", json=user_data.dict())
-    
+
     # Assert
     assert response.status_code == 201
     assert response.json()["email"] == "test@example.com"

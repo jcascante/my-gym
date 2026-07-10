@@ -1,13 +1,14 @@
+import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import (
     InvalidCredentialsError,
-    UserAlreadyExistsError,
     InvalidTokenError,
-    decode_token,
-    verify_password,
+    UserAlreadyExistsError,
     create_access_token,
     create_refresh_token,
+    decode_token,
+    verify_password,
 )
 from app.crud.user import create_user, get_user_by_email
 from app.models import User
@@ -33,16 +34,20 @@ async def login(db: AsyncSession, email: str, password: str) -> User:
     return user
 
 
-async def verify_refresh_token(token: str) -> dict:
+async def verify_refresh_token(token: str) -> dict[str, int]:
     try:
-        payload = decode_token(token)
-        sub: str = payload.get("sub")
-        if not sub:
-            raise InvalidTokenError()
+        payload = decode_token(token, expected_type="refresh")
+    except jwt.InvalidTokenError as e:
+        raise InvalidTokenError(str(e)) from e
+
+    sub = payload.get("sub")
+    if not sub:
+        raise InvalidTokenError()
+    try:
         user_id = int(sub)
-        return {"user_id": user_id}
-    except Exception as e:
-        raise InvalidTokenError(str(e))
+    except (TypeError, ValueError) as e:
+        raise InvalidTokenError("Invalid token subject") from e
+    return {"user_id": user_id}
 
 
 def create_tokens(user_id: int) -> dict[str, str]:

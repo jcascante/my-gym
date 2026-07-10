@@ -1,46 +1,43 @@
-import { useState, useRef, useEffect } from 'react'
-import { useAuthStore } from '@/store/auth'
-import { useNavigate } from 'react-router-dom'
-import { logout } from '@/api/auth'
-import { AlertCircle, ChevronDown, LogOut, Settings, User } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react';
+import { useAuthStore } from '@/store/auth';
+import { useNavigate } from 'react-router-dom';
+import { logout } from '@/api/auth';
+import { AlertCircle, ChevronDown, LogOut, Settings, User } from 'lucide-react';
 
 export default function Header() {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const navigate = useNavigate()
-  const { user, clearAuth } = useAuthStore()
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { user, clearAuth } = useAuthStore();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
+        setIsDropdownOpen(false);
       }
     }
 
     if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [isDropdownOpen])
+  }, [isDropdownOpen]);
 
   const handleLogout = async () => {
-    const { accessToken } = useAuthStore.getState()
-    setIsLoggingOut(true)
-    setError(null)
+    setIsLoggingOut(true);
+    setError(null);
     try {
-      if (accessToken) {
-        await logout(accessToken)
-      }
+      await logout();
     } catch (err) {
-      console.error('Logout error:', err)
+      console.error('Logout error:', err);
     } finally {
-      clearAuth()
-      navigate('/login')
-      setIsLoggingOut(false)
+      clearAuth();
+      navigate('/login');
+      setIsLoggingOut(false);
     }
-  }
+  };
 
   return (
     <header className="bg-white border-b border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 sticky top-0 z-40">
@@ -71,7 +68,9 @@ export default function Header() {
                   {user?.email}
                 </span>
               </div>
-              <ChevronDown className={`w-4 h-4 text-neutral-600 dark:text-neutral-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`w-4 h-4 text-neutral-600 dark:text-neutral-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+              />
             </button>
 
             {/* Dropdown Menu */}
@@ -89,8 +88,8 @@ export default function Header() {
                   {/* Profile Option */}
                   <button
                     onClick={() => {
-                      navigate('/profile')
-                      setIsDropdownOpen(false)
+                      navigate('/profile');
+                      setIsDropdownOpen(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                   >
@@ -101,8 +100,8 @@ export default function Header() {
                   {/* Settings Option */}
                   <button
                     onClick={() => {
-                      navigate('/settings')
-                      setIsDropdownOpen(false)
+                      navigate('/settings');
+                      setIsDropdownOpen(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                   >
@@ -129,5 +128,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

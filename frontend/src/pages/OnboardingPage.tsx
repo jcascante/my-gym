@@ -1,15 +1,15 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/store/auth'
-import { saveUserProfile } from '@/api/auth'
-import { Button, FormField, Card, Alert } from '@/components'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/auth';
+import { saveUserProfile } from '@/api/auth';
+import { Button, FormField, Card, Alert } from '@/components';
 
 export default function OnboardingPage() {
-  const navigate = useNavigate()
-  const user = useAuthStore((state) => state.user)
-  const setUserProfile = useAuthStore((state) => state.setUserProfile)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const setUserProfile = useAuthStore((state) => state.setUserProfile);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     age: '',
     gender: '',
@@ -24,19 +24,21 @@ export default function OnboardingPage() {
     injuries_limitations: '',
     short_term_goals: '',
     medium_term_goals: '',
-  })
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    })
-  }
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
     try {
       const profileData = {
@@ -53,17 +55,20 @@ export default function OnboardingPage() {
         injuries_limitations: formData.injuries_limitations || undefined,
         short_term_goals: formData.short_term_goals || undefined,
         medium_term_goals: formData.medium_term_goals || undefined,
-      }
+      };
 
-      const response = await saveUserProfile(profileData)
-      setUserProfile(response.profile || undefined)
-      navigate('/')
+      const response = await saveUserProfile(profileData);
+      if (!response.profile) {
+        throw new Error('Failed to save profile');
+      }
+      setUserProfile(response.profile);
+      navigate('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save profile')
+      setError(err instanceof Error ? err.message : 'Failed to save profile');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-neutral-900 dark:to-neutral-800 py-8 px-4">
@@ -78,12 +83,18 @@ export default function OnboardingPage() {
             </p>
           </div>
 
-          {error && <Alert type="error" dismissible onDismiss={() => setError(null)} className="mb-6">{error}</Alert>}
+          {error && (
+            <Alert type="error" dismissible onDismiss={() => setError(null)} className="mb-6">
+              {error}
+            </Alert>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Info */}
             <div>
-              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">Personal Information</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                Personal Information
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   label="Age"
@@ -138,7 +149,9 @@ export default function OnboardingPage() {
 
             {/* Fitness Level */}
             <div>
-              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">Fitness Level</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                Fitness Level
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="input-group">
                   <label htmlFor="experience" className="input-label">
@@ -180,7 +193,9 @@ export default function OnboardingPage() {
 
             {/* Workout Preferences */}
             <div>
-              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">Workout Preferences</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                Workout Preferences
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="input-group">
                   <label htmlFor="focus" className="input-label">
@@ -245,7 +260,9 @@ export default function OnboardingPage() {
 
             {/* Goals */}
             <div>
-              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">Your Goals</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                Your Goals
+              </h2>
               <div className="space-y-4">
                 <FormField
                   label="Short-term Goals"
@@ -266,7 +283,9 @@ export default function OnboardingPage() {
 
             {/* Additional Info */}
             <div>
-              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">Additional Information</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                Additional Information
+              </h2>
               <div className="input-group">
                 <label htmlFor="injuries" className="input-label">
                   Injuries or Limitations
@@ -283,12 +302,18 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            <Button type="submit" variant="primary" size="lg" isLoading={loading} className="w-full">
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              isLoading={loading}
+              className="w-full"
+            >
               Complete Onboarding
             </Button>
           </form>
         </Card>
       </div>
     </div>
-  )
+  );
 }

@@ -28,14 +28,14 @@ describe('UserForm', () => {
     // Arrange
     const onSubmit = vi.fn();
     render(<UserForm onSubmit={onSubmit} />);
-    
+
     // Act
     const emailInput = screen.getByLabelText(/email/i);
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    
+
     const submitButton = screen.getByRole('button', { name: /submit/i });
     fireEvent.click(submitButton);
-    
+
     // Assert
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({ email: 'test@example.com' });
@@ -46,7 +46,7 @@ describe('UserForm', () => {
     render(<UserForm />);
     const submitButton = screen.getByRole('button', { name: /submit/i });
     fireEvent.click(submitButton);
-    
+
     expect(screen.getByText(/email is required/i)).toBeInTheDocument();
   });
 });

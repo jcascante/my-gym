@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest';
 
 describe('Auth API', () => {
   it('should be defined', () => {
-    expect(true).toBe(true)
-  })
+    expect(true).toBe(true);
+  });
 
   // TODO: Add auth tests
-})
+});

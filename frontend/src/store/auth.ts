@@ -1,39 +1,41 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface User {
-  id: number
-  email: string
-  first_name: string
-  last_name: string
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
 }
 
 export interface UserProfile {
-  id?: number
-  age?: number
-  gender?: string
-  weight_kg?: number
-  height_cm?: number
-  activity_level?: string
-  fitness_focus?: string
-  experience_level?: string
-  days_per_week?: number
-  workout_duration_min?: number
-  equipment?: string
-  injuries_limitations?: string
-  short_term_goals?: string
-  medium_term_goals?: string
+  id?: number;
+  age?: number;
+  gender?: string;
+  weight_kg?: number;
+  height_cm?: number;
+  activity_level?: string;
+  fitness_focus?: string;
+  experience_level?: string;
+  days_per_week?: number;
+  workout_duration_min?: number;
+  equipment?: string;
+  injuries_limitations?: string;
+  short_term_goals?: string;
+  medium_term_goals?: string;
 }
 
 interface AuthState {
-  user: User | null
-  userProfile: UserProfile | null
-  accessToken: string | null
-  refreshToken: string | null
-  isAuthenticated: boolean
-  setAuth: (user: User, accessToken: string, refreshToken: string, userProfile?: UserProfile | null) => void
-  setUserProfile: (profile: UserProfile) => void
-  clearAuth: () => void
+  user: User | null;
+  userProfile: UserProfile | null;
+  isAuthenticated: boolean;
+  // True until the initial /users/me check (driven by the httpOnly auth
+  // cookie) resolves, so the router doesn't redirect to /login prematurely.
+  isLoading: boolean;
+  setAuth: (user: User, userProfile?: UserProfile | null) => void;
+  setUserProfile: (profile: UserProfile) => void;
+  clearAuth: () => void;
+  setLoading: (loading: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -41,16 +43,14 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       userProfile: null,
-      accessToken: null,
-      refreshToken: null,
       isAuthenticated: false,
-      setAuth: (user, accessToken, refreshToken, userProfile = null) =>
+      isLoading: true,
+      setAuth: (user, userProfile = null) =>
         set({
           user,
-          accessToken,
-          refreshToken,
           userProfile: userProfile || null,
           isAuthenticated: true,
+          isLoading: false,
         }),
       setUserProfile: (profile) =>
         set({
@@ -60,13 +60,16 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           userProfile: null,
-          accessToken: null,
-          refreshToken: null,
           isAuthenticated: false,
+          isLoading: false,
         }),
+      setLoading: (loading) => set({ isLoading: loading }),
     }),
     {
       name: 'auth-storage',
+      // Tokens live only in httpOnly cookies now; persisting isAuthenticated
+      // would let stale UI state outlive an expired/cleared cookie.
+      partialize: (state) => ({ user: state.user, userProfile: state.userProfile }),
     },
   ),
-)
+);

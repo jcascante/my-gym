@@ -190,12 +190,12 @@ interface UserState {
 export const useUserStore = create<UserState>((set) => ({
   currentUser: null,
   isAuthenticated: false,
-  
+
   setCurrentUser: (user) => set({
     currentUser: user,
     isAuthenticated: !!user,
   }),
-  
+
   logout: () => set({
     currentUser: null,
     isAuthenticated: false,
@@ -232,7 +232,7 @@ export const useUserQuery = (id: number) => {
 
 export const useCreateUserMutation = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: userApi.create,
     onSuccess: (newUser) => {
@@ -356,7 +356,7 @@ export const useForm = <T>(initialValues: T): UseFormReturn<T> => {
   const [touched, setTouched] = React.useState<Record<keyof T, boolean>>({} as Record<keyof T, boolean>);
 
   // ... implementation
-  
+
   return { values, errors, touched, handleChange, handleBlur, handleSubmit, reset };
 };
 ```

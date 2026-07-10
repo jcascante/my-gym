@@ -22,9 +22,9 @@ All documentation is published via GitHub Pages as HTML files. The main page is 
 
 ## User Documentation
 
-**Purpose**: Teach end users how to use MyGym features  
-**Location**: `docs/user/`  
-**Audience**: People using the application  
+**Purpose**: Teach end users how to use MyGym features
+**Location**: `docs/user/`
+**Audience**: People using the application
 **Format**: HTML (rendered on GitHub Pages)
 
 ### Structure
@@ -44,7 +44,7 @@ docs/user/
 
 ### Writing User Documentation
 
-**Format**: HTML with embedded CSS styling  
+**Format**: HTML with embedded CSS styling
 **Tone**: Friendly, clear, non-technical, conversational
 
 **HTML Structure for each feature**:
@@ -116,10 +116,10 @@ docs/user/
 
 **Examples**:
 
-❌ Bad: "JWT tokens are stored in HTTP-only cookies to prevent XSS attacks"  
+❌ Bad: "JWT tokens are stored in HTTP-only cookies to prevent XSS attacks"
 ✅ Good: "Your login is secure — we protect your session automatically"
 
-❌ Bad: "Invoke POST /api/v1/programs to generate a workout"  
+❌ Bad: "Invoke POST /api/v1/programs to generate a workout"
 ✅ Good: "Click 'Generate Program' and we'll create your workout based on your goals"
 
 ### Updating User Docs Index
@@ -145,9 +145,9 @@ And update the quick-links section:
 
 ## Technical Documentation
 
-**Purpose**: Explain implementation details, architecture, APIs, and patterns  
-**Location**: `docs/technical/`  
-**Audience**: Developers, DevOps engineers, code reviewers  
+**Purpose**: Explain implementation details, architecture, APIs, and patterns
+**Location**: `docs/technical/`
+**Audience**: Developers, DevOps engineers, code reviewers
 **Format**: HTML (rendered on GitHub Pages)
 
 ### Structure
@@ -166,7 +166,7 @@ docs/technical/
 
 ### Writing Technical Documentation
 
-**Format**: HTML with embedded CSS and syntax-highlighted code blocks  
+**Format**: HTML with embedded CSS and syntax-highlighted code blocks
 **Tone**: Precise, detailed, reference-focused
 
 **HTML Structure for each system**:
@@ -518,7 +518,7 @@ All documentation is automatically published to GitHub Pages. To deploy:
 2. GitHub Actions automatically builds and deploys
 3. Documentation is available at `https://[username].github.io/my-gym/`
 
-**Important**: 
+**Important**:
 - HTML files in `docs/` are served as pages
 - Markdown files are viewable as GitHub markdown
 - Internal links use relative paths (e.g., `../` for up, `./file.md` for same level)

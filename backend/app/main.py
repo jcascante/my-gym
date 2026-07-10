@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1 import auth_router, users_router
 from app.core import AppException, settings
@@ -16,8 +17,8 @@ app.add_middleware(
 
 
 @app.exception_handler(AppException)
-async def app_exception_handler(request, exc: AppException):
-    return HTTPException(status_code=exc.status_code, detail=exc.message)
+async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
 
 app.include_router(auth_router, prefix=settings.API_V1_STR)
@@ -25,5 +26,5 @@ app.include_router(users_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     return {"message": "MyGym API"}

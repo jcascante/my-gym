@@ -71,7 +71,7 @@ class UserCRUD:
             select(User).filter(User.id == user_id)
         )
         return result.scalar_one_or_none()
-    
+
     @staticmethod
     async def create(db: AsyncSession, user_data: UserCreate) -> User:
         db_user = User(**user_data.dict())
@@ -79,16 +79,16 @@ class UserCRUD:
         await db.commit()
         await db.refresh(db_user)
         return db_user
-    
+
     @staticmethod
     async def update(db: AsyncSession, user_id: int, update_data: UserUpdate) -> User:
         db_user = await UserCRUD.get_by_id(db, user_id)
         if not db_user:
             raise HTTPException(status_code=404, detail="User not found")
-        
+
         for key, value in update_data.dict(exclude_unset=True).items():
             setattr(db_user, key, value)
-        
+
         await db.commit()
         await db.refresh(db_user)
         return db_user
@@ -105,19 +105,19 @@ class UserService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.crud = UserCRUD()
-    
+
     async def create_user(self, user_data: UserCreate) -> UserSchema:
         # Validation
         existing = await self.crud.get_by_email(self.db, user_data.email)
         if existing:
             raise HTTPException(status_code=400, detail="Email already exists")
-        
+
         # Business logic
         user = await self.crud.create(self.db, user_data)
-        
+
         # Side effects (send email, etc.)
         # await send_welcome_email(user.email)
-        
+
         return UserSchema.from_orm(user)
 ```
 
@@ -214,9 +214,9 @@ async def create_user_with_profile(
     # Parallel execution
     user_task = create_user(db, user_data)
     profile_task = create_profile(db, profile_data)
-    
+
     user, profile = await asyncio.gather(user_task, profile_task)
-    
+
     return {"user": user, "profile": profile}
 ```
 
@@ -235,7 +235,7 @@ async def test_create_user(client: AsyncClient, db: AsyncSession):
         json={"email": "test@example.com", "name": "Test"}
     )
     assert response.status_code == 201
-    
+
     # Verify in database
     result = await db.execute(select(User).filter(User.email == "test@example.com"))
     assert result.scalar_one_or_none() is not None
