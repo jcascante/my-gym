@@ -195,10 +195,11 @@ export default function OnboardingPage() {
                   >
                     <option value="">Select focus</option>
                     <option value="strength">Strength</option>
-                    <option value="cardio">Cardio</option>
+                    <option value="endurance">Endurance</option>
                     <option value="flexibility">Flexibility</option>
                     <option value="weight_loss">Weight Loss</option>
                     <option value="muscle_gain">Muscle Gain</option>
+                    <option value="general">General Fitness</option>
                   </select>
                 </div>
                 <FormField
@@ -234,8 +235,8 @@ export default function OnboardingPage() {
                     required
                   >
                     <option value="">Select equipment</option>
-                    <option value="home">Home (no equipment)</option>
-                    <option value="dumbbells">Home (with dumbbells)</option>
+                    <option value="home">Home</option>
+                    <option value="bodyweight">Bodyweight Only</option>
                     <option value="gym">Gym</option>
                   </select>
                 </div>

@@ -21,13 +21,16 @@ export default function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="*" element={<Navigate to="/login" />} />
           </>
-        ) : (
+        ) : userProfile ? (
           <>
+            <Route path="/" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            {!userProfile && <Route path="*" element={<OnboardingPage />} />}
-            {userProfile && <Route path="/" element={<DashboardPage />} />}
-            {userProfile && <Route path="*" element={<Navigate to="/" />} />}
+            <Route path="*" element={<Navigate to="/" />} />
+          </>
+        ) : (
+          <>
+            <Route path="*" element={<OnboardingPage />} />
           </>
         )}
       </Routes>

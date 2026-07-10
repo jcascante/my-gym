@@ -17,13 +17,16 @@ async def get_current_user(
     token = credentials.credentials
     try:
         payload = decode_token(token)
-        user_id: int = payload.get("sub")
-        if not user_id:
+        sub: str = payload.get("sub")
+        if not sub:
             raise InvalidTokenError()
+        user_id: int = int(sub)
     except InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=401, detail="Invalid token format")
     except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     user = await get_user_by_id(db, user_id)
     if not user:

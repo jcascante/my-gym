@@ -36,17 +36,18 @@ async def login(db: AsyncSession, email: str, password: str) -> User:
 async def verify_refresh_token(token: str) -> dict:
     try:
         payload = decode_token(token)
-        user_id: int = payload.get("sub")
-        if not user_id:
+        sub: str = payload.get("sub")
+        if not sub:
             raise InvalidTokenError()
+        user_id = int(sub)
         return {"user_id": user_id}
     except Exception as e:
         raise InvalidTokenError(str(e))
 
 
 def create_tokens(user_id: int) -> dict[str, str]:
-    access_token = create_access_token(data={"sub": user_id})
-    refresh_token = create_refresh_token(data={"sub": user_id})
+    access_token = create_access_token(data={"sub": str(user_id)})
+    refresh_token = create_refresh_token(data={"sub": str(user_id)})
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
