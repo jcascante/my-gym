@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Setup - MyGym</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #1a3a52 0%, #2c5282 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 10px 15px;
+            color: #1a3a52;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            color: #2c5282;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a3a52 0%, #2c5282 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        h2 {
+            color: #1a3a52;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2c5282;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+
+        .step {
+            background: #f9f9f9;
+            border-left: 4px solid #2c5282;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .step ol {
+            margin-left: 20px;
+        }
+
+        .step li {
+            margin-bottom: 12px;
+        }
+
+        .faq-item {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .faq-item strong {
+            color: #e65100;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .faq-item p {
+            color: #795548;
+            margin: 0;
+        }
+
+        .tip {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 12px 15px;
+            border-radius: 4px;
+            color: #2e7d32;
+        }
+
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 12px 15px;
+            border-radius: 4px;
+            color: #e65100;
+        }
+
+        .note {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px 15px;
+            border-radius: 4px;
+            color: #1565c0;
+        }
+
+        a {
+            color: #1a3a52;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s;
+        }
+
+        a:hover {
+            border-bottom-color: #1a3a52;
+            opacity: 0.8;
+        }
+
+        footer {
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            color: #777;
+            font-size: 0.9em;
+            border-top: 1px solid #ddd;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-button">← Back to Guides</a>
+
+        <header>
+            <h1>👤 Profile Setup</h1>
+            <p>Customize your fitness profile to get personalized workouts</p>
+        </header>
+
+        <div class="content">
+            <h2>Overview</h2>
+            <p>
+                Your MyGym profile stores your personal fitness information and preferences. This data helps us create
+                workout programs tailored specifically to you. You can create or update your profile anytime, and you can
+                modify any information as your fitness journey progresses.
+            </p>
+
+            <h2>Before You Start</h2>
+            <ul>
+                <li>You must be logged into your MyGym account</li>
+                <li>You should have basic information ready: height, weight, fitness level</li>
+                <li>Think about your fitness goals (optional, but helpful)</li>
+                <li>Consider any injuries or physical limitations</li>
+            </ul>
+
+            <h2>How to Create or Update Your Profile</h2>
+            <div class="step">
+                <ol>
+                    <li>Click on <strong>"My Profile"</strong> from the main menu</li>
+                    <li>Click the <strong>"Edit Profile"</strong> button (if you already have a profile)</li>
+                    <li>Fill in or update your information:
+                        <ul style="margin-top: 10px;">
+                            <li><strong>Age</strong> - Your current age (13+)</li>
+                            <li><strong>Gender</strong> - Male, Female, or Other</li>
+                            <li><strong>Height & Weight</strong> - Your measurements (we support decimal values)</li>
+                            <li><strong>Fitness Level</strong> - Beginner, Intermediate, or Advanced</li>
+                            <li><strong>Activity Level</strong> - How active you are day-to-day</li>
+                            <li><strong>Workout Preferences</strong> - Days per week, duration, equipment access</li>
+                            <li><strong>Fitness Focus</strong> - What you want to achieve (strength, endurance, etc.)</li>
+                            <li><strong>Goals</strong> - Your short and medium-term fitness targets</li>
+                            <li><strong>Injuries or Limitations</strong> - Any physical constraints we should know about</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>"Save Changes"</strong> to save your profile</li>
+                </ol>
+            </div>
+
+            <h2>Clearing Information</h2>
+            <p>
+                You can clear any profile field by leaving it empty or selecting "Select..." in dropdown menus.
+                This is useful if you want to remove outdated information or change your preferences.
+            </p>
+            <div class="step">
+                <ol>
+                    <li>Click <strong>"Edit Profile"</strong></li>
+                    <li>Clear the field you want to remove (leave it empty)</li>
+                    <li>Click <strong>"Save Changes"</strong></li>
+                </ol>
+            </div>
+
+            <h2>Understanding Your Profile Fields</h2>
+
+            <h3>Personal Information</h3>
+            <p>
+                <strong>Age, Gender, Height, Weight</strong> — These measurements help us understand your fitness context
+                and adjust workout intensity appropriately. Height and weight support decimal values (e.g., 175.5 cm, 72.3 kg).
+            </p>
+
+            <h3>Fitness Level</h3>
+            <p>
+                <strong>Experience Level</strong> — Your history with structured exercise. Beginner means you're new to
+                fitness; Advanced means you have years of consistent training.
+            </p>
+            <p>
+                <strong>Activity Level</strong> — How active you are outside formal workouts. "Sedentary" means mostly sitting;
+                "Very Active" means you're on your feet most of the day.
+            </p>
+
+            <h3>Workout Preferences</h3>
+            <p>
+                <strong>Days per Week & Duration</strong> — How many days you want to work out and for how long.
+                Realistic expectations help us create achievable programs.
+            </p>
+            <p>
+                <strong>Equipment Access</strong> — Home (minimal/bodyweight), Gym (full facility), or Bodyweight only.
+                This shapes which exercises we recommend.
+            </p>
+            <p>
+                <strong>Fitness Focus</strong> — What you want to prioritize: Strength, Endurance, Flexibility, Weight Loss,
+                Muscle Gain, or General Fitness.
+            </p>
+
+            <h3>Goals & Limitations</h3>
+            <p>
+                <strong>Short & Medium-term Goals</strong> — Specific targets you want to achieve. Examples: "Build a consistent
+                workout habit" (short-term) or "Gain 5kg of muscle" (medium-term).
+            </p>
+            <p>
+                <strong>Injuries or Limitations</strong> — Any physical constraints we should know about: back pain, knee injuries,
+                mobility issues, etc. This helps us avoid dangerous movements.
+            </p>
+
+            <h2>Troubleshooting</h2>
+
+            <div class="faq-item">
+                <strong>❓ Can I leave fields empty?</strong>
+                <p>
+                    Yes! Most profile fields are optional. We'll create a program based on whatever information you provide.
+                    However, more details help us tailor your workouts better.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ My decimal measurements aren't saving (175.5 cm)</strong>
+                <p>
+                    Decimal values are now fully supported. If you're having issues, try clearing the field and re-entering
+                    the value. Make sure you're using a period (.) not a comma (,) for decimals.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ Can I change my profile anytime?</strong>
+                <p>
+                    Absolutely! You can update your profile as often as you want. Changes take effect immediately and apply
+                    to new workouts generated after the update.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ Will changing my profile affect existing workouts?</strong>
+                <p>
+                    No. Changes only apply to new workouts. Workouts you've already started keep their original program.
+                    You can regenerate your program anytime to get a fresh workout plan based on your updated profile.
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ How do I clear a field I no longer want?</strong>
+                <p>
+                    Click "Edit Profile," clear the field (leave it empty or select "Select..." in dropdowns), then click
+                    "Save Changes." The field will be removed from your profile.
+                </p>
+            </div>
+
+            <h2>Tips & Tricks</h2>
+
+            <ul>
+                <li>
+                    <div class="tip">
+                        🎯 <strong>Be honest about your fitness level</strong> — Overestimating can lead to workout intensity
+                        that's too high. Start conservative; you can always increase difficulty later.
+                    </div>
+                </li>
+                <li>
+                    <div class="tip">
+                        📝 <strong>Document your goals</strong> — Specific, measurable goals help us design programs that
+                        actually get you there. "Get stronger" is harder to work with than "Deadlift 300 lbs."
+                    </div>
+                </li>
+                <li>
+                    <div class="tip">
+                        ⚠️ <strong>Mention injuries upfront</strong> — Let us know about any pain points or limitations.
+                        We'll adapt workouts so you can train safely and avoid re-injury.
+                    </div>
+                </li>
+                <li>
+                    <div class="tip">
+                        🔄 <strong>Update regularly</strong> — As you progress, your fitness level changes. Update your
+                        profile every few months to keep workouts challenging and relevant.
+                    </div>
+                </li>
+                <li>
+                    <div class="tip">
+                        🏠 <strong>Set realistic expectations</strong> — Honestly assess how many days per week and how long
+                        you can realistically commit. A realistic plan beats an ambitious one you won't follow.
+                    </div>
+                </li>
+            </ul>
+
+            <h2>Related Features</h2>
+            <ul>
+                <li><a href="LOGIN_SIGNUP.html">Authentication & Account</a> — How to sign up and log in</li>
+                <li><a href="PROGRAM_GENERATION.html">Program Generation</a> — How we create your custom workouts</li>
+                <li><a href="WORKOUT_TRACKING.html">Workout Tracking</a> — How to log and track your exercises</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p><strong>MyGym User Guide</strong></p>
+            <p>Need help? Check our other guides or contact support.</p>
+        </footer>
+    </div>
+</body>
+</html>
