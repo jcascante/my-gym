@@ -14,23 +14,23 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #1f2937;
-            background: linear-gradient(135deg, #1a3a52 0%, #2c5282 100%);
+            color: #333;
+            background: #ffffff;
             min-height: 100vh;
-            padding: 2rem 1rem;
+            padding: 0;
         }
 
         .container {
             max-width: 900px;
             margin: 0 auto;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border-radius: 0;
+            box-shadow: none;
             overflow: hidden;
         }
 
         header {
-            background: linear-gradient(135deg, #1a3a52 0%, #2c5282 100%);
+            background: #1a3a52;
             color: white;
             padding: 2rem;
             text-align: center;
@@ -55,7 +55,7 @@
             margin-top: 2rem;
             margin-bottom: 1rem;
             padding-bottom: 0.75rem;
-            border-bottom: 3px solid #2c5282;
+            border-bottom: 2px solid #1a3a52;
         }
 
         h2:first-child {
@@ -71,7 +71,7 @@
 
         p, li {
             margin-bottom: 0.75rem;
-            color: #374151;
+            color: #555;
             font-size: 1rem;
         }
 
@@ -84,67 +84,74 @@
         }
 
         .step {
-            background: #f0f9ff;
-            border-left: 4px solid #0284c7;
+            background: #1a3a52;
+            color: white;
+            border-left: none;
             padding: 1.25rem;
             margin: 1.5rem 0;
-            border-radius: 6px;
+            border-radius: 8px;
         }
 
         .step ol {
             margin-left: 1.5rem;
             margin-bottom: 0;
+            color: white;
         }
 
         .step li {
             margin-bottom: 0.75rem;
-            color: #1a3a52;
+            color: white;
         }
 
         .tip {
-            background: #dbeafe;
-            border-left: 4px solid #0284c7;
+            background: #1a3a52;
+            color: white;
+            border-left: none;
             padding: 1rem;
             margin: 1rem 0;
-            border-radius: 4px;
-            color: #0c4a6e;
+            border-radius: 8px;
         }
 
         .success {
-            background: #dcfce7;
-            border-left: 4px solid #16a34a;
+            background: #1a3a52;
+            color: white;
+            border-left: none;
             padding: 1rem;
             margin: 1rem 0;
-            border-radius: 4px;
-            color: #15803d;
+            border-radius: 8px;
         }
 
         .warning {
-            background: #fef3c7;
-            border-left: 4px solid #f59e0b;
+            background: #1a3a52;
+            color: white;
+            border-left: none;
             padding: 1rem;
             margin: 1rem 0;
-            border-radius: 4px;
-            color: #92400e;
+            border-radius: 8px;
         }
 
         .faq-item {
-            background: #f3f4f6;
-            border-left: 4px solid #6b7280;
+            background: #1a3a52;
+            color: white;
+            border-left: none;
             padding: 1rem;
             margin: 1.25rem 0;
-            border-radius: 4px;
+            border-radius: 8px;
         }
 
         .faq-item strong {
-            color: #1f2937;
+            color: white;
             display: block;
             margin-bottom: 0.5rem;
         }
 
         .faq-item p {
             margin: 0;
-            color: #4b5563;
+            color: #ccc;
+        }
+
+        .faq-item a {
+            color: #6eb3d1;
         }
 
         .timeline {
@@ -156,7 +163,7 @@
         .timeline-item {
             margin-left: 2rem;
             padding-bottom: 1.5rem;
-            border-left: 2px solid #2c5282;
+            border-left: 2px solid #1a3a52;
         }
 
         .timeline-item:last-child {
@@ -168,7 +175,7 @@
             content: '●';
             position: absolute;
             left: -0.65rem;
-            color: #2c5282;
+            color: #1a3a52;
             font-size: 1.5rem;
         }
 
@@ -181,8 +188,8 @@
             display: inline-block;
             margin-bottom: 1rem;
             padding: 0.5rem 1rem;
-            background: #f3f4f6;
-            color: #1f2937;
+            background: #1a3a52;
+            color: white;
             border-radius: 4px;
             text-decoration: none;
             transition: background 0.3s;
@@ -190,20 +197,50 @@
         }
 
         .back-button:hover {
-            background: #e5e7eb;
+            background: #2c5282;
         }
 
         footer {
-            background: #f3f4f6;
+            background: #2c5282;
             padding: 1.5rem;
             text-align: center;
-            border-top: 1px solid #e5e7eb;
-            color: #6b7280;
+            border-top: none;
+            color: white;
             font-size: 0.9rem;
         }
 
+        footer a {
+            color: #6eb3d1;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
         strong {
-            color: #1a3a52;
+            color: #333;
+        }
+
+        .success strong {
+            color: white;
+        }
+
+        .step strong {
+            color: white;
+        }
+
+        .tip strong {
+            color: white;
+        }
+
+        a {
+            color: #2c5282;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
