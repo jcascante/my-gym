@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
-import { signup, login, setAuthToken } from '@/api/auth'
+import { signup, login, setAuthToken, getCurrentUser } from '@/api/auth'
 import { Button, FormField, Alert, Card } from '@/components'
 
 export default function SignupPage() {
@@ -35,16 +35,9 @@ export default function SignupPage() {
         password: formData.password,
       })
       setAuthToken(access_token)
-      setAuth(
-        {
-          id: 1,
-          email: formData.email,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-        },
-        access_token,
-        refresh_token,
-      )
+
+      const userData = await getCurrentUser()
+      setAuth(userData, access_token, refresh_token, userData.profile)
       navigate('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed')

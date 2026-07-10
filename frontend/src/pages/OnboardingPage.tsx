@@ -1,11 +1,15 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
-import { Button, FormField, Card } from '@/components'
+import { saveUserProfile } from '@/api/auth'
+import { Button, FormField, Card, Alert } from '@/components'
 
 export default function OnboardingPage() {
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const setUserProfile = useAuthStore((state) => state.setUserProfile)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     age: '',
     gender: '',
@@ -29,28 +33,36 @@ export default function OnboardingPage() {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
     setLoading(true)
 
-    setTimeout(() => {
-      setUserProfile({
-        age: parseInt(formData.age) || 25,
-        gender: formData.gender || 'male',
-        weight_kg: parseFloat(formData.weight_kg) || 70,
-        height_cm: parseInt(formData.height_cm) || 180,
-        activity_level: formData.activity_level || 'moderately_active',
-        fitness_focus: formData.fitness_focus || 'strength',
-        experience_level: formData.experience_level || 'beginner',
-        days_per_week: parseInt(formData.days_per_week) || 4,
-        workout_duration_min: parseInt(formData.workout_duration_min) || 60,
-        equipment: formData.equipment || 'gym',
-        injuries_limitations: formData.injuries_limitations,
-        short_term_goals: formData.short_term_goals,
-        medium_term_goals: formData.medium_term_goals,
-      })
+    try {
+      const profileData = {
+        age: parseInt(formData.age) || undefined,
+        gender: formData.gender || undefined,
+        weight_kg: parseFloat(formData.weight_kg) || undefined,
+        height_cm: parseInt(formData.height_cm) || undefined,
+        activity_level: formData.activity_level || undefined,
+        fitness_focus: formData.fitness_focus || undefined,
+        experience_level: formData.experience_level || undefined,
+        days_per_week: parseInt(formData.days_per_week) || undefined,
+        workout_duration_min: parseInt(formData.workout_duration_min) || undefined,
+        equipment: formData.equipment || undefined,
+        injuries_limitations: formData.injuries_limitations || undefined,
+        short_term_goals: formData.short_term_goals || undefined,
+        medium_term_goals: formData.medium_term_goals || undefined,
+      }
+
+      const response = await saveUserProfile(profileData)
+      setUserProfile(response.profile || undefined)
+      navigate('/')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save profile')
+    } finally {
       setLoading(false)
-    }, 500)
+    }
   }
 
   return (
@@ -65,6 +77,8 @@ export default function OnboardingPage() {
               Let's set up your fitness profile to create your personalized workout program.
             </p>
           </div>
+
+          {error && <Alert type="error" dismissible onDismiss={() => setError(null)} className="mb-6">{error}</Alert>}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Info */}

@@ -8,7 +8,8 @@ interface User {
   last_name: string
 }
 
-interface UserProfile {
+export interface UserProfile {
+  id?: number
   age?: number
   gender?: string
   weight_kg?: number
@@ -30,7 +31,7 @@ interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   isAuthenticated: boolean
-  setAuth: (user: User, accessToken: string, refreshToken: string) => void
+  setAuth: (user: User, accessToken: string, refreshToken: string, userProfile?: UserProfile | null) => void
   setUserProfile: (profile: UserProfile) => void
   clearAuth: () => void
 }
@@ -43,11 +44,12 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
-      setAuth: (user, accessToken, refreshToken) =>
+      setAuth: (user, accessToken, refreshToken, userProfile = null) =>
         set({
           user,
           accessToken,
           refreshToken,
+          userProfile: userProfile || null,
           isAuthenticated: true,
         }),
       setUserProfile: (profile) =>

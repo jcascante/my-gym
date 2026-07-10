@@ -1,3 +1,10 @@
+---
+name: documentation-skill
+description: Create and maintain GitHub Pages HTML documentation for users and technical audiences
+skills: [documentation, html, github-pages, user-guides, technical-docs]
+allowed-tools: [Bash, Read, Edit, Write, Artifact]
+---
+
 # Documentation Skill
 
 Guidance for creating and maintaining MyGym documentation for GitHub Pages. **All documentation must be created as HTML** for optimal presentation and styling on GitHub Pages.

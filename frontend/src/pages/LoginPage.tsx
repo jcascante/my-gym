@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
-import { login, setAuthToken } from '@/api/auth'
+import { login, setAuthToken, getCurrentUser } from '@/api/auth'
 import { Button, FormField, Alert, Card } from '@/components'
 
 export default function LoginPage() {
@@ -20,8 +20,9 @@ export default function LoginPage() {
     try {
       const { access_token, refresh_token } = await login({ email, password })
       setAuthToken(access_token)
-      const user = { id: 1, email, first_name: 'User', last_name: 'Name' }
-      setAuth(user, access_token, refresh_token)
+
+      const userData = await getCurrentUser()
+      setAuth(userData, access_token, refresh_token, userData.profile)
       navigate('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')

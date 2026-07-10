@@ -31,6 +31,31 @@ export interface UserResponse {
   last_name: string
 }
 
+export interface UserProfile {
+  id?: number
+  age?: number
+  gender?: string
+  weight_kg?: number
+  height_cm?: number
+  activity_level?: string
+  fitness_focus?: string
+  experience_level?: string
+  days_per_week?: number
+  workout_duration_min?: number
+  equipment?: string
+  injuries_limitations?: string
+  short_term_goals?: string
+  medium_term_goals?: string
+}
+
+export interface UserWithProfileResponse {
+  id: number
+  email: string
+  first_name: string
+  last_name: string
+  profile?: UserProfile | null
+}
+
 export async function signup(payload: SignupPayload): Promise<UserResponse> {
   const response = await apiClient.post<UserResponse>('/auth/signup', payload)
   return response.data
@@ -41,13 +66,12 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
   return response.data
 }
 
-export async function logout(): Promise<void> {
-  const token = localStorage.getItem('authToken')
-  if (token) {
-    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
-  }
-  await apiClient.post('/auth/logout')
-  delete apiClient.defaults.headers.common['Authorization']
+export async function logout(token: string): Promise<void> {
+  await apiClient.post('/auth/logout', {}, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  })
 }
 
 export async function refreshToken(refreshToken: string): Promise<AuthResponse> {
@@ -65,4 +89,14 @@ export function setAuthToken(token: string): void {
 export function clearAuthToken(): void {
   delete apiClient.defaults.headers.common['Authorization']
   localStorage.removeItem('authToken')
+}
+
+export async function getCurrentUser(): Promise<UserWithProfileResponse> {
+  const response = await apiClient.get<UserWithProfileResponse>('/users/me')
+  return response.data
+}
+
+export async function saveUserProfile(profile: UserProfile): Promise<UserWithProfileResponse> {
+  const response = await apiClient.post<UserWithProfileResponse>('/users/profile', profile)
+  return response.data
 }

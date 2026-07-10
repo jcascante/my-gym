@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conditional Onboarding Flow - Technical Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        nav a {
+            color: #2a5298;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        nav a:hover {
+            background: white;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        h2 {
+            color: #1e3c72;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #2a5298;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2a5298;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        p, li {
+            margin-bottom: 0.75rem;
+            color: #374151;
+        }
+
+        ul {
+            margin-left: 2rem;
+        }
+
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .endpoint {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .endpoint strong {
+            color: #1e40af;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .diagram {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+            color: #1f2937;
+        }
+
+        .keyword {
+            color: #7c3aed;
+        }
+
+        .string {
+            color: #16a34a;
+        }
+
+        .comment {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .troubleshooting-item {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .troubleshooting-item strong {
+            color: #92400e;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        table th, table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        table th {
+            background: #f3f4f6;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        a {
+            color: #2a5298;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            background: #f3f4f6;
+            padding: 1.5rem;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #f3f4f6;
+            color: #1f2937;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .back-button:hover {
+            background: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-button">← Back</a>
+
+        <header>
+            <h1>⚙️ Conditional Onboarding Flow Technical Documentation</h1>
+            <p>Architecture and implementation details for the first-time user onboarding system</p>
+        </header>
+
+        <nav>
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#endpoints">API Endpoints</a>
+            <a href="#models">Data Models</a>
+            <a href="#flow">Data Flow</a>
+            <a href="#implementation">Implementation</a>
+            <a href="#testing">Testing</a>
+            <a href="#deployment">Deployment</a>
+        </nav>
+
+        <div class="content">
+            <h2 id="overview">Overview</h2>
+            <p>The conditional onboarding flow ensures new users complete their profile before accessing the dashboard, while returning users skip directly to the app. This improves UX by showing relevant content to each user type without forcing re-onboarding on every login.</p>
+
+            <p><strong>Key principle:</strong> First login shows onboarding form (profile is null) → Returning login skips to dashboard (profile exists).</p>
+
+            <h2 id="architecture">Architecture</h2>
+
+            <h3>System Components</h3>
+            <div class="diagram">Frontend (React + Zustand)
+    ↓
+Auth Store (user + userProfile)
+    ↓
+App Routing (if !userProfile → OnboardingPage else DashboardPage)
+    ↓
+API Client (auth.ts)
+    ↓
+Backend (FastAPI)
+    ↓
+User Service (CRUD operations)
+    ↓
+Database (PostgreSQL)</div>
+
+            <h3>State Management</h3>
+            <p>The auth store in Zustand maintains two key pieces of state:</p>
+            <ul>
+                <li><strong>user:</strong> Current authenticated user (email, id, name)</li>
+                <li><strong>userProfile:</strong> User's fitness profile (goals, experience, availability) or null</li>
+            </ul>
+
+            <p>On login, the frontend fetches the current user and their profile. If profile is null, user sees OnboardingPage. If profile exists, user goes to DashboardPage.</p>
+
+            <h2 id="endpoints">API Endpoints</h2>
+
+            <h3>Get Current User with Profile</h3>
+            <div class="endpoint">
+                <strong>GET /api/v1/users/me</strong>
+                <p><strong>Purpose:</strong> Retrieve current authenticated user with their profile (if it exists)</p>
+                <p><strong>Auth:</strong> Requires valid JWT token</p>
+                <p><strong>Response (200):</strong></p>
+                <div class="code-block">{
+  <span class="string">"id"</span>: 1,
+  <span class="string">"email"</span>: <span class="string">"user@example.com"</span>,
+  <span class="string">"name"</span>: <span class="string">"John Doe"</span>,
+  <span class="string">"userProfile"</span>: {
+    <span class="string">"userId"</span>: 1,
+    <span class="string">"fitnessGoal"</span>: <span class="string">"build_muscle"</span>,
+    <span class="string">"experience"</span>: <span class="string">"intermediate"</span>,
+    <span class="string">"hoursPerWeek"</span>: 4,
+    <span class="string">"createdAt"</span>: <span class="string">"2026-07-09T10:00:00Z"</span>
+  } <span class="comment">// null if no profile yet</span>
+}</div>
+            </div>
+
+            <h3>Create or Update User Profile</h3>
+            <div class="endpoint">
+                <strong>POST /api/v1/users/profile</strong>
+                <p><strong>Purpose:</strong> Create a new profile or update existing one (partial updates preserve fields)</p>
+                <p><strong>Auth:</strong> Requires valid JWT token</p>
+                <p><strong>Request:</strong></p>
+                <div class="code-block">{
+  <span class="string">"fitnessGoal"</span>: <span class="string">"build_muscle"</span>,
+  <span class="string">"experience"</span>: <span class="string">"beginner"</span>,
+  <span class="string">"hoursPerWeek"</span>: 3
+}</div>
+                <p><strong>Response (201 on create, 200 on update):</strong></p>
+                <div class="code-block">{
+  <span class="string">"id"</span>: 1,
+  <span class="string">"userId"</span>: 1,
+  <span class="string">"fitnessGoal"</span>: <span class="string">"build_muscle"</span>,
+  <span class="string">"experience"</span>: <span class="string">"beginner"</span>,
+  <span class="string">"hoursPerWeek"</span>: 3,
+  <span class="string">"createdAt"</span>: <span class="string">"2026-07-09T10:00:00Z"</span>,
+  <span class="string">"updatedAt"</span>: <span class="string">"2026-07-09T10:00:00Z"</span>
+}</div>
+            </div>
+
+            <h2 id="models">Data Models</h2>
+
+            <h3>Backend Models (SQLAlchemy)</h3>
+            <p><strong>File:</strong> <code>backend/app/models/</code></p>
+
+            <p><strong>UserProfile Table:</strong></p>
+            <table>
+                <tr>
+                    <th>Column</th>
+                    <th>Type</th>
+                    <th>Constraints</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td>id</td>
+                    <td>Integer</td>
+                    <td>Primary Key</td>
+                    <td>Unique profile identifier</td>
+                </tr>
+                <tr>
+                    <td>user_id</td>
+                    <td>Integer</td>
+                    <td>Foreign Key (User), Unique</td>
+                    <td>One profile per user</td>
+                </tr>
+                <tr>
+                    <td>fitness_goal</td>
+                    <td>String</td>
+                    <td>Not Null</td>
+                    <td>User's primary fitness goal</td>
+                </tr>
+                <tr>
+                    <td>experience</td>
+                    <td>String</td>
+                    <td>Not Null</td>
+                    <td>Training experience level</td>
+                </tr>
+                <tr>
+                    <td>hours_per_week</td>
+                    <td>Integer</td>
+                    <td>Not Null</td>
+                    <td>Available training hours weekly</td>
+                </tr>
+                <tr>
+                    <td>created_at</td>
+                    <td>DateTime</td>
+                    <td>Server default</td>
+                    <td>Profile creation timestamp</td>
+                </tr>
+                <tr>
+                    <td>updated_at</td>
+                    <td>DateTime</td>
+                    <td>Server default</td>
+                    <td>Last update timestamp</td>
+                </tr>
+            </table>
+
+            <h3>Pydantic Schemas (Request/Response)</h3>
+            <p><strong>File:</strong> <code>backend/app/schemas/user.py</code></p>
+            <ul>
+                <li><strong>UserProfileRequest:</strong> Input validation for profile creation/updates</li>
+                <li><strong>UserProfileResponse:</strong> Serialized profile for API responses</li>
+                <li><strong>UserWithProfileResponse:</strong> User + profile combined response</li>
+            </ul>
+
+            <h3>Frontend Types (TypeScript)</h3>
+            <p><strong>File:</strong> <code>frontend/src/api/auth.ts</code></p>
+            <ul>
+                <li><strong>UserProfile:</strong> Profile data interface</li>
+                <li><strong>UserWithProfileResponse:</strong> API response type</li>
+            </ul>
+
+            <h2 id="flow">Data Flow</h2>
+
+            <h3>First-Time User Flow</h3>
+            <div class="diagram">1. User signs up
+2. Backend creates User record (no profile yet)
+3. User logs in → /login
+4. Frontend POST /auth/login with credentials
+5. Backend returns {accessToken, refreshToken, user}
+6. Frontend fetches GET /users/me
+7. Backend returns {user, userProfile: null}
+8. Frontend setAuth(user, null) in store
+9. App routing detects !userProfile → shows OnboardingPage
+10. User fills form (goal, experience, hours)
+11. Frontend POST /users/profile with form data
+12. Backend creates UserProfile record
+13. Frontend receives profile response
+14. Frontend setUserProfile(profile)
+15. App routing detects userProfile exists → shows DashboardPage</div>
+
+            <h3>Returning User Flow</h3>
+            <div class="diagram">1. User logs in → /login
+2. Frontend POST /auth/login with credentials
+3. Backend returns {accessToken, refreshToken, user}
+4. Frontend fetches GET /users/me
+5. Backend returns {user, userProfile: {...}}
+6. Frontend setAuth(user, profile) in store
+7. App routing detects userProfile exists → shows DashboardPage
+8. User is immediately in app (no onboarding)</div>
+
+            <h3>Profile Update Flow</h3>
+            <div class="diagram">1. User in app, clicks Settings → Edit Profile
+2. Form pre-populates with existing profile data
+3. User modifies field(s)
+4. Frontend POST /users/profile with partial data
+5. Backend merges with existing profile (preserves unmodified fields)
+6. Backend returns updated profile
+7. Frontend updates store with new profile
+8. UI reflects changes immediately</div>
+
+            <h2 id="implementation">Implementation Details</h2>
+
+            <h3>Backend Implementation</h3>
+
+            <p><strong>File:</strong> <code>backend/app/api/v1/endpoints/users.py</code></p>
+            <ul>
+                <li>Routes decorated with @router.get/post</li>
+                <li>Dependency injection for DB session and current user</li>
+                <li>Proper HTTP status codes (200, 201, 400, 401, 404)</li>
+            </ul>
+
+            <p><strong>File:</strong> <code>backend/app/crud/user.py</code></p>
+            <ul>
+                <li><code>get_user_profile(db, user_id)</code> — Query UserProfile by user_id</li>
+                <li><code>create_or_update_user_profile(db, user_id, profile_data)</code> — Create new or update existing profile</li>
+            </ul>
+
+            <p><strong>Key pattern:</strong> Partial updates preserve existing fields. Only provided fields are updated, others remain unchanged.</p>
+
+            <h3>Frontend Implementation</h3>
+
+            <p><strong>File:</strong> <code>frontend/src/api/auth.ts</code></p>
+            <ul>
+                <li><code>getCurrentUser()</code> — Async fetch GET /users/me</li>
+                <li><code>saveUserProfile(profile)</code> — Async POST /users/profile</li>
+            </ul>
+
+            <p><strong>File:</strong> <code>frontend/src/store/auth.ts</code></p>
+            <ul>
+                <li><code>setAuth(user, userProfile)</code> — Store both user and profile</li>
+                <li><code>setUserProfile(profile)</code> — Update profile without logging out</li>
+            </ul>
+
+            <p><strong>File:</strong> <code>frontend/src/App.tsx</code></p>
+            <p>Routing logic (conditional based on userProfile):</p>
+            <div class="code-block"><span class="keyword">if</span> (!userProfile) {
+  <span class="keyword">return</span> &lt;OnboardingPage /&gt;
+} <span class="keyword">else</span> {
+  <span class="keyword">return</span> &lt;DashboardPage /&gt;
+}</div>
+
+            <h2 id="testing">Testing</h2>
+
+            <h3>Backend Test Coverage</h3>
+            <p><strong>File:</strong> <code>backend/tests/test_users.py</code></p>
+            <ul>
+                <li>GET /users/me with profile</li>
+                <li>GET /users/me without profile (returns null)</li>
+                <li>GET /users/me unauthorized (401)</li>
+                <li>POST /users/profile create new</li>
+                <li>POST /users/profile update existing</li>
+                <li>POST /users/profile partial update</li>
+                <li>POST /users/profile unauthorized (401)</li>
+            </ul>
+
+            <p><strong>File:</strong> <code>backend/tests/test_onboarding_flow.py</code></p>
+            <ul>
+                <li>First-time user: signup → fetch profile (null) → POST profile → verify profile saved</li>
+                <li>Returning user: login → fetch profile (exists) → verify profile returned</li>
+                <li>Profile update: POST with partial data → verify fields preserved</li>
+            </ul>
+
+            <h3>Frontend Test Coverage</h3>
+            <ul>
+                <li><code>frontend/src/tests/api/auth.test.ts</code> — API client functions</li>
+                <li><code>frontend/src/tests/store/auth.test.ts</code> — Store state management</li>
+                <li><code>frontend/src/tests/pages/LoginPage.test.tsx</code> — Login flow</li>
+                <li><code>frontend/src/tests/pages/SignupPage.test.tsx</code> — Signup flow</li>
+                <li><code>frontend/src/tests/pages/OnboardingPage.test.tsx</code> — Form submission</li>
+            </ul>
+
+            <p><strong>Target:</strong> >80% coverage (achieved with 44+ test cases)</p>
+
+            <h2 id="deployment">Deployment Considerations</h2>
+
+            <h3>Database Migrations</h3>
+            <p>New UserProfile table requires migration:</p>
+            <div class="code-block">docker-compose exec backend alembic upgrade head</div>
+
+            <h3>Environment Variables</h3>
+            <p>No new environment variables required. Existing DATABASE_URL and JWT_SECRET are sufficient.</p>
+
+            <h3>API Versioning</h3>
+            <p>New endpoints are under /api/v1/ (same version as existing auth endpoints), ensuring backward compatibility.</p>
+
+            <h3>Error Handling</h3>
+            <ul>
+                <li>401 Unauthorized: Missing or invalid JWT token</li>
+                <li>400 Bad Request: Invalid profile data</li>
+                <li>404 Not Found: User not found (shouldn't happen for authenticated requests)</li>
+            </ul>
+
+            <h3>Monitoring</h3>
+            <p>Key metrics to track:</p>
+            <ul>
+                <li>Time from login to dashboard (should be instant for returning users)</li>
+                <li>Time to complete onboarding (should be <5 min)</li>
+                <li>Profile creation success rate</li>
+                <li>GET /users/me latency (should be <100ms)</li>
+            </ul>
+
+            <h3>Rollback Plan</h3>
+            <p>If issues arise:</p>
+            <ol>
+                <li>Disable profile fetch on login (comment out getCurrentUser in LoginPage)</li>
+                <li>Always show DashboardPage (bypass routing logic)</li>
+                <li>Rollback database migration</li>
+                <li>Deploy updated backend</li>
+            </ol>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 MyGym. Technical documentation for conditional onboarding flow.</p>
+        </footer>
+    </div>
+</body>
+</html>

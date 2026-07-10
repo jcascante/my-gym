@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import auth_router
+from app.api.v1 import auth_router, users_router
 from app.core import AppException, settings
 
 app = FastAPI(title=settings.PROJECT_NAME)
@@ -21,6 +21,7 @@ async def app_exception_handler(request, exc: AppException):
 
 
 app.include_router(auth_router, prefix=settings.API_V1_STR)
+app.include_router(users_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")

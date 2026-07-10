@@ -1,129 +1,175 @@
-# Claude Code Skills for MyGym App
+# MyGym Skills Library
 
-This directory contains specialized skills to guide Claude Code when working on this project. Each skill provides best practices, patterns, and workflows for specific areas.
+Specialized guides for developing MyGym (React 19 + FastAPI + PostgreSQL + Docker). Each skill provides detailed patterns, examples, and best practices for specific areas of the codebase.
 
 ## Available Skills
 
-### 1. **api-testing** - FastAPI Endpoint Testing
-- Comprehensive testing strategy (unit, integration, fixtures)
-- pytest + pytest-asyncio patterns
-- Mock external services
-- Test structure and organization
+### Backend Development
 
-### 2. **react-component-testing** - React Component Testing
-- User-centric testing with React Testing Library
-- Vitest setup and configuration
-- API mocking with MSW (Mock Service Worker)
-- Testing accessibility (a11y)
-- Error boundaries and async handling
+- **[api-testing](./api-testing/SKILL.md)** — Backend testing patterns with pytest, factories, and integration tests for FastAPI endpoints
+- **[fastapi-async-patterns](./fastapi-async-patterns/SKILL.md)** — Async/await best practices, dependency injection, error handling in FastAPI
+- **[rest-api-design](./rest-api-design/SKILL.md)** — REST API standards, status codes, error responses, pagination, authentication
+- **[database-migrations](./database-migrations/SKILL.md)** — Schema changes with Alembic, migration workflows, testing strategies
 
-### 3. **database-migrations** - Alembic Migration Management
-- Safe schema change workflows
-- Data migration patterns
-- Backward-compatible migration strategies
-- Testing migrations (up and down)
-- Production deployment checklist
+### Frontend Development
 
-### 4. **docker-workflows** - Docker & Docker Compose
-- Local development with Docker Compose
-- Development vs production Dockerfiles
-- Multi-stage builds for optimization
-- Running tests in containers
-- Independent service deployment
+- **[react-design](./react-design/SKILL.md)** — Design system, responsive patterns, accessibility, dark mode, component structure
+- **[react-typescript-patterns](./react-typescript-patterns/SKILL.md)** — Type-safe React components, custom hooks, state management (Zustand), React Query integration
+- **[react-component-testing](./react-component-testing/SKILL.md)** — Component testing with Vitest and React Testing Library, accessibility testing
 
-### 5. **fastapi-async-patterns** - FastAPI Best Practices
-- Async/await for all I/O operations
-- Dependency injection patterns
-- CRUD operations with async SQLAlchemy
-- Service layer business logic
-- Error handling and custom exceptions
-- Testing async endpoints
+### Operations & Quality
 
-### 6. **react-typescript-patterns** - React + TypeScript Development
-- Strict TypeScript typing for components
-- Modern hooks patterns (useState, useEffect, custom hooks)
-- State management with Zustand
-- TanStack Query (React Query) for data fetching
-- Component composition and reusability
-- Error boundaries
+- **[docker-workflows](./docker-workflows/SKILL.md)** — Docker Compose setup, local development, debugging containers, deployment patterns
+- **[code-quality](./code-quality/SKILL.md)** — Linting (Ruff), formatting (Black), type checking (mypy), pre-commit hooks
+- **[token-optimization](./token-optimization/SKILL.md)** — Token usage optimization strategies for Claude Code and API efficiency
 
-### 7. **rest-api-design** - REST API Standards
-- RESTful API design conventions
-- HTTP status codes and semantics
-- Consistent response formats
-- Error handling and validation
-- Pagination, filtering, sorting
-- API versioning strategies
-- Comprehensive testing patterns
+## How to Use
 
-### 8. **code-quality** - Code Quality & Standards
-- Backend: ruff, black, mypy, pytest
-- Frontend: ESLint, Prettier, TypeScript strict mode, Vitest
-- Pre-commit hooks and CI/CD setup
-- Coverage targets and metrics
-- IDE configuration
-- GitHub Actions workflows
+### Load a Skill
 
-### 9. **documentation** - User & Technical Documentation
-- User documentation (feature guides, step-by-step instructions)
-- Technical documentation (architecture, implementation, API reference)
-- GitHub Pages structure and indexing
-- Documentation patterns and templates
-- Navigation and cross-linking
-- Writing guidelines for different audiences
+Use `/skill-name` to load detailed patterns for a task:
 
-## How to Use Skills
-
-Skills are invoked automatically when relevant to your work. You can also explicitly request them:
-
-```
-Write a test for the UserService using the api-testing skill
-```
-
-Or type the skill name as a command:
-```
+```bash
+# Before testing the backend
 /api-testing
-/react-component-testing
+
+# Before building a React component
+/react-typescript-patterns
+
+# Before writing migrations
 /database-migrations
-/documentation
 ```
+
+### Example Workflow
+
+1. **Planning** → Read `CLAUDE.md` for architecture overview
+2. **Implementation** → Invoke relevant skill for patterns/examples
+3. **Testing** → Use `api-testing` or `react-component-testing` skill
+4. **Quality** → Run `code-quality` checks (linting, types, formatting)
+
+## Skill Structure
+
+Each skill is a directory with a `SKILL.md` file:
+
+```
+.claude/skills/
+├── api-testing/
+│   └── SKILL.md          # Patterns, examples, best practices
+├── react-design/
+│   └── SKILL.md
+└── ... (9 more skills)
+```
+
+## When to Invoke Each Skill
+
+| Task | Skill |
+|------|-------|
+| Write API endpoint tests | `api-testing` |
+| Design React component | `react-design` |
+| Create custom hook | `react-typescript-patterns` |
+| Test React component | `react-component-testing` |
+| Write async service | `fastapi-async-patterns` |
+| Design API route | `rest-api-design` |
+| Create database migration | `database-migrations` |
+| Setup Docker Compose | `docker-workflows` |
+| Run linting/formatting | `code-quality` |
+| Optimize token usage | `token-optimization` |
+
+## Quick Reference
+
+### Backend Stack
+- **Framework**: FastAPI (async)
+- **ORM**: SQLAlchemy 2.0+ async
+- **Database**: PostgreSQL (prod), SQLite (testing)
+- **Migrations**: Alembic
+- **Testing**: pytest + factories + mocks
+- **Quality**: Ruff, Black, mypy (strict)
+
+### Frontend Stack
+- **Framework**: React 19
+- **Language**: TypeScript (strict)
+- **Build**: Vite
+- **State**: Zustand
+- **Queries**: TanStack Query
+- **Testing**: Vitest + React Testing Library
+- **Quality**: ESLint, Prettier, TypeScript
 
 ## Development Workflow
 
-1. **Write tests first** (TDD) - use `api-testing` or `react-component-testing`
-2. **Implement feature** - follow `fastapi-async-patterns` or `react-typescript-patterns`
-3. **Run quality checks** - refer to `code-quality`
-4. **Database changes** - use `database-migrations`
-5. **API design** - follow `rest-api-design`
-6. **Document feature** - use `documentation`
-   - User documentation: How to use the feature
-   - Technical documentation: Implementation details
-7. **Deployment** - use `docker-workflows`
-
-## Quick Commands
-
 ```bash
-# Backend
-docker-compose exec backend pytest                          # Run tests
-docker-compose exec backend ruff check . --fix              # Lint
-docker-compose exec backend black .                         # Format
-docker-compose exec backend mypy app/                       # Type check
+# 1. Start Docker services
+docker-compose up -d
 
-# Frontend
-docker-compose exec frontend npm run test:watch             # Run tests
-docker-compose exec frontend npm run lint -- --fix          # Lint
-docker-compose exec frontend npm run format                 # Format
-docker-compose exec frontend npm run type-check             # Type check
+# 2. Backend development
+docker-compose exec backend pytest              # Test
+docker-compose exec backend ruff check . --fix  # Lint
+docker-compose exec backend black .             # Format
+docker-compose exec backend mypy app/           # Type check
 
-# Database
-docker-compose exec backend alembic upgrade head            # Run migrations
-docker-compose exec backend alembic revision --autogenerate -m "desc"  # Create migration
+# 3. Frontend development
+docker-compose exec frontend npm run test:watch # Test
+docker-compose exec frontend npm run lint -- --fix # Lint
+docker-compose exec frontend npm run format     # Format
+
+# 4. Database migrations
+docker-compose exec backend alembic revision --autogenerate -m "message"
+docker-compose exec backend alembic upgrade head
+
+# 5. Access documentation
+# Frontend: http://localhost:5173
+# Backend: http://localhost:8000
+# API Docs: http://localhost:8000/docs
 ```
 
-## Standards Summary
+## Key Patterns
 
-- **Testing**: TDD approach, >80% coverage required
-- **Code**: Strict type checking, async/await for I/O, proper error handling
-- **API**: Consistent REST patterns, proper status codes, versioned endpoints
-- **Quality**: Automated linting, formatting, and type checking via pre-commit
-- **Deployment**: Independent Docker services, separate frontend/backend deployment
+- **Async/Await**: All I/O is async (database, HTTP, file)
+- **Type Safety**: Strict mypy (backend), strict TypeScript (frontend)
+- **TDD**: Write tests first, >80% coverage required
+- **REST**: Consistent API at `/api/v1/` with JWT auth
+- **Migrations**: Schema changes via Alembic, always test up/down
+- **Components**: Reusable, testable, accessible, responsive
+- **State**: Zustand for global state, React Query for server state
+
+## Architecture
+
+```
+my-gym/
+├── backend/              # FastAPI + SQLAlchemy
+│   ├── app/
+│   │   ├── main.py      # Entry point
+│   │   ├── models/      # SQLAlchemy models
+│   │   ├── schemas/     # Pydantic schemas
+│   │   ├── api/v1/      # REST endpoints
+│   │   ├── services/    # Business logic
+│   │   ├── crud/        # Database operations
+│   │   └── core/        # Config, security
+│   └── tests/           # pytest tests
+├── frontend/            # React + Vite
+│   ├── src/
+│   │   ├── components/  # Reusable components
+│   │   ├── pages/       # Route pages
+│   │   ├── api/         # API client
+│   │   ├── hooks/       # Custom hooks
+│   │   ├── store/       # Zustand stores
+│   │   └── types/       # TypeScript types
+│   └── src/tests/       # Vitest tests
+├── docker-compose.yml   # Local development
+├── CLAUDE.md            # Architecture overview (this project)
+└── .claude/skills/      # Skill library (this directory)
+```
+
+## Resources
+
+- **Backend Docs**: http://localhost:8000/docs (Swagger UI, auto-generated)
+- **Type Hints**: See `CLAUDE.md` and skill examples
+- **Testing Strategy**: `api-testing` and `react-component-testing` skills
+- **Code Standards**: `code-quality` skill + pre-commit hooks
+
+## Tips
+
+- Use skills to scaffold new features (copy pattern → adapt)
+- Cross-reference skills when combining backend + frontend (e.g., API design + React hooks)
+- Check `CLAUDE.md` for quick command reference
+- Run linters before committing (pre-commit hooks required)
+- Keep tests close to implementation (same directory structure)

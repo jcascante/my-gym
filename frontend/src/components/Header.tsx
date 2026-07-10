@@ -26,15 +26,18 @@ export default function Header() {
   }, [isDropdownOpen])
 
   const handleLogout = async () => {
+    const { accessToken } = useAuthStore.getState()
     setIsLoggingOut(true)
     setError(null)
     try {
-      await logout()
+      if (accessToken) {
+        await logout(accessToken)
+      }
+    } catch (err) {
+      console.error('Logout error:', err)
+    } finally {
       clearAuth()
       navigate('/login')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Logout failed')
-    } finally {
       setIsLoggingOut(false)
     }
   }

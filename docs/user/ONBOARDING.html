@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started with MyGym - Setup Your Profile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: linear-gradient(135deg, #1a3a52 0%, #2c5282 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a3a52 0%, #2c5282 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        h2 {
+            color: #1a3a52;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid #2c5282;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2c5282;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        p, li {
+            margin-bottom: 0.75rem;
+            color: #374151;
+            font-size: 1rem;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .step {
+            background: #f0f9ff;
+            border-left: 4px solid #0284c7;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            border-radius: 6px;
+        }
+
+        .step ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0;
+        }
+
+        .step li {
+            margin-bottom: 0.75rem;
+            color: #1a3a52;
+        }
+
+        .tip {
+            background: #dbeafe;
+            border-left: 4px solid #0284c7;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            color: #0c4a6e;
+        }
+
+        .success {
+            background: #dcfce7;
+            border-left: 4px solid #16a34a;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            color: #15803d;
+        }
+
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            color: #92400e;
+        }
+
+        .faq-item {
+            background: #f3f4f6;
+            border-left: 4px solid #6b7280;
+            padding: 1rem;
+            margin: 1.25rem 0;
+            border-radius: 4px;
+        }
+
+        .faq-item strong {
+            color: #1f2937;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .faq-item p {
+            margin: 0;
+            color: #4b5563;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 1rem 0;
+            margin: 1.5rem 0;
+        }
+
+        .timeline-item {
+            margin-left: 2rem;
+            padding-bottom: 1.5rem;
+            border-left: 2px solid #2c5282;
+        }
+
+        .timeline-item:last-child {
+            border-left: none;
+            padding-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: '●';
+            position: absolute;
+            left: -0.65rem;
+            color: #2c5282;
+            font-size: 1.5rem;
+        }
+
+        .timeline-item h4 {
+            color: #1a3a52;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #f3f4f6;
+            color: #1f2937;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background 0.3s;
+            font-weight: 500;
+        }
+
+        .back-button:hover {
+            background: #e5e7eb;
+        }
+
+        footer {
+            background: #f3f4f6;
+            padding: 1.5rem;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        strong {
+            color: #1a3a52;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-button">← Back</a>
+
+        <header>
+            <h1>🎯 Getting Started with MyGym</h1>
+            <p>Complete your profile on first login and start training</p>
+        </header>
+
+        <div class="content">
+            <h2>What Happens When You First Join</h2>
+            <p>MyGym is personalized to your fitness goals. When you sign up and log in for the first time, we'll ask you a few quick questions about your fitness experience and availability. This helps us create the perfect workout program just for you.</p>
+
+            <div class="success">
+                <strong>✓ First-Time Experience</strong> Your profile setup takes just 2-3 minutes. Answer a few questions about your goals and experience, and we'll build your personalized workout program.
+            </div>
+
+            <h2>Your First Login: Step-by-Step</h2>
+
+            <div class="step">
+                <ol>
+                    <li><strong>Sign Up or Log In</strong> — Enter your email and password. If you're returning, you'll go straight to your dashboard.</li>
+                    <li><strong>Complete Your Profile</strong> — First-time users see a profile form asking:
+                        <ul style="margin-top: 0.5rem;">
+                            <li><strong>Fitness Goal:</strong> What are you training for? (Build muscle, lose weight, increase endurance, etc.)</li>
+                            <li><strong>Experience Level:</strong> Are you a beginner, intermediate, or advanced athlete?</li>
+                            <li><strong>Time Available:</strong> How many hours per week can you train?</li>
+                        </ul>
+                    </li>
+                    <li><strong>Click "Create Profile"</strong> — Your profile is saved to our servers</li>
+                    <li><strong>Welcome to MyGym!</strong> — You're taken to your personalized dashboard</li>
+                </ol>
+            </div>
+
+            <h2>Important: What Happens to Returning Users</h2>
+            <p>Already have an account? You won't see the profile form again. When you log in:</p>
+            <ul>
+                <li>We remember your existing profile</li>
+                <li>You skip the setup and go straight to your dashboard</li>
+                <li>If you want to change your profile later, you can do that from your <strong>Settings</strong> menu</li>
+            </ul>
+
+            <div class="tip">
+                💡 <strong>Pro Tip:</strong> Your profile isn't locked in. You can change your fitness goal, experience level, or availability anytime from your account settings. MyGym will adjust your workout program accordingly.
+            </div>
+
+            <h2>Timeline: From Sign-Up to First Workout</h2>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h4>Sign Up (1 min)</h4>
+                    <p>Create your account with email and password</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Log In (30 sec)</h4>
+                    <p>Enter your credentials and you're authenticated</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Complete Profile (2-3 min)</h4>
+                    <p>Answer questions about your fitness goals and experience</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Program Generated (instant)</h4>
+                    <p>MyGym creates your personalized workout program</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Ready to Train (now)</h4>
+                    <p>Access your dashboard and start your first workout</p>
+                </div>
+            </div>
+
+            <h2>Profile Questions Explained</h2>
+
+            <h3>🎯 Fitness Goal</h3>
+            <p>What's your primary reason for training? Examples:</p>
+            <ul>
+                <li><strong>Build Muscle</strong> — Increase strength and size</li>
+                <li><strong>Lose Weight</strong> — Reduce body fat and lean down</li>
+                <li><strong>Increase Endurance</strong> — Build cardiovascular fitness</li>
+                <li><strong>General Fitness</strong> — Balanced health and wellness</li>
+                <li><strong>Athletic Performance</strong> — Train for a sport or event</li>
+            </ul>
+
+            <h3>📊 Experience Level</h3>
+            <p>How long have you been training regularly?</p>
+            <ul>
+                <li><strong>Beginner</strong> — Less than 1 year of regular training</li>
+                <li><strong>Intermediate</strong> — 1-3 years of consistent training</li>
+                <li><strong>Advanced</strong> — 3+ years, comfortable with complex programs</li>
+            </ul>
+
+            <h3>⏰ Hours Per Week</h3>
+            <p>How many hours can you realistically dedicate to training each week?</p>
+            <ul>
+                <li><strong>3 hours:</strong> 3-4 workouts per week</li>
+                <li><strong>5 hours:</strong> 4-5 workouts per week</li>
+                <li><strong>7+ hours:</strong> 5-6 workouts per week</li>
+            </ul>
+
+            <p><strong>Be honest!</strong> It's better to underestimate than overcommit. You can always increase later.</p>
+
+            <h2>What Happens After You Create Your Profile</h2>
+
+            <div class="success">
+                ✓ <strong>Your workout program is generated</strong> — Based on your goal, experience, and availability
+            </div>
+
+            <p>MyGym creates a personalized program with:</p>
+            <ul>
+                <li>Recommended exercises for your goal</li>
+                <li>Sets, reps, and weight guidance</li>
+                <li>Rest days scheduled appropriately</li>
+                <li>Progressive difficulty as you get stronger</li>
+            </ul>
+
+            <h2>Troubleshooting</h2>
+
+            <div class="faq-item">
+                <strong>❓ I'm a returning user but don't see my program</strong>
+                <p>If you've logged in before but your profile isn't showing, try: 1) Refresh the page, 2) Clear your browser cache, 3) Log out and log back in. If the issue persists, <a href="mailto:support@mygym.com">contact support</a>.</p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ Can I skip the profile setup?</strong>
+                <p>No, we need your profile to create a program. But it only takes 2-3 minutes, and you can always change it later from Settings.</p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ What if I don't know my fitness level?</strong>
+                <p>Go with your gut. <strong>Beginner:</strong> Never trained before or inconsistent. <strong>Intermediate:</strong> Train regularly (1-3 years). <strong>Advanced:</strong> Train seriously (3+ years). You can update this anytime.</p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ I entered the wrong hours per week. Can I change it?</strong>
+                <p>Yes! Go to <strong>Settings</strong> → <strong>Edit Profile</strong> and update your availability. Your program will adjust automatically.</p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ Why is my profile required?</strong>
+                <p>Your profile tells us your fitness goal, experience, and time availability. Without this, we can't create a safe, effective, personalized program. That's the whole point of MyGym!</p>
+            </div>
+
+            <h2>Next Steps</h2>
+
+            <p>Once you've set up your profile:</p>
+
+            <ol>
+                <li><strong>Review Your Program</strong> — Browse the exercises and workout schedule we created</li>
+                <li><strong>Start Tracking</strong> — Log your first workout and track your progress</li>
+                <li><strong>Get Feedback</strong> — After each workout, share how it felt so we can refine your program</li>
+                <li><strong>Watch Your Progress</strong> — See your improvements over time in the Analytics tab</li>
+            </ol>
+
+            <div class="tip">
+                💡 <strong>Ready to get started?</strong> <a href="../index.html">Return to MyGym</a> and log in to complete your profile.
+            </div>
+
+            <h2>Tips for Success</h2>
+
+            <div class="success">
+                ✓ <strong>Be honest about your experience</strong> — A program that's too hard leads to burnout. You can always level up.
+            </div>
+
+            <div class="success">
+                ✓ <strong>Underestimate your time</strong> — It's better to say 3 hours and train 4 than promise 7 and train 2.
+            </div>
+
+            <div class="success">
+                ✓ <strong>Save your profile updates</strong> — Click "Save Changes" to ensure your updates are stored.
+            </div>
+
+            <div class="success">
+                ✓ <strong>Don't worry about perfection</strong> — You can change everything anytime. Get started now.
+            </div>
+
+            <h2>Questions?</h2>
+
+            <p>If you have trouble setting up your profile or have questions, we're here to help:</p>
+            <ul>
+                <li><strong>Email:</strong> <a href="mailto:support@mygym.com">support@mygym.com</a></li>
+                <li><strong>In-App Support:</strong> Click the Help icon in the app menu</li>
+                <li><strong>Status Page:</strong> Check <a href="https://status.mygym.com">status.mygym.com</a> for known issues</li>
+            </ul>
+
+            <p style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e7eb; color: #6b7280;">
+                <strong>Welcome to MyGym!</strong> We're excited to help you reach your fitness goals. Your personalized journey starts now. 💪
+            </p>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 MyGym. Your personalized workout companion.</p>
+            <p><a href="index.html">← Back to Guides</a></p>
+        </footer>
+    </div>
+</body>
+</html>
