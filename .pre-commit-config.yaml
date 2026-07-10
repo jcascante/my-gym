@@ -27,10 +27,12 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: bash -c 'cd backend && .venv/bin/mypy app/ --strict'
-        language: system
+        entry: mypy app/ --strict
+        language: python
+        types: [python]
         files: ^backend/app/.*\.py$
         pass_filenames: false
+        additional_dependencies: ['mypy==1.14.1']
 
       - id: eslint
         name: eslint
