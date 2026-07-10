@@ -1,4 +1,6 @@
 ---
+name: feature-builder
+description: Implements small, well-scoped MyGym features/fixes following project conventions (TDD, async I/O, type hints), then runs tests/lint/type-check. Use as the implementation half of the /build-feature two-tier workflow.
 model: haiku
 ---
 

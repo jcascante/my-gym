@@ -48,8 +48,7 @@ async def create_or_update_user_profile(
 
     if existing_profile:
         for key, value in profile_data.items():
-            if value is not None:
-                setattr(existing_profile, key, value)
+            setattr(existing_profile, key, value)
         db.add(existing_profile)
     else:
         existing_profile = UserProfile(user_id=user_id, **profile_data)

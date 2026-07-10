@@ -10,19 +10,19 @@ interface User {
 
 export interface UserProfile {
   id?: number;
-  age?: number;
-  gender?: string;
-  weight_kg?: number;
-  height_cm?: number;
-  activity_level?: string;
-  fitness_focus?: string;
-  experience_level?: string;
-  days_per_week?: number;
-  workout_duration_min?: number;
-  equipment?: string;
-  injuries_limitations?: string;
-  short_term_goals?: string;
-  medium_term_goals?: string;
+  age?: number | null;
+  gender?: string | null;
+  weight_kg?: number | null;
+  height_cm?: number | null;
+  activity_level?: string | null;
+  fitness_focus?: string | null;
+  experience_level?: string | null;
+  days_per_week?: number | null;
+  workout_duration_min?: number | null;
+  equipment?: string | null;
+  injuries_limitations?: string | null;
+  short_term_goals?: string | null;
+  medium_term_goals?: string | null;
 }
 
 interface AuthState {

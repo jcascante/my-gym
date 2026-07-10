@@ -202,3 +202,35 @@ async def test_crud_update_existing_profile(db: AsyncSession):
     assert updated_profile.age == 26
     assert updated_profile.weight_kg == 62.0
     assert updated_profile.gender == "female"
+
+
+@pytest.mark.asyncio
+async def test_update_profile_set_field_to_null(authenticated_client: AsyncClient, test_user: User):
+    """Test that setting a profile field to null actually persists the null value"""
+    initial_payload = {
+        "age": 30,
+        "gender": "male",
+        "weight_kg": 80.0,
+        "height_cm": 180,
+        "fitness_focus": "strength",
+    }
+
+    response = await authenticated_client.post("/api/v1/users/profile", json=initial_payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["profile"]["age"] == 30
+    assert data["profile"]["fitness_focus"] == "strength"
+
+    updated_payload = {
+        "age": 30,
+        "gender": "male",
+        "weight_kg": 80.0,
+        "height_cm": 180,
+        "fitness_focus": None,
+    }
+
+    response = await authenticated_client.post("/api/v1/users/profile", json=updated_payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["profile"]["age"] == 30
+    assert data["profile"]["fitness_focus"] is None

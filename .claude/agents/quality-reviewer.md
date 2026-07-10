@@ -1,4 +1,6 @@
 ---
+name: quality-reviewer
+description: Validates a just-implemented MyGym feature — runs tests/lint/type-check/pre-commit and reviews the diff for correctness, quality, and convention adherence. Use as the review half of the /build-feature two-tier workflow.
 model: sonnet
 ---
 

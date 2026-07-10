@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Management Technical Documentation - MyGym</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            justify-content: center;
+        }
+
+        nav a {
+            color: #1e3c72;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            background: white;
+            border: 1px solid #ddd;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        nav a:hover {
+            background: #1e3c72;
+            color: white;
+            border-color: #1e3c72;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        h2 {
+            color: #1e3c72;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2a5298;
+            font-size: 1.8em;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2a5298;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        p {
+            line-height: 1.8;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        a {
+            color: #2a5298;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s;
+        }
+
+        a:hover {
+            border-bottom-color: #2a5298;
+            opacity: 0.8;
+        }
+
+        .code-block {
+            background: #1e3c72;
+            color: #e8f4f8;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            border-left: 4px solid #2a5298;
+        }
+
+        .code-block .keyword {
+            color: #64b5f6;
+            font-weight: bold;
+        }
+
+        .code-block .string {
+            color: #81c784;
+        }
+
+        .code-block .comment {
+            color: #90a4ae;
+            font-style: italic;
+        }
+
+        .code-block .function {
+            color: #ffb74d;
+        }
+
+        .endpoint {
+            background: #f0f4ff;
+            border-left: 4px solid #2a5298;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+
+        .endpoint strong {
+            color: #1e3c72;
+            font-size: 1.1em;
+        }
+
+        .diagram {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            overflow-x: auto;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .callout {
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid;
+        }
+
+        .callout.info {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #1565c0;
+        }
+
+        .callout.warning {
+            background: #fff3e0;
+            border-color: #ff9800;
+            color: #e65100;
+        }
+
+        .callout.success {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .callout strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .troubleshooting-item {
+            background: #fff9e6;
+            border-left: 4px solid #ff9800;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 6px;
+        }
+
+        .troubleshooting-item strong {
+            color: #e65100;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .troubleshooting-item p {
+            color: #795548;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        table thead {
+            background: #1e3c72;
+            color: white;
+        }
+
+        table th, table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        .field-table {
+            margin: 20px 0;
+        }
+
+        .field-table td:first-child {
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: #2a5298;
+            font-weight: bold;
+        }
+
+        footer {
+            background: #f5f5f5;
+            padding: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #777;
+            font-size: 0.9em;
+        }
+
+        footer a {
+            color: #1e3c72;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            nav {
+                flex-direction: column;
+            }
+
+            nav a {
+                width: 100%;
+                text-align: center;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 1.4em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Profile Management Technical Documentation</h1>
+            <p>User profile CRUD operations with partial updates and null-value persistence</p>
+        </header>
+
+        <nav>
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#endpoints">API Endpoints</a>
+            <a href="#models">Models & Schemas</a>
+            <a href="#implementation">Implementation</a>
+            <a href="#dataflow">Data Flow</a>
+            <a href="#nullhandling">Null Handling</a>
+            <a href="#testing">Testing</a>
+            <a href="#troubleshooting">Troubleshooting</a>
+            <a href="#references">References</a>
+        </nav>
+
+        <div class="content">
+            <h2 id="overview">Overview</h2>
+            <p>
+                The Profile Management system handles user profile data (fitness level, goals, preferences)
+                with support for partial updates and explicit null-value persistence. Users can update their
+                profile incrementally — changing only specific fields while preserving all others — or
+                explicitly clear fields by setting them to null.
+            </p>
+
+            <h3>Key Features</h3>
+            <ul>
+                <li><strong>Partial Updates</strong>: Only explicitly provided fields are updated; unchanged fields are preserved</li>
+                <li><strong>Null-Value Persistence</strong>: Users can explicitly set profile fields to null/empty to clear them</li>
+                <li><strong>Type Safety</strong>: Pydantic schemas ensure data validation and type consistency</li>
+                <li><strong>Async Operations</strong>: All database operations use async SQLAlchemy for non-blocking I/O</li>
+                <li><strong>Comprehensive Testing</strong>: Full test coverage for edge cases (partial updates, null persistence, field preservation)</li>
+            </ul>
+
+            <h2 id="architecture">Architecture</h2>
+            <p>
+                The profile management system follows a layered architecture with clear separation of concerns:
+            </p>
+
+            <div class="diagram">
+Frontend (React)
+    ↓
+ProfilePage.tsx (Form validation & normalization)
+    ↓
+saveUserProfile() API client
+    ↓
+Backend HTTP Layer
+    ↓
+POST /api/v1/users/profile
+    ├→ Request validation (Pydantic UserProfileRequest)
+    ├→ Partial data extraction (exclude_unset=True)
+    ↓
+CRUD Layer (app/crud/user.py)
+    ├→ create_or_update_user_profile()
+    ├→ Existing profile lookup
+    ├→ Field-by-field setattr (including null values)
+    ↓
+Database Layer
+    └→ UserProfile model (SQLAlchemy ORM)
+            </div>
+
+            <h3>Key Design Decisions</h3>
+            <ul>
+                <li><strong>Pydantic exclude_unset=True</strong>: Only serializes fields that were explicitly set in the request, distinguishing "not provided" from "explicitly null"</li>
+                <li><strong>CRUD loop with unconditional setattr</strong>: Sets all provided fields including null values, allowing explicit clears without special logic</li>
+                <li><strong>Frontend form normalization</strong>: Parse helpers convert empty strings to null before sending, ensuring consistent representation</li>
+                <li><strong>Optional nullable columns</strong>: Database schema allows NULL for all profile fields, enabling flexible data deletion</li>
+            </ul>
+
+            <h2 id="endpoints">API Endpoints</h2>
+
+            <div class="endpoint">
+                <strong>POST /api/v1/users/profile</strong>
+                <p><strong>Purpose:</strong> Create or update the current user's profile with partial data</p>
+                <p><strong>Authentication:</strong> Required (HTTP-only JWT cookie)</p>
+
+                <h4>Request Body</h4>
+                <div class="code-block">
+{
+  <span class="string">"age"</span>: <span class="keyword">30</span> | <span class="keyword">null</span>,
+  <span class="string">"gender"</span>: <span class="string">"male"</span> | <span class="string">"female"</span> | <span class="string">"other"</span> | <span class="keyword">null</span>,  <span class="comment"># Any string accepted</span>
+  <span class="string">"weight_kg"</span>: <span class="keyword">75.5</span> | <span class="keyword">null</span>,
+  <span class="string">"height_cm"</span>: <span class="keyword">175.5</span> | <span class="keyword">null</span>,  <span class="comment"># Float: decimals allowed</span>
+  <span class="string">"activity_level"</span>: <span class="string">"sedentary"</span> | <span class="string">"lightly_active"</span> | ... | <span class="keyword">null</span>,
+  <span class="string">"fitness_focus"</span>: <span class="string">"strength"</span> | <span class="string">"endurance"</span> | ... | <span class="keyword">null</span>,
+  <span class="string">"experience_level"</span>: <span class="string">"beginner"</span> | <span class="string">"intermediate"</span> | <span class="string">"advanced"</span> | <span class="keyword">null</span>,
+  <span class="string">"days_per_week"</span>: <span class="keyword">3</span> | <span class="keyword">null</span>,
+  <span class="string">"workout_duration_min"</span>: <span class="keyword">60</span> | <span class="keyword">null</span>,
+  <span class="string">"equipment"</span>: <span class="string">"home"</span> | <span class="string">"gym"</span> | <span class="string">"bodyweight"</span> | <span class="keyword">null</span>,
+  <span class="string">"injuries_limitations"</span>: <span class="string">"Back pain, knee injury"</span> | <span class="keyword">null</span>,
+  <span class="string">"short_term_goals"</span>: <span class="string">"Build consistency"</span> | <span class="keyword">null</span>,
+  <span class="string">"medium_term_goals"</span>: <span class="string">"Gain muscle"</span> | <span class="keyword">null</span>
+}
+                </div>
+
+                <h4>Partial Update Example</h4>
+                <p>To update only age and weight, send:</p>
+                <div class="code-block">
+{
+  <span class="string">"age"</span>: <span class="keyword">31</span>,
+  <span class="string">"weight_kg"</span>: <span class="keyword">78.5</span>
+}
+                </div>
+                <p><strong>Result:</strong> Only age and weight_kg are updated. All other fields (gender, height, etc.) are preserved as-is in the database.</p>
+
+                <h4>Null-Value Clear Example</h4>
+                <p>To clear the fitness_focus field:</p>
+                <div class="code-block">
+{
+  <span class="string">"fitness_focus"</span>: <span class="keyword">null</span>
+}
+                </div>
+                <p><strong>Result:</strong> fitness_focus is set to NULL in the database. All other fields are preserved.</p>
+
+                <h4>Response</h4>
+                <div class="code-block">
+{
+  <span class="string">"id"</span>: <span class="keyword">1</span>,
+  <span class="string">"email"</span>: <span class="string">"user@example.com"</span>,
+  <span class="string">"first_name"</span>: <span class="string">"John"</span>,
+  <span class="string">"last_name"</span>: <span class="string">"Doe"</span>,
+  <span class="string">"profile"</span>: {
+    <span class="string">"id"</span>: <span class="keyword">1</span>,
+    <span class="string">"age"</span>: <span class="keyword">31</span>,
+    <span class="string">"gender"</span>: <span class="string">"male"</span>,
+    <span class="string">"weight_kg"</span>: <span class="keyword">78.5</span>,
+    <span class="comment">// ... all other fields</span>
+  }
+}
+                </div>
+
+                <h4>Status Codes</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Meaning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>200</strong></td>
+                            <td>Profile created or updated successfully</td>
+                        </tr>
+                        <tr>
+                            <td><strong>401</strong></td>
+                            <td>Unauthorized (no valid JWT token)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>422</strong></td>
+                            <td>Validation error (invalid enum value, type mismatch, etc.)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <strong>GET /api/v1/users/me</strong>
+                <p><strong>Purpose:</strong> Get the current user with their profile</p>
+                <p><strong>Authentication:</strong> Required</p>
+
+                <h4>Response</h4>
+                <div class="code-block">
+{
+  <span class="string">"id"</span>: <span class="keyword">1</span>,
+  <span class="string">"email"</span>: <span class="string">"user@example.com"</span>,
+  <span class="string">"first_name"</span>: <span class="string">"John"</span>,
+  <span class="string">"last_name"</span>: <span class="string">"Doe"</span>,
+  <span class="string">"profile"</span>: <span class="keyword">null</span> <span class="comment">// or UserProfileResponse object</span>
+}
+                </div>
+            </div>
+
+            <h2 id="models">Models & Schemas</h2>
+
+            <h3>Database Model</h3>
+            <p>File: <code>backend/app/models/user.py</code></p>
+            <div class="code-block">
+<span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> Integer, String, Float, Enum, ForeignKey, DateTime
+<span class="keyword">from</span> sqlalchemy.orm <span class="keyword">import</span> Mapped, mapped_column
+
+<span class="keyword">class</span> <span class="function">UserProfile</span>(Base):
+    __tablename__ = <span class="string">"user_profiles"</span>
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=<span class="keyword">True</span>)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey(<span class="string">"users.id"</span>), unique=<span class="keyword">True</span>)
+
+    <span class="comment"># All fields nullable — users can clear them</span>
+    age: Mapped[int | <span class="keyword">None</span>] = mapped_column(Integer)
+    gender: Mapped[str | <span class="keyword">None</span>] = mapped_column(String(20))
+    weight_kg: Mapped[float | <span class="keyword">None</span>] = mapped_column(Float)
+    height_cm: Mapped[float | <span class="keyword">None</span>] = mapped_column(Float)
+    activity_level: Mapped[ActivityLevel | <span class="keyword">None</span>] = mapped_column(Enum(ActivityLevel))
+    fitness_focus: Mapped[FitnessFocus | <span class="keyword">None</span>] = mapped_column(Enum(FitnessFocus))
+    experience_level: Mapped[ExperienceLevel | <span class="keyword">None</span>] = mapped_column(Enum(ExperienceLevel))
+    days_per_week: Mapped[int | <span class="keyword">None</span>] = mapped_column(Integer)
+    workout_duration_min: Mapped[int | <span class="keyword">None</span>] = mapped_column(Integer)
+    equipment: Mapped[Equipment | <span class="keyword">None</span>] = mapped_column(Enum(Equipment))
+    injuries_limitations: Mapped[str | <span class="keyword">None</span>] = mapped_column(String)
+    short_term_goals: Mapped[str | <span class="keyword">None</span>] = mapped_column(String)
+    medium_term_goals: Mapped[str | <span class="keyword">None</span>] = mapped_column(String)
+
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
+            </div>
+
+            <h3>Pydantic Schemas</h3>
+            <p>File: <code>backend/app/schemas/user.py</code></p>
+
+            <h4>UserProfileRequest (For API Input)</h4>
+            <div class="code-block">
+<span class="keyword">class</span> <span class="function">UserProfileRequest</span>(BaseModel):
+    <span class="comment"># All fields optional with None default</span>
+    <span class="comment"># Only fields present in request are updated</span>
+    age: Optional[int] = <span class="keyword">None</span>
+    gender: Optional[str] = <span class="keyword">None</span>
+    weight_kg: Optional[float] = <span class="keyword">None</span>
+    height_cm: Optional[float] = <span class="keyword">None</span>
+    activity_level: Optional[ActivityLevel] = <span class="keyword">None</span>
+    fitness_focus: Optional[FitnessFocus] = <span class="keyword">None</span>
+    experience_level: Optional[ExperienceLevel] = <span class="keyword">None</span>
+    days_per_week: Optional[int] = <span class="keyword">None</span>
+    workout_duration_min: Optional[int] = <span class="keyword">None</span>
+    equipment: Optional[Equipment] = <span class="keyword">None</span>
+    injuries_limitations: Optional[str] = <span class="keyword">None</span>
+    short_term_goals: Optional[str] = <span class="keyword">None</span>
+    medium_term_goals: Optional[str] = <span class="keyword">None</span>
+            </div>
+
+            <h4>UserProfileResponse (For API Output)</h4>
+            <div class="code-block">
+<span class="keyword">class</span> <span class="function">UserProfileResponse</span>(BaseModel):
+    model_config = ConfigDict(from_attributes=<span class="keyword">True</span>)
+
+    id: int
+    <span class="comment"># Same fields as request, all Optional</span>
+    age: Optional[int] = <span class="keyword">None</span>
+    gender: Optional[str] = <span class="keyword">None</span>  <span class="comment"># Free-form string (no server-side enum validation)</span>
+    weight_kg: Optional[float] = <span class="keyword">None</span>
+    height_cm: Optional[float] = <span class="keyword">None</span>  <span class="comment"># Float allows decimals (e.g., 175.5)</span>
+    <span class="comment"># ... rest of Optional fields</span>
+            </div>
+
+            <h2 id="implementation">Implementation Details</h2>
+
+            <h3>Endpoint Handler</h3>
+            <p>File: <code>backend/app/api/v1/endpoints/users.py</code></p>
+            <div class="code-block">
+<span class="keyword">@router.post</span>(<span class="string">"/profile"</span>, response_model=UserWithProfileResponse)
+<span class="keyword">async def</span> <span class="function">create_update_profile_endpoint</span>(
+    profile_data: UserProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    <span class="comment"># exclude_unset=True: only fields explicitly provided by client</span>
+    <span class="comment"># Omitted fields remain unset → CRUD won't overwrite them</span>
+    <span class="keyword">await</span> create_or_update_user_profile(
+        db,
+        current_user.id,
+        profile_data.model_dump(exclude_unset=<span class="keyword">True</span>)
+    )
+
+    <span class="comment"># Refresh relationship to get updated profile</span>
+    <span class="keyword">await</span> db.refresh(current_user, attribute_names=[<span class="string">"profile"</span>])
+    <span class="keyword">return</span> current_user
+            </div>
+
+            <h3>CRUD Operation</h3>
+            <p>File: <code>backend/app/crud/user.py</code></p>
+            <div class="code-block">
+<span class="keyword">async def</span> <span class="function">create_or_update_user_profile</span>(
+    db: AsyncSession,
+    user_id: int,
+    profile_data: dict[str, Any],
+) -> UserProfile:
+    existing_profile = <span class="keyword">await</span> get_user_profile(db, user_id)
+
+    <span class="keyword">if</span> existing_profile:
+        <span class="comment"># Update existing: set each field in profile_data</span>
+        <span class="comment"># This includes null values (allows explicit clears)</span>
+        <span class="keyword">for</span> key, value <span class="keyword">in</span> profile_data.items():
+            setattr(existing_profile, key, value)
+        db.add(existing_profile)
+    <span class="keyword">else</span>:
+        <span class="comment"># Create new profile with provided data</span>
+        existing_profile = UserProfile(user_id=user_id, **profile_data)
+        db.add(existing_profile)
+
+    <span class="keyword">await</span> db.flush()
+    <span class="keyword">await</span> db.commit()
+    <span class="keyword">await</span> db.refresh(existing_profile)
+    <span class="keyword">return</span> existing_profile
+            </div>
+
+            <h3>Frontend Validation</h3>
+            <p>File: <code>frontend/src/pages/ProfilePage.tsx</code></p>
+            <div class="code-block">
+<span class="comment"># Parse helpers: convert form values to proper types or null</span>
+<span class="keyword">const</span> <span class="function">parseNumOrNull</span> = (val: string | number | <span class="keyword">null</span> | <span class="keyword">undefined</span>): number | <span class="keyword">null</span> => {
+    <span class="keyword">if</span> (val === <span class="string">''</span> || val === <span class="keyword">null</span> || val === <span class="keyword">undefined</span>) <span class="keyword">return</span> <span class="keyword">null</span>;
+    <span class="keyword">const</span> num = parseInt(val.toString());
+    <span class="keyword">return</span> Number.isNaN(num) ? <span class="keyword">null</span> : num;
+};
+
+<span class="keyword">const</span> <span class="function">parseFloatOrNull</span> = (val: string | number | <span class="keyword">null</span> | <span class="keyword">undefined</span>): number | <span class="keyword">null</span> => {
+    <span class="keyword">if</span> (val === <span class="string">''</span> || val === <span class="keyword">null</span> || val === <span class="keyword">undefined</span>) <span class="keyword">return</span> <span class="keyword">null</span>;
+    <span class="keyword">const</span> num = parseFloat(val.toString());
+    <span class="keyword">return</span> Number.isNaN(num) ? <span class="keyword">null</span> : num;
+};
+
+<span class="keyword">const</span> <span class="function">parseStringOrNull</span> = (val: string | <span class="keyword">null</span> | <span class="keyword">undefined</span>): string | <span class="keyword">null</span> => {
+    <span class="keyword">const</span> trimmed = val?.toString().trim();
+    <span class="keyword">return</span> trimmed && trimmed !== <span class="string">''</span> ? trimmed : <span class="keyword">null</span>;
+};
+
+<span class="comment"># Apply to all form fields before sending</span>
+<span class="keyword">const</span> profileData: UserProfile = {
+    age: parseNumOrNull(formData.age),  <span class="comment"># Integer: no decimals</span>
+    gender: parseStringOrNull(formData.gender),
+    weight_kg: parseFloatOrNull(formData.weight_kg),  <span class="comment"># Float: decimals allowed</span>
+    height_cm: parseFloatOrNull(formData.height_cm),  <span class="comment"># Float: decimals allowed</span>
+    <span class="comment"># ... rest of fields</span>
+};
+            </div>
+
+            <h2 id="dataflow">Data Flow</h2>
+
+            <h3>Scenario 1: Partial Update (Update age only)</h3>
+            <div class="diagram">
+1. User clicks "Edit Profile"
+   → Form loads with current profile data
+
+2. User changes age from 30 to 31
+   → formData.age = "31" (string from input)
+   → Other fields unchanged
+
+3. User clicks "Save Changes"
+   → handleSubmit fires
+   → parseNumOrNull("31") → 31 (number)
+   → profileData = {age: 31} (only changed field)
+
+4. saveUserProfile(profileData) POST /api/v1/users/profile
+   Request body:
+   {
+     "age": 31
+   }
+
+5. Backend receives request
+   → Pydantic validates: ✓ age is valid int
+   → profile_data.model_dump(exclude_unset=True)
+   → Returns {age: 31} (only age was set in request)
+
+6. CRUD: create_or_update_user_profile(db, user_id, {age: 31})
+   → Lookup existing profile
+   → for key, value in {age: 31}.items():
+   →   setattr(profile, key, value)
+   → setattr(profile, "age", 31) ← Only this executes
+   → gender, weight, height, etc. UNTOUCHED
+
+7. Database UPDATE
+   UPDATE user_profiles SET age = 31, updated_at = now()
+   WHERE user_id = 1
+   Result: age=31, gender="male" (preserved), weight_kg=75.5 (preserved)
+
+8. Response returns full profile with all fields
+            </div>
+
+            <h3>Scenario 2: Null-Value Clear (Clear fitness_focus)</h3>
+            <div class="diagram">
+1. User wants to clear their fitness_focus
+   → Selects empty option in fitness_focus dropdown
+   → formData.fitness_focus = "" (empty string)
+
+2. User clicks "Save Changes"
+   → handleSubmit fires
+   → parseStringOrNull("") → null (empty strings become null)
+   → profileData = {fitness_focus: null} (only changed field)
+
+3. saveUserProfile(profileData) POST /api/v1/users/profile
+   Request body:
+   {
+     "fitness_focus": null
+   }
+
+4. Backend receives request
+   → Pydantic validates: ✓ fitness_focus: Optional[FitnessFocus]
+   → profile_data.model_dump(exclude_unset=True)
+   → Returns {fitness_focus: null} (only fitness_focus was set)
+
+5. CRUD: create_or_update_user_profile(db, user_id, {fitness_focus: null})
+   → Lookup existing profile
+   → for key, value in {fitness_focus: null}.items():
+   →   setattr(profile, key, value)
+   → setattr(profile, "fitness_focus", None) ← Explicitly set to null!
+   → Other fields UNTOUCHED
+
+6. Database UPDATE
+   UPDATE user_profiles SET fitness_focus = NULL, updated_at = now()
+   WHERE user_id = 1
+   Result: fitness_focus=NULL (cleared), weight_kg=75.5 (preserved)
+
+7. Response returns profile with fitness_focus=null
+            </div>
+
+            <h2 id="nullhandling">Null Handling Strategy</h2>
+
+            <div class="callout info">
+                <strong>Key Principle: Partial Updates</strong>
+                The backend uses <code>exclude_unset=True</code> to distinguish:
+                <ul style="margin-top: 10px;">
+                    <li><strong>Not provided</strong> (omitted from request) → Field is preserved</li>
+                    <li><strong>Explicitly null</strong> (sent as null) → Field is cleared</li>
+                </ul>
+            </div>
+
+            <h3>Frontend Normalization</h3>
+            <p>
+                All empty form inputs are converted to <code>null</code> before sending to the backend:
+            </p>
+            <ul>
+                <li><code>""</code> (empty string) → <code>null</code></li>
+                <li>Missing/undefined → <code>null</code></li>
+                <li>Valid values → parsed and sent as-is (e.g., "30" → 30)</li>
+            </ul>
+
+            <h3>Database Constraints</h3>
+            <p>
+                All <code>UserProfile</code> columns are nullable in SQLAlchemy 2.0+:
+            </p>
+            <div class="code-block">
+age: Mapped[int | <span class="keyword">None</span>] = mapped_column(Integer)
+weight_kg: Mapped[float | <span class="keyword">None</span>] = mapped_column(Float)
+<span class="comment"># ... all fields are nullable (Mapped[T | None])</span>
+            </div>
+            <p>
+                This allows:
+            </p>
+            <ul>
+                <li>First-time profile creation with partial data</li>
+                <li>Users explicitly clearing fields without cascading deletes</li>
+                <li>Flexible profile evolution over time</li>
+            </ul>
+
+            <h3>Edge Cases Handled</h3>
+
+            <div class="troubleshooting-item">
+                <strong>❓ What if user sends empty dict {}?</strong>
+                <p>
+                    No fields are set in Pydantic, so <code>exclude_unset=True</code> returns empty dict.
+                    CRUD receives empty dict, no fields are updated. All existing data preserved. ✓
+                </p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❓ What if user sends all fields explicitly?</strong>
+                <p>
+                    All fields have <code>exclude_unset=False</code>, so all are included even if unchanged.
+                    CRUD updates all fields. Safe because we're setting to the same values. ✓
+                </p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❓ What if frontend sends invalid enum value?</strong>
+                <p>
+                    Pydantic validation catches it before CRUD. Returns 422 Unprocessable Entity.
+                    Database never receives invalid data. ✓
+                </p>
+            </div>
+
+            <h2 id="testing">Testing</h2>
+
+            <h3>Backend Test Coverage</h3>
+            <p>File: <code>backend/tests/test_users.py</code></p>
+
+            <div class="code-block">
+<span class="keyword">async def</span> <span class="function">test_update_user_profile</span>():
+    <span class="comment"># Create full profile, then partial update</span>
+    initial = {<span class="string">"age"</span>: 30, <span class="string">"gender"</span>: <span class="string">"male"</span>, <span class="string">"weight_kg"</span>: 80.0}
+    <span class="keyword">await</span> create_or_update_user_profile(db, user_id, initial)
+
+    <span class="comment"># Update only age and weight</span>
+    update = {<span class="string">"age"</span>: 31, <span class="string">"weight_kg"</span>: 78.5}
+    <span class="keyword">await</span> create_or_update_user_profile(db, user_id, update)
+
+    <span class="comment"># Verify: age and weight changed, gender preserved</span>
+    profile = <span class="keyword">await</span> get_user_profile(db, user_id)
+    assert profile.age == 31
+    assert profile.weight_kg == 78.5
+    assert profile.gender == <span class="string">"male"</span>  <span class="comment"># Not changed!</span>
+
+<span class="keyword">async def</span> <span class="function">test_update_profile_set_field_to_null</span>():
+    <span class="comment"># Create profile with fitness_focus</span>
+    initial = {<span class="string">"age"</span>: 30, <span class="string">"fitness_focus"</span>: <span class="string">"strength"</span>}
+    <span class="keyword">await</span> create_or_update_user_profile(db, user_id, initial)
+
+    <span class="comment"># Clear fitness_focus by sending null</span>
+    update = {<span class="string">"fitness_focus"</span>: <span class="keyword">None</span>}
+    <span class="keyword">await</span> create_or_update_user_profile(db, user_id, update)
+
+    <span class="comment"># Verify: fitness_focus is null, age preserved</span>
+    profile = <span class="keyword">await</span> get_user_profile(db, user_id)
+    assert profile.fitness_focus <span class="keyword">is</span> <span class="keyword">None</span>  <span class="comment"># Cleared!</span>
+    assert profile.age == 30  <span class="comment"># Preserved!</span>
+            </div>
+
+            <h3>Frontend Test Coverage</h3>
+            <p>File: <code>frontend/src/tests/pages/ProfilePage.test.tsx</code></p>
+
+            <div class="code-block">
+it(<span class="string">'should clear fields when user deletes content and saves'</span>, <span class="keyword">async</span> () => {
+    <span class="comment">// User edits form, clears fitness_focus</span>
+    <span class="keyword">const</span> focusSelect = screen.getByLabelText(<span class="string">'Fitness Focus'</span>);
+    fireEvent.change(focusSelect, { target: { value: <span class="string">''</span> } });
+
+    <span class="comment">// User submits</span>
+    <span class="keyword">const</span> saveButton = screen.getByRole(<span class="string">'button'</span>, { name: /Save Changes/i });
+    fireEvent.click(saveButton);
+
+    <span class="comment">// Verify API called with null</span>
+    <span class="keyword">await</span> waitFor(() => {
+        expect(authApi.saveUserProfile).toHaveBeenCalledWith(
+            expect.objectContaining({
+                fitness_focus: <span class="keyword">null</span>,
+            }),
+        );
+    });
+});
+            </div>
+
+            <h3>Test Strategy</h3>
+            <ul>
+                <li><strong>Partial updates</strong>: Verify unmodified fields are preserved</li>
+                <li><strong>Null persistence</strong>: Verify null values are persisted correctly</li>
+                <li><strong>Full updates</strong>: Verify all fields can be updated together</li>
+                <li><strong>Validation</strong>: Verify invalid data is rejected by Pydantic</li>
+                <li><strong>Empty profiles</strong>: Verify profiles can be created with no data</li>
+            </ul>
+
+            <h2 id="troubleshooting">Troubleshooting</h2>
+
+            <div class="troubleshooting-item">
+                <strong>❌ User saves profile, but unchanged fields get cleared</strong>
+                <p>
+                    <strong>Cause:</strong> Frontend is sending all 13 fields with null for unchanged fields.
+                    Backend's setattr is setting them to NULL instead of preserving.
+                </p>
+                <p>
+                    <strong>Fix:</strong> Ensure backend uses <code>profile_data.model_dump(exclude_unset=True)</code>
+                    to only include fields that were explicitly set in the request.
+                    See: <code>backend/app/api/v1/endpoints/users.py:24</code>
+                </p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ User tries to clear a field (set to null), but it's not being cleared</strong>
+                <p>
+                    <strong>Cause:</strong> Frontend is sending undefined/NaN instead of null for empty fields.
+                    Backend filter might be excluding None values.
+                </p>
+                <p>
+                    <strong>Fix:</strong> Ensure parse helpers convert empty inputs to <code>null</code>:
+                    - <code>parseNumOrNull("")</code> → <code>null</code>
+                    - <code>parseStringOrNull("")</code> → <code>null</code>
+                </p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ API returns 422 Unprocessable Entity</strong>
+                <p>
+                    <strong>Cause:</strong> Invalid enum value sent (e.g., "super_strength" for fitness_focus).
+                </p>
+                <p>
+                    <strong>Fix:</strong> Validate form inputs against allowed enum values.
+                    Check <code>backend/app/schemas/user.py</code> for valid values.
+                </p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ Test: "gender expected 'male', got None"</strong>
+                <p>
+                    <strong>Cause:</strong> Partial update test is not using <code>exclude_unset=True</code>.
+                    CRUD is receiving all fields including unset ones as None.
+                </p>
+                <p>
+                    <strong>Fix:</strong> Verify CRUD layer at <code>backend/app/crud/user.py:50-52</code>
+                    only has <code>setattr(existing_profile, key, value)</code> without <code>if value is not None</code>.
+                </p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>⚠️ Decimal heights truncated (175.5 → 175)</strong>
+                <p>
+                    <strong>Cause:</strong> Frontend <code>ProfilePage.tsx:81</code> uses <code>parseNumOrNull</code> (integer parsing) for <code>height_cm</code> instead of <code>parseFloatOrNull</code>.
+                    This truncates decimal heights.
+                </p>
+                <p>
+                    <strong>Fix:</strong> Change line 81 from <code>height_cm: parseNumOrNull(formData.height_cm)</code> to <code>height_cm: parseFloatOrNull(formData.height_cm)</code>.
+                </p>
+            </div>
+
+            <h2 id="references">References</h2>
+            <ul>
+                <li><a href="https://fastapi.tiangolo.com/">FastAPI Documentation</a></li>
+                <li><a href="https://docs.pydantic.dev/">Pydantic V2 Documentation</a> — See <code>BaseModel.model_dump(exclude_unset=True)</code></li>
+                <li><a href="https://docs.sqlalchemy.org/">SQLAlchemy Documentation</a></li>
+                <li><strong>Source Files:</strong>
+                    <ul>
+                        <li><code>backend/app/api/v1/endpoints/users.py</code> — API endpoint</li>
+                        <li><code>backend/app/crud/user.py</code> — CRUD operations</li>
+                        <li><code>backend/app/schemas/user.py</code> — Pydantic schemas</li>
+                        <li><code>backend/app/models/user.py</code> — SQLAlchemy models</li>
+                        <li><code>backend/tests/test_users.py</code> — Backend tests</li>
+                        <li><code>frontend/src/pages/ProfilePage.tsx</code> — Frontend form</li>
+                        <li><code>frontend/src/tests/pages/ProfilePage.test.tsx</code> — Frontend tests</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="callout success">
+                <strong>✓ Last Updated</strong>
+                <p>July 2026 — Documented null-value persistence feature with partial update semantics and test coverage.</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>
+                <strong>MyGym Technical Documentation</strong> |
+                <a href="index.html">← Back to Technical Docs</a>
+            </p>
+            <p style="margin-top: 15px; font-size: 0.85em;">
+                For user-facing documentation, see
+                <a href="../user/index.html">User Documentation</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -21,8 +21,7 @@ async def create_update_profile_endpoint(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    filtered_data = {k: v for k, v in profile_data.model_dump().items() if v is not None}
-    await create_or_update_user_profile(db, current_user.id, filtered_data)
+    await create_or_update_user_profile(db, current_user.id, profile_data.model_dump(exclude_unset=True))
     # current_user.profile is already loaded (possibly as None) in this
     # session's identity map; a plain refresh() won't reload relationships,
     # and a fresh selectinload query won't overwrite an already-loaded
