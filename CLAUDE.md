@@ -129,3 +129,13 @@ Use `.claude/skills/` for detailed guidance:
 - `token-optimization` - Token cost reduction strategies
 
 See `.claude/skills/README.md` for full list and usage.
+
+## Development Workflow
+
+For small, well-scoped features and bug fixes, use `/build-feature` to implement with Haiku (cheap) and validate with Sonnet (quality):
+
+```
+/build-feature <task description>
+```
+
+This two-tier workflow (Haiku implements → Sonnet reviews) keeps token costs low while catching bugs before they compound. See `.claude/commands/build-feature.md` for details and cost estimates.
