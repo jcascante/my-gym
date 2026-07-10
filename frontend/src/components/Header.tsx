@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '@/api/auth';
+import { getErrorMessage } from '@/api/errors';
 import { AlertCircle, ChevronDown, LogOut, Settings, User } from 'lucide-react';
 
 export default function Header() {
@@ -31,7 +32,7 @@ export default function Header() {
     try {
       await logout();
     } catch (err) {
-      console.error('Logout error:', err);
+      setError(getErrorMessage(err));
     } finally {
       clearAuth();
       navigate('/login');

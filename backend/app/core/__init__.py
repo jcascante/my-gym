@@ -8,6 +8,7 @@ from .exceptions import (
     UserNotFoundError,
     ValidationError,
 )
+from .logging import get_logger, setup_logging
 from .security import create_access_token, create_refresh_token, decode_token, hash_password, verify_password
 
 __all__ = [
@@ -24,4 +25,6 @@ __all__ = [
     "create_access_token",
     "create_refresh_token",
     "decode_token",
+    "setup_logging",
+    "get_logger",
 ]

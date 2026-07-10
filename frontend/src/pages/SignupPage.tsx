@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { signup, login, getCurrentUser } from '@/api/auth';
+import { getErrorMessage } from '@/api/errors';
 import { Button, FormField, Alert, Card } from '@/components';
 
 export default function SignupPage() {
@@ -39,7 +40,7 @@ export default function SignupPage() {
       setAuth(userData, userData.profile);
       navigate('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signup failed');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

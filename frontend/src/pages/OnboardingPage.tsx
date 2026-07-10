@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { saveUserProfile } from '@/api/auth';
+import { getErrorMessage } from '@/api/errors';
 import { Button, FormField, Card, Alert } from '@/components';
 
 export default function OnboardingPage() {
@@ -64,7 +65,7 @@ export default function OnboardingPage() {
       setUserProfile(response.profile);
       navigate('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save profile');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

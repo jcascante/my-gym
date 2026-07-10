@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { login, getCurrentUser } from '@/api/auth';
+import { getErrorMessage } from '@/api/errors';
 import { Button, FormField, Alert, Card } from '@/components';
 
 export default function LoginPage() {
@@ -24,7 +25,7 @@ export default function LoginPage() {
       setAuth(userData, userData.profile);
       navigate('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

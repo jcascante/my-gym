@@ -1,4 +1,6 @@
 class AppException(Exception):
+    error_code: str = "APP_ERROR"
+
     def __init__(self, message: str, status_code: int = 500):
         self.message = message
         self.status_code = status_code
@@ -6,30 +8,42 @@ class AppException(Exception):
 
 
 class InvalidCredentialsError(AppException):
+    error_code: str = "INVALID_CREDENTIALS"
+
     def __init__(self, message: str = "Invalid credentials"):
         super().__init__(message, status_code=401)
 
 
 class UserNotFoundError(AppException):
+    error_code: str = "USER_NOT_FOUND"
+
     def __init__(self, message: str = "User not found"):
         super().__init__(message, status_code=404)
 
 
 class UserAlreadyExistsError(AppException):
+    error_code: str = "USER_ALREADY_EXISTS"
+
     def __init__(self, message: str = "User already exists"):
         super().__init__(message, status_code=400)
 
 
 class ValidationError(AppException):
+    error_code: str = "VALIDATION_ERROR"
+
     def __init__(self, message: str):
         super().__init__(message, status_code=422)
 
 
 class TokenExpiredError(AppException):
+    error_code: str = "TOKEN_EXPIRED"
+
     def __init__(self, message: str = "Token expired"):
         super().__init__(message, status_code=401)
 
 
 class InvalidTokenError(AppException):
+    error_code: str = "INVALID_TOKEN"
+
     def __init__(self, message: str = "Invalid token"):
         super().__init__(message, status_code=401)
