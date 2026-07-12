@@ -1,0 +1,73 @@
+# Terraform configuration example for MyGym
+# Copy this file to terraform.tfvars and fill in your values
+# IMPORTANT: terraform.tfvars is NEVER committed (see .gitignore)
+# NEVER share the real terraform.tfvars as it contains secrets
+
+# AWS Configuration
+aws_region   = "us-east-1"
+project_name = "gym-app"
+environment  = "production"
+
+# ── Database Configuration ─────────────────────────────────────────────────────
+# REQUIRED: Set strong, random passwords for production
+db_name     = "mygym"
+db_username = "gymadmin"
+db_password = "ChangeMe123!SecurePassword"  # IMPORTANT: Use a strong random password
+
+# ── Application Secrets ────────────────────────────────────────────────────────
+# REQUIRED: Generate a new secret key for JWT token signing
+# Generate with: python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+secret_key = "o899AwaWq9EphIFggQERxdJr4lCsup0zwQqd70Faces"
+
+# ── Authentication & Security Configuration ─────────────────────────────────────
+# CORS origins allowed to call the backend API (JSON-formatted string)
+backend_cors_origins = "[\"https://app.costabirra.com\"]"
+
+# JWT configuration
+algorithm                  = "HS256"
+access_token_expire_minutes = 60
+
+# HTTPS-only cookies (set to true in production, false for local development)
+cookie_secure = true
+
+# ── ECS Task Configuration ──────────────────────────────────────────────────────
+# Docker image tag to deploy (e.g., "latest", "v1.0.0", or commit SHA)
+image_tag = "latest"
+
+# ECS task sizing (CPU units and memory in MB)
+# Valid combinations: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
+backend_cpu       = 256   # 256, 512, 1024, 2048, or 4096
+backend_memory    = 512   # Varies by CPU (min 512 for 256 CPU, max 30720 for 4096 CPU)
+
+# Auto-scaling configuration (number of tasks)
+backend_min_tasks = 1   # Minimum tasks (1 for dev, 2+ for production HA)
+backend_max_tasks = 4   # Maximum tasks (scale up under load)
+
+# ── Production Deployment Notes ─────────────────────────────────────────────────
+# 1. SECRET_KEY ROTATION:
+#    This file currently contains a placeholder secret_key. Before first production
+#    deployment, generate a fresh key:
+#      python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+#    Update the secret_key value above.
+#
+# 2. DATABASE PASSWORDS:
+#    Generate strong random passwords for db_password:
+#      openssl rand -base64 32
+#    Or: python3 -c "import secrets; print(secrets.token_urlsafe(24))"
+#
+# 3. SECURITY GROUP:
+#    Update backend_cors_origins to match your frontend domain(s).
+#    For multiple origins, use JSON array: "[\"https://app.example.com\", \"https://www.example.com\"]"
+#
+# 4. ACM CERTIFICATE:
+#    The ALB uses an ACM certificate for HTTPS. Update the certificate ARN in
+#    terraform/main.tf if using a different certificate (currently: arn:aws:acm:us-east-1:...)
+#
+# 5. SCALE UP FOR HA:
+#    For production, set backend_min_tasks = 2 (spread across AZs for high availability)
+#
+# 6. MONITORING:
+#    After deployment, check:
+#      - CloudWatch Logs: /ecs/gym-app-production-backend
+#      - ECS service health: AWS Console → ECS → Services
+#      - ALB target health: AWS Console → EC2 → Target Groups
