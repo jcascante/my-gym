@@ -80,3 +80,8 @@ app.include_router(users_router, prefix=settings.API_V1_STR)
 @app.get("/")
 async def root() -> dict[str, str]:
     return {"message": "MyGym API"}
+
+
+@app.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok"}

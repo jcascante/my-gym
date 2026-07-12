@@ -1,6 +1,6 @@
 import hashlib
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
 import jwt
 from passlib.context import CryptContext
@@ -30,7 +30,7 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
         expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
+    return cast(str, encoded_jwt)
 
 
 def create_refresh_token(data: dict[str, Any]) -> str:
@@ -38,7 +38,7 @@ def create_refresh_token(data: dict[str, Any]) -> str:
     expire = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
+    return cast(str, encoded_jwt)
 
 
 def decode_token(token: str, expected_type: str | None = None) -> dict[str, Any]:

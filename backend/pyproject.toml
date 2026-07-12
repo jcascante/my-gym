@@ -32,6 +32,8 @@ dev = [
     "ruff==0.9.0",
     "mypy==1.14.1",
     "types-python-jose==3.5.0.20260408",
+    "types-passlib==1.7.7.20250516",
+    "types-pyjwt==1.7.1",
     "pre-commit==4.0.1",
 ]
 
@@ -69,8 +71,11 @@ ignore_errors = true
 module = [
     "passlib.*",
     "jose.*",
+    "aiopg.*",
+    "aiosqlite.*",
 ]
 ignore_missing_imports = true
+disallow_untyped_imports = false
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
