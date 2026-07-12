@@ -27,15 +27,12 @@ jobs:
 
       - name: Log in to Amazon ECR
         id: login-ecr
-        run: |
-          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
-            docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push Docker image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          ECR_REGISTRY=$(aws ecr describe-repositories --repository-names gym-app-backend --region ${{ env.AWS_REGION }} --query 'repositories[0].repositoryUri' --output text | sed 's|/.*||')
           IMAGE_TAG=${{ github.sha }}
           docker build -t $ECR_REGISTRY/gym-app-backend:$IMAGE_TAG backend/
           docker tag $ECR_REGISTRY/gym-app-backend:$IMAGE_TAG $ECR_REGISTRY/gym-app-backend:latest
@@ -58,7 +55,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
 
       - name: Install dependencies
         run: npm ci
