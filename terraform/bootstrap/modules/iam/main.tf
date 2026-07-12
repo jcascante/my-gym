@@ -40,7 +40,7 @@ resource "aws_iam_role" "github_actions_deploy" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:jorgecascante/my-gym:*"
+            "token.actions.githubusercontent.com:sub" = "repo:jorgecascante/my-gym:ref:refs/heads/main"
           }
         }
       }
@@ -100,15 +100,19 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
         Effect = "Allow"
         Action = [
           "ecs:UpdateService",
-          "ecs:DescribeServices",
-          "ecs:DescribeTaskDefinition",
-          "ecs:DescribeClusterContainerInsights"
+          "ecs:DescribeServices"
         ]
         Resource = [
-          "arn:aws:ecs:*:*:service/*/*",
-          "arn:aws:ecs:*:*:cluster/*",
-          "arn:aws:ecs:*:*:task-definition/*"
+          "arn:aws:ecs:*:${data.aws_caller_identity.current.account_id}:service/gym-app-production-cluster/gym-app-production-backend",
+          "arn:aws:ecs:*:${data.aws_caller_identity.current.account_id}:cluster/gym-app-production-cluster"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeTaskDefinition"
+        ]
+        Resource = "arn:aws:ecs:*:${data.aws_caller_identity.current.account_id}:task-definition/gym-app-production-backend:*"
       }
     ]
   })

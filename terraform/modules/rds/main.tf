@@ -37,14 +37,13 @@ resource "aws_security_group" "rds" {
 resource "aws_db_instance" "main" {
   identifier     = "${local.name}-postgres"
   engine         = "postgres"
-  engine_version = "15.7"
+  engine_version = "17.10"
 
   instance_class = "db.t4g.micro"
 
   allocated_storage = var.allocated_storage
   storage_type      = var.storage_type
   storage_encrypted = true
-  iops              = 3000
 
   db_name  = var.db_name
   username = var.db_username
@@ -60,7 +59,7 @@ resource "aws_db_instance" "main" {
   maintenance_window      = "sun:04:00-sun:05:00"
 
   skip_final_snapshot       = false
-  final_snapshot_identifier = "${local.name}-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
+  final_snapshot_identifier = "${local.name}-final-snapshot"
 
   enabled_cloudwatch_logs_exports = ["postgresql"]
 

@@ -86,8 +86,18 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.backend.arn
+    type = var.acm_certificate_arn != "" ? "redirect" : "forward"
+
+    dynamic "redirect" {
+      for_each = var.acm_certificate_arn != "" ? [1] : []
+      content {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+
+    target_group_arn = var.acm_certificate_arn != "" ? null : aws_lb_target_group.backend.arn
   }
 }
 

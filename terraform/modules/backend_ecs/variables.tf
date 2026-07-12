@@ -1,7 +1,7 @@
 variable "project_name" { type = string }
-variable "environment"  { type = string }
+variable "environment" { type = string }
 
-variable "vpc_id"            { type = string }
+variable "vpc_id" { type = string }
 variable "public_subnet_ids" { type = list(string) }
 
 variable "ecr_repository_url" { type = string }
@@ -37,7 +37,7 @@ variable "desired_tasks" {
 }
 
 variable "task_execution_role_arn" { type = string }
-variable "task_role_arn"           { type = string }
+variable "task_role_arn" { type = string }
 
 variable "container_port" {
   type    = number

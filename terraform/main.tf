@@ -53,47 +53,6 @@ data "aws_subnets" "public" {
   }
 }
 
-# ── Security Groups ─────────────────────────────────────────────────────────
-# Create security groups at root level to avoid circular dependency between backend_ecs and rds
-
-resource "aws_security_group" "ecs_tasks" {
-  name   = "${var.project_name}-${var.environment}-ecs-sg"
-  vpc_id = data.aws_vpc.main.id
-
-  ingress {
-    from_port   = 8000
-    to_port     = 8000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_security_group" "rds" {
-  name   = "${var.project_name}-${var.environment}-rds-sg"
-  vpc_id = data.aws_vpc.main.id
-
-  ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs_tasks.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 # ── IAM ─────────────────────────────────────────────────────────────────────
 
 module "iam" {
@@ -164,8 +123,6 @@ module "backend_ecs" {
     ACCESS_TOKEN_EXPIRE_MINUTES = tostring(var.access_token_expire_minutes)
     COOKIE_SECURE               = tostring(var.cookie_secure)
   }
-
-  depends_on = [module.rds]
 }
 
 # ── RDS PostgreSQL ──────────────────────────────────────────────────────────
@@ -177,7 +134,7 @@ module "rds" {
   environment           = var.environment
   vpc_id                = data.aws_vpc.main.id
   subnet_ids            = data.aws_subnets.public.ids
-  ecs_security_group_id = aws_security_group.ecs_tasks.id
+  ecs_security_group_id = module.backend_ecs.ecs_security_group_id
 
   db_name     = var.db_name
   db_username = var.db_username
