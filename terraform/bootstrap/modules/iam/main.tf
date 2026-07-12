@@ -2,15 +2,12 @@
 data "aws_caller_identity" "current" {}
 
 # GitHub OIDC Provider
-# Check if it already exists in the account to avoid duplicates
-data "aws_iam_openid_connect_provider" "github" {
-  arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
-}
-
-# If the provider doesn't exist, create it
+# NOTE: a `data` lookup can't be used to conditionally skip creation here —
+# aws_iam_openid_connect_provider hard-errors the whole plan on a 404 (NoSuchEntity)
+# instead of returning null, so try() can't catch it. If the account already has
+# a GitHub OIDC provider (e.g. from another Terraform config), `terraform import`
+# it into this resource address instead of re-adding detection logic.
 resource "aws_iam_openid_connect_provider" "github" {
-  count = try(data.aws_iam_openid_connect_provider.github.arn, null) == null ? 1 : 0
-
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1", "1b511abead59c6ce207077c0ef0285192718a2da"]
@@ -20,9 +17,8 @@ resource "aws_iam_openid_connect_provider" "github" {
   }
 }
 
-# Reference either the existing or newly created provider
 locals {
-  github_oidc_provider_arn = try(data.aws_iam_openid_connect_provider.github.arn, aws_iam_openid_connect_provider.github[0].arn)
+  github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
 }
 
 # IAM Role for GitHub Actions with OIDC trust
@@ -40,7 +36,7 @@ resource "aws_iam_role" "github_actions_deploy" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:jorgecascante/my-gym:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = "repo:jcascante/my-gym:ref:refs/heads/main"
           }
         }
       }
