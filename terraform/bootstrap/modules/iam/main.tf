@@ -109,6 +109,30 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
           "ecs:DescribeTaskDefinition"
         ]
         Resource = "arn:aws:ecs:*:${data.aws_caller_identity.current.account_id}:task-definition/gym-app-production-backend:*"
+      },
+      {
+        # One-off migration task: run alembic upgrade head against the current
+        # task definition before rolling the service, using the same network path
+        # (ECS tasks sit in the SG that RDS whitelists — GH Actions runners don't).
+        Effect = "Allow"
+        Action = [
+          "ecs:RunTask",
+          "ecs:DescribeTasks"
+        ]
+        Resource = [
+          "arn:aws:ecs:*:${data.aws_caller_identity.current.account_id}:task-definition/gym-app-production-backend:*",
+          "arn:aws:ecs:*:${data.aws_caller_identity.current.account_id}:task/gym-app-production-cluster/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gym-app-production-ecs-execution",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gym-app-production-ecs-task"
+        ]
       }
     ]
   })
