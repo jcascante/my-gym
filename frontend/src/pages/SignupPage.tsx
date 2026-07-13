@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirm_password: '',
     first_name: '',
     last_name: '',
   });
@@ -27,10 +28,21 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (formData.password !== formData.confirm_password) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await signup(formData);
+      await signup({
+        email: formData.email,
+        password: formData.password,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+      });
       await login({
         email: formData.email,
         password: formData.password,
@@ -106,6 +118,17 @@ export default function SignupPage() {
             minLength={8}
             placeholder="••••••••"
             hint="Minimum 8 characters"
+          />
+
+          <FormField
+            label="Confirm Password"
+            type="password"
+            name="confirm_password"
+            value={formData.confirm_password}
+            onChange={handleChange}
+            required
+            minLength={8}
+            placeholder="••••••••"
           />
 
           <Button type="submit" variant="primary" size="lg" isLoading={loading} className="w-full">

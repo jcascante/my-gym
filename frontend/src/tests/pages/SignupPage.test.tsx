@@ -39,8 +39,63 @@ describe('SignupPage', () => {
     expect(screen.getByPlaceholderText('John')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Doe')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Password/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Confirm Password/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Create account/i })).toBeInTheDocument();
+  });
+
+  it('should toggle password visibility when the eye icon is clicked', () => {
+    const setAuthMock = vi.fn();
+    vi.mocked(useAuthStore).mockImplementation((selector: any) =>
+      selector({ setAuth: setAuthMock }),
+    );
+
+    render(
+      <BrowserRouter>
+        <SignupPage />
+      </BrowserRouter>,
+    );
+
+    const passwordInput = screen.getByLabelText<HTMLInputElement>(/^Password/);
+    expect(passwordInput.type).toBe('password');
+
+    const toggleButton = passwordInput.parentElement?.querySelector('button') as HTMLButtonElement;
+    fireEvent.click(toggleButton);
+    expect(passwordInput.type).toBe('text');
+
+    fireEvent.click(toggleButton);
+    expect(passwordInput.type).toBe('password');
+  });
+
+  it('should show an error when passwords do not match', async () => {
+    const setAuthMock = vi.fn();
+    vi.mocked(useAuthStore).mockImplementation((selector: any) =>
+      selector({ setAuth: setAuthMock }),
+    );
+
+    render(
+      <BrowserRouter>
+        <SignupPage />
+      </BrowserRouter>,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('John'), { target: { value: 'Jane' } });
+    fireEvent.change(screen.getByPlaceholderText('Doe'), { target: { value: 'Smith' } });
+    fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
+      target: { value: 'newuser@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: 'password123' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Confirm Password/), {
+      target: { value: 'password456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Create account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
+      expect(authApi.signup).not.toHaveBeenCalled();
+    });
   });
 
   it('should signup successfully with profile', async () => {
@@ -88,7 +143,10 @@ describe('SignupPage', () => {
     fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
       target: { value: 'newuser@example.com' },
     });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: 'password123' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Confirm Password/), {
       target: { value: 'password123' },
     });
     fireEvent.click(screen.getByRole('button', { name: /Create account/i }));
@@ -151,7 +209,10 @@ describe('SignupPage', () => {
     fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
       target: { value: 'newuser@example.com' },
     });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: 'password123' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Confirm Password/), {
       target: { value: 'password123' },
     });
     fireEvent.click(screen.getByRole('button', { name: /Create account/i }));
@@ -182,7 +243,10 @@ describe('SignupPage', () => {
     fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
       target: { value: 'existing@example.com' },
     });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: 'password123' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Confirm Password/), {
       target: { value: 'password123' },
     });
     fireEvent.click(screen.getByRole('button', { name: /Create account/i }));

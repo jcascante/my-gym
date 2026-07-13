@@ -17,43 +17,124 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+function renderOnboardingPage(setUserProfileMock = vi.fn()) {
+  vi.mocked(useAuthStore).mockImplementation((selector: any) =>
+    selector({
+      user: { id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe' },
+      setUserProfile: setUserProfileMock,
+    }),
+  );
+
+  render(
+    <BrowserRouter>
+      <OnboardingPage />
+    </BrowserRouter>,
+  );
+}
+
+async function fillPersonalInfoStep({
+  age = '30',
+  gender = 'male',
+  weight_kg = '75.5',
+  height_cm = '180',
+}: Partial<Record<'age' | 'gender' | 'weight_kg' | 'height_cm', string>> = {}) {
+  fireEvent.change(screen.getByLabelText(/Age/), { target: { value: age } });
+  fireEvent.change(screen.getByLabelText(/Gender/), { target: { value: gender } });
+  fireEvent.change(screen.getByLabelText(/Weight \(kg\)/), { target: { value: weight_kg } });
+  fireEvent.change(screen.getByLabelText(/Height \(cm\)/), { target: { value: height_cm } });
+  fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { name: /Fitness Level/ })).toBeInTheDocument(),
+  );
+}
+
+async function fillFitnessLevelStep({
+  experience_level = 'intermediate',
+  activity_level = 'moderately_active',
+}: Partial<Record<'experience_level' | 'activity_level', string>> = {}) {
+  fireEvent.change(screen.getByLabelText(/Experience Level/), {
+    target: { value: experience_level },
+  });
+  fireEvent.change(screen.getByLabelText(/Activity Level/), {
+    target: { value: activity_level },
+  });
+  fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { name: /Workout Preferences/ })).toBeInTheDocument(),
+  );
+}
+
+async function fillWorkoutPreferencesStep({
+  fitness_focus = 'strength',
+  days_per_week = '4',
+  workout_duration_min = '60',
+  equipment = 'gym',
+}: Partial<
+  Record<'fitness_focus' | 'days_per_week' | 'workout_duration_min' | 'equipment', string>
+> = {}) {
+  fireEvent.change(screen.getByLabelText(/Fitness Focus/), { target: { value: fitness_focus } });
+  fireEvent.change(screen.getByLabelText(/Days per Week/), { target: { value: days_per_week } });
+  fireEvent.change(screen.getByLabelText(/Workout Duration/), {
+    target: { value: workout_duration_min },
+  });
+  fireEvent.change(screen.getByLabelText(/Equipment Access/), { target: { value: equipment } });
+  fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { name: /Your Goals/ })).toBeInTheDocument(),
+  );
+}
+
+async function advanceThroughGoalsAndAdditionalInfoSteps() {
+  fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { name: /Additional Information/ })).toBeInTheDocument(),
+  );
+}
+
 describe('OnboardingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
   });
 
-  it('should render onboarding form', () => {
-    const setUserProfileMock = vi.fn();
-    vi.mocked(useAuthStore).mockImplementation((selector: any) =>
-      selector({
-        user: { id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe' },
-        setUserProfile: setUserProfileMock,
-      }),
-    );
-
-    render(
-      <BrowserRouter>
-        <OnboardingPage />
-      </BrowserRouter>,
-    );
+  it('should render the first wizard step', () => {
+    renderOnboardingPage();
 
     expect(screen.getByText(/Welcome, John!/)).toBeInTheDocument();
     expect(screen.getByText(/Let's set up your fitness profile/)).toBeInTheDocument();
-    expect(screen.getByText(/Personal Information/)).toBeInTheDocument();
-    expect(screen.getByText(/Fitness Level/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Complete Onboarding/i })).toBeInTheDocument();
+    expect(screen.getByText('Step 1 of 5')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Personal Information/ })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Fitness Level/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Next/i })).toBeInTheDocument();
   });
 
-  it('should submit profile with all fields', async () => {
-    const setUserProfileMock = vi.fn();
-    vi.mocked(useAuthStore).mockImplementation((selector: any) =>
-      selector({
-        user: { id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe' },
-        setUserProfile: setUserProfileMock,
-      }),
-    );
+  it('should not advance to the next step when required fields are missing', async () => {
+    renderOnboardingPage();
 
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Please fill in all required fields before continuing.'),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Step 1 of 5/)).toBeInTheDocument();
+  });
+
+  it('should navigate back to a previous step', async () => {
+    renderOnboardingPage();
+
+    await fillPersonalInfoStep();
+    expect(screen.getByText('Step 2 of 5')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Back/i }));
+
+    await waitFor(() => expect(screen.getByText('Step 1 of 5')).toBeInTheDocument());
+    expect(screen.getByLabelText(/Age/)).toHaveValue(30);
+  });
+
+  it('should submit profile with all fields after completing every step', async () => {
+    const setUserProfileMock = vi.fn();
     const mockResponse = {
       id: 1,
       email: 'test@example.com',
@@ -76,26 +157,12 @@ describe('OnboardingPage', () => {
 
     vi.mocked(authApi.saveUserProfile).mockResolvedValue(mockResponse);
 
-    render(
-      <BrowserRouter>
-        <OnboardingPage />
-      </BrowserRouter>,
-    );
+    renderOnboardingPage(setUserProfileMock);
 
-    fireEvent.change(screen.getByLabelText(/Age/), { target: { value: '30' } });
-    fireEvent.change(screen.getByLabelText(/Gender/), { target: { value: 'male' } });
-    fireEvent.change(screen.getByLabelText(/Weight \(kg\)/), { target: { value: '75.5' } });
-    fireEvent.change(screen.getByLabelText(/Height \(cm\)/), { target: { value: '180' } });
-    fireEvent.change(screen.getByLabelText(/Experience Level/), {
-      target: { value: 'intermediate' },
-    });
-    fireEvent.change(screen.getByLabelText(/Activity Level/), {
-      target: { value: 'moderately_active' },
-    });
-    fireEvent.change(screen.getByLabelText(/Fitness Focus/), { target: { value: 'strength' } });
-    fireEvent.change(screen.getByLabelText(/Days per Week/), { target: { value: '4' } });
-    fireEvent.change(screen.getByLabelText(/Workout Duration/), { target: { value: '60' } });
-    fireEvent.change(screen.getByLabelText(/Equipment Access/), { target: { value: 'gym' } });
+    await fillPersonalInfoStep();
+    await fillFitnessLevelStep();
+    await fillWorkoutPreferencesStep();
+    await advanceThroughGoalsAndAdditionalInfoSteps();
 
     fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
 
@@ -113,15 +180,8 @@ describe('OnboardingPage', () => {
     });
   });
 
-  it('should submit profile with minimal fields', async () => {
+  it('should submit profile with minimal required fields', async () => {
     const setUserProfileMock = vi.fn();
-    vi.mocked(useAuthStore).mockImplementation((selector: any) =>
-      selector({
-        user: { id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe' },
-        setUserProfile: setUserProfileMock,
-      }),
-    );
-
     const mockResponse = {
       id: 1,
       email: 'test@example.com',
@@ -136,24 +196,16 @@ describe('OnboardingPage', () => {
 
     vi.mocked(authApi.saveUserProfile).mockResolvedValue(mockResponse);
 
-    render(
-      <BrowserRouter>
-        <OnboardingPage />
-      </BrowserRouter>,
-    );
+    renderOnboardingPage(setUserProfileMock);
 
-    fireEvent.change(screen.getByLabelText(/Age/), { target: { value: '25' } });
-    fireEvent.change(screen.getByLabelText(/Gender/), { target: { value: 'male' } });
-    fireEvent.change(screen.getByLabelText(/Experience Level/), {
-      target: { value: 'beginner' },
+    await fillPersonalInfoStep({ age: '25' });
+    await fillFitnessLevelStep({ experience_level: 'beginner', activity_level: 'sedentary' });
+    await fillWorkoutPreferencesStep({
+      days_per_week: '1',
+      workout_duration_min: '15',
+      equipment: 'home',
     });
-    fireEvent.change(screen.getByLabelText(/Activity Level/), {
-      target: { value: 'sedentary' },
-    });
-    fireEvent.change(screen.getByLabelText(/Fitness Focus/), { target: { value: 'strength' } });
-    fireEvent.change(screen.getByLabelText(/Days per Week/), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText(/Workout Duration/), { target: { value: '15' } });
-    fireEvent.change(screen.getByLabelText(/Equipment Access/), { target: { value: 'home' } });
+    await advanceThroughGoalsAndAdditionalInfoSteps();
 
     fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
 
@@ -166,34 +218,15 @@ describe('OnboardingPage', () => {
 
   it('should display error on profile save failure', async () => {
     const setUserProfileMock = vi.fn();
-    vi.mocked(useAuthStore).mockImplementation((selector: any) =>
-      selector({
-        user: { id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe' },
-        setUserProfile: setUserProfileMock,
-      }),
-    );
-
     const errorMessage = 'Failed to save profile';
     vi.mocked(authApi.saveUserProfile).mockRejectedValue(new Error(errorMessage));
 
-    render(
-      <BrowserRouter>
-        <OnboardingPage />
-      </BrowserRouter>,
-    );
+    renderOnboardingPage(setUserProfileMock);
 
-    fireEvent.change(screen.getByLabelText(/Age/), { target: { value: '30' } });
-    fireEvent.change(screen.getByLabelText(/Gender/), { target: { value: 'male' } });
-    fireEvent.change(screen.getByLabelText(/Experience Level/), {
-      target: { value: 'intermediate' },
-    });
-    fireEvent.change(screen.getByLabelText(/Activity Level/), {
-      target: { value: 'moderately_active' },
-    });
-    fireEvent.change(screen.getByLabelText(/Fitness Focus/), { target: { value: 'strength' } });
-    fireEvent.change(screen.getByLabelText(/Days per Week/), { target: { value: '4' } });
-    fireEvent.change(screen.getByLabelText(/Workout Duration/), { target: { value: '60' } });
-    fireEvent.change(screen.getByLabelText(/Equipment Access/), { target: { value: 'gym' } });
+    await fillPersonalInfoStep();
+    await fillFitnessLevelStep();
+    await fillWorkoutPreferencesStep();
+    await advanceThroughGoalsAndAdditionalInfoSteps();
 
     fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
 
@@ -205,34 +238,15 @@ describe('OnboardingPage', () => {
 
   it('should dismiss error message', async () => {
     const setUserProfileMock = vi.fn();
-    vi.mocked(useAuthStore).mockImplementation((selector: any) =>
-      selector({
-        user: { id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe' },
-        setUserProfile: setUserProfileMock,
-      }),
-    );
-
     const errorMessage = 'Failed to save profile';
     vi.mocked(authApi.saveUserProfile).mockRejectedValue(new Error(errorMessage));
 
-    render(
-      <BrowserRouter>
-        <OnboardingPage />
-      </BrowserRouter>,
-    );
+    renderOnboardingPage(setUserProfileMock);
 
-    fireEvent.change(screen.getByLabelText(/Age/), { target: { value: '30' } });
-    fireEvent.change(screen.getByLabelText(/Gender/), { target: { value: 'male' } });
-    fireEvent.change(screen.getByLabelText(/Experience Level/), {
-      target: { value: 'intermediate' },
-    });
-    fireEvent.change(screen.getByLabelText(/Activity Level/), {
-      target: { value: 'moderately_active' },
-    });
-    fireEvent.change(screen.getByLabelText(/Fitness Focus/), { target: { value: 'strength' } });
-    fireEvent.change(screen.getByLabelText(/Days per Week/), { target: { value: '4' } });
-    fireEvent.change(screen.getByLabelText(/Workout Duration/), { target: { value: '60' } });
-    fireEvent.change(screen.getByLabelText(/Equipment Access/), { target: { value: 'gym' } });
+    await fillPersonalInfoStep();
+    await fillFitnessLevelStep();
+    await fillWorkoutPreferencesStep();
+    await advanceThroughGoalsAndAdditionalInfoSteps();
 
     fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
 
