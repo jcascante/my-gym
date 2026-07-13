@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infrastructure & Deployment Technical Documentation - MyGym</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px 20px;
+            margin: -20px -20px 40px -20px;
+            border-radius: 0 0 8px 8px;
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        nav {
+            margin: 30px 0;
+            padding: 15px 20px;
+            background: white;
+            border-left: 4px solid #2a5298;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        nav a {
+            display: inline-block;
+            margin-right: 15px;
+            color: #2a5298;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9em;
+            transition: color 0.2s;
+            white-space: nowrap;
+        }
+
+        nav a:hover {
+            color: #1e3c72;
+            text-decoration: underline;
+        }
+
+        .content {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #2a5298;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        h2:first-of-type {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #1e3c72;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+
+        h4 {
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        ol, ul {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        strong {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .endpoint {
+            background: #f9f9f9;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #2a5298;
+            border-radius: 4px;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .code-block code {
+            color: #d4d4d4;
+        }
+
+        .keyword { color: #569cd6; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .number { color: #b5cea8; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+
+        table th {
+            background: #2a5298;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .diagram {
+            background: #f0f4ff;
+            padding: 20px;
+            border-left: 4px solid #2a5298;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.85em;
+        }
+
+        .note {
+            background: #e3f2fd;
+            padding: 15px;
+            border-left: 4px solid #1976d2;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .note strong {
+            color: #1565c0;
+        }
+
+        .warning {
+            background: #fff3e0;
+            padding: 15px;
+            border-left: 4px solid #f57c00;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .warning strong {
+            color: #e65100;
+        }
+
+        .success {
+            background: #e8f5e9;
+            padding: 15px;
+            border-left: 4px solid #4caf50;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .success strong {
+            color: #2e7d32;
+        }
+
+        .troubleshooting-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .troubleshooting-item strong {
+            display: block;
+            color: #2a5298;
+            margin-bottom: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #eef2ff;
+            color: #3730a3;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background: #2a5298;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .back-button:hover {
+            background: #1e3c72;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            header {
+                margin: -15px -15px 30px -15px;
+            }
+
+            header h1 {
+                font-size: 1.5em;
+            }
+
+            nav {
+                overflow-x: scroll;
+            }
+
+            nav a {
+                margin-right: 10px;
+                font-size: 0.85em;
+            }
+
+            .code-block {
+                font-size: 0.8em;
+            }
+
+            table {
+                font-size: 0.85em;
+            }
+
+            table th, table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-button">← Back to Technical Docs</a>
+
+        <header>
+            <h1>☁️ Infrastructure & Deployment</h1>
+            <p>Technical Documentation for Terraform-Managed AWS Infrastructure and the GitHub Actions Deploy Pipeline</p>
+        </header>
+
+        <nav>
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#terraform">Terraform Modules</a>
+            <a href="#workflow">GitHub Actions Workflow</a>
+            <a href="#migrations">Migration Step</a>
+            <a href="#secrets">Secrets & Variables</a>
+            <a href="#dataflow">Data Flow</a>
+            <a href="#testing">Testing & Validation</a>
+            <a href="#deployment">Deployment Considerations</a>
+            <a href="#troubleshooting">Troubleshooting</a>
+            <a href="#references">References</a>
+        </nav>
+
+        <div class="content">
+            <!-- Overview -->
+            <h2 id="overview">Overview</h2>
+            <p>MyGym's production infrastructure on AWS is defined as code with Terraform and deployed automatically by a GitHub Actions workflow on every push to <code>main</code>. The backend runs on ECS Fargate behind an Application Load Balancer, PostgreSQL runs on RDS, and the frontend is a static build served from S3 through CloudFront. Authentication between GitHub Actions and AWS uses OIDC federation — there are no long-lived AWS access keys stored in GitHub.</p>
+
+            <h3>Key Components:</h3>
+            <ul>
+                <li>Terraform-managed ECS Fargate service, ALB, and RDS PostgreSQL instance</li>
+                <li>Terraform-managed IAM roles, including a GitHub OIDC trust relationship</li>
+                <li>Separate <code>bootstrap/</code> Terraform config for account-level resources (ECR repos, OIDC provider, CI/CD role) that must exist before the application stack can deploy</li>
+                <li>GitHub Actions workflow (<code>.github/workflows/deploy.yml</code>) with independent <code>backend</code> and <code>frontend</code> jobs</li>
+                <li>One-off ECS task for running Alembic migrations before rolling the service</li>
+                <li>Remote Terraform state in S3 with DynamoDB locking</li>
+            </ul>
+
+            <div class="note"><strong>Note:</strong> Terraform <code>apply</code> is intentionally <strong>not</strong> run by CI. Infrastructure changes are applied manually and reviewed via <code>terraform plan</code> — see <a href="#deployment">Deployment Considerations</a>.</div>
+
+            <!-- Architecture -->
+            <h2 id="architecture">Architecture</h2>
+
+            <h3>Runtime Architecture</h3>
+            <div class="diagram">                          Route53 (costabirra.com)
+                                    |
+                +-------------------+-------------------+
+                |                                       |
+        app.costabirra.com                     api.costabirra.com
+                |                                       |
+          CloudFront (CDN)                      ALB (HTTPS, TLS 1.3)
+                |                                       |
+          S3 (static build)                    ECS Fargate Service
+                                                (backend containers)
+                                                         |
+                                                RDS PostgreSQL
+                                                (private subnet, SG-restricted)</div>
+
+            <h3>Deployment Architecture</h3>
+            <div class="diagram">GitHub push to main
+        |
+        v
+GitHub Actions (OIDC — no stored AWS keys)
+        |
+        +-- assume role: github-actions-deploy (sts:AssumeRoleWithWebIdentity)
+        |
+        +---------------------------+----------------------------+
+        |                           |                            |
+   backend job                 frontend job                (manual only)
+        |                           |                            |
+  build+push image             npm run build              terraform apply
+  to ECR                       sync dist/ -> S3            (local, reviewed)
+        |                           |
+  run migration task           invalidate CloudFront
+  (ECS RunTask)                     cache
+        |
+  force-new-deployment
+  on ECS service</div>
+
+            <h3>Terraform vs. Reused Resources</h3>
+            <p>Not everything referenced by Terraform is created by it. The application config (<code>terraform/main.tf</code>) intentionally treats some existing infrastructure as read-only <code>data</code> sources rather than managing it, to avoid Terraform taking ownership of resources that were provisioned outside this codebase (e.g. the default VPC, an already-issued ACM certificate, and the existing frontend bucket/CloudFront distribution).</p>
+            <table>
+                <tr>
+                    <th>Resource</th>
+                    <th>Managed by Terraform?</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>Default VPC & public subnets</td>
+                    <td>❌ Reused (<code>data</code>)</td>
+                    <td><code>data.aws_vpc.main</code>, <code>data.aws_subnets.public</code></td>
+                </tr>
+                <tr>
+                    <td>ECR repository</td>
+                    <td>✅ Created in <code>bootstrap/</code></td>
+                    <td>Referenced as <code>data.aws_ecr_repository.backend</code> from the application stack</td>
+                </tr>
+                <tr>
+                    <td>Frontend S3 bucket & CloudFront distribution</td>
+                    <td>❌ Reused (<code>data</code>)</td>
+                    <td><code>app.costabirra.com</code>, distribution <code>E15DPRRJ6MVP5X</code></td>
+                </tr>
+                <tr>
+                    <td>Route53 <code>api.costabirra.com</code> record</td>
+                    <td>✅ Created</td>
+                    <td>Alias to the backend ALB</td>
+                </tr>
+                <tr>
+                    <td>IAM roles (ECS execution/task, GitHub Actions deploy)</td>
+                    <td>✅ Created</td>
+                    <td><code>modules/iam</code> and <code>bootstrap/modules/iam</code></td>
+                </tr>
+                <tr>
+                    <td>ECS cluster, service, task definition, ALB, autoscaling</td>
+                    <td>✅ Created</td>
+                    <td><code>modules/backend_ecs</code></td>
+                </tr>
+                <tr>
+                    <td>RDS PostgreSQL instance</td>
+                    <td>✅ Created</td>
+                    <td><code>modules/rds</code></td>
+                </tr>
+            </table>
+
+            <!-- Terraform Modules -->
+            <h2 id="terraform">Terraform Modules</h2>
+
+            <p>Terraform is split into two independent state files/configs:</p>
+            <ul>
+                <li><strong><code>terraform/bootstrap/</code></strong> — account-level resources that must exist before the application stack can be applied (ECR repos, GitHub OIDC provider, CI/CD IAM role). State key: <code>gym-app/bootstrap/terraform.tfstate</code>.</li>
+                <li><strong><code>terraform/</code></strong> (application) — the ECS/RDS/IAM/networking stack for the running app. State key: <code>gym-app/application/terraform.tfstate</code>.</li>
+            </ul>
+            <p>Both back onto the same S3 bucket (<code>691650344087-terraform-state</code>) and DynamoDB lock table (<code>691650344087-terraform-locks</code>), but as separate state files so bootstrap and application changes can't collide or be applied together by accident.</p>
+
+            <h3>bootstrap/modules/ecr</h3>
+            <p><strong>Path:</strong> <code>terraform/bootstrap/modules/ecr/</code></p>
+            <p>Creates one ECR repository per entry in <code>var.ecr_repositories</code> (named <code>{project_name}-{repository}</code>), with:</p>
+            <ul>
+                <li>Vulnerability scan on push (<code>image_scanning_configuration.scan_on_push = true</code>)</li>
+                <li>AES256 encryption at rest</li>
+                <li>A lifecycle policy that expires images beyond the most recent 10, keeping registry storage bounded</li>
+            </ul>
+
+            <h3>bootstrap/modules/iam</h3>
+            <p><strong>Path:</strong> <code>terraform/bootstrap/modules/iam/</code></p>
+            <p>Creates the trust relationship that lets GitHub Actions authenticate to AWS without static credentials:</p>
+            <ul>
+                <li><strong>OIDC provider</strong> (<code>aws_iam_openid_connect_provider.github</code>) trusting <code>token.actions.githubusercontent.com</code></li>
+                <li><strong>IAM role</strong> <code>github-actions-deploy</code>, assumable only via <code>sts:AssumeRoleWithWebIdentity</code> where the OIDC subject claim matches <code>repo:jcascante/my-gym:ref:refs/heads/main</code> — i.e. only workflow runs on <code>main</code> in this exact repo can assume it</li>
+                <li>Three scoped inline policies attached to that role: <code>github-actions-ecr</code> (push images), <code>github-actions-ecs</code> (update the service, run the migration task, and <code>iam:PassRole</code> for the two ECS runtime roles), and <code>github-actions-frontend</code> (S3 sync + CloudFront invalidation)</li>
+            </ul>
+            <div class="note"><strong>Note:</strong> <code>aws_iam_openid_connect_provider</code> hard-errors the entire plan on a 404 if a provider already exists for that URL — a <code>data</code> lookup can't conditionally skip creation, since AWS returns <code>NoSuchEntity</code> rather than an empty result. If an OIDC provider already exists in the account, use <code>terraform import</code> instead of re-running detection logic. See the comment in <code>bootstrap/modules/iam/main.tf</code>.</div>
+
+            <h3>modules/iam</h3>
+            <p><strong>Path:</strong> <code>terraform/modules/iam/</code></p>
+            <p>Creates the two runtime roles ECS Fargate tasks assume — kept separate from the bootstrap CI/CD role above:</p>
+            <ul>
+                <li><strong><code>ecs_execution</code></strong> — used by the ECS agent itself to pull the container image and ship logs; attaches AWS-managed <code>AmazonECSTaskExecutionRolePolicy</code></li>
+                <li><strong><code>ecs_task</code></strong> — the application's own runtime identity; currently grants <code>CloudWatchLogsFullAccess</code> only</li>
+            </ul>
+
+            <h3>modules/backend_ecs</h3>
+            <p><strong>Path:</strong> <code>terraform/modules/backend_ecs/</code></p>
+            <p>The core compute module — provisions everything needed to run the FastAPI backend as a load-balanced, auto-scaling Fargate service:</p>
+            <ul>
+                <li><strong>Security groups:</strong> ALB accepts 80/443 from the internet; ECS tasks only accept traffic from the ALB's security group on <code>container_port</code></li>
+                <li><strong>ALB:</strong> HTTP listener 301-redirects to HTTPS when an ACM cert is configured; HTTPS listener uses <code>ELBSecurityPolicy-TLS13-1-2-2021-06</code>; supports additional SAN certificates via <code>aws_lb_listener_certificate</code></li>
+                <li><strong>ECS cluster</strong> with Container Insights enabled, plus a CloudWatch log group (<code>/ecs/{project}-{env}</code>, 30-day retention)</li>
+                <li><strong>Task definition:</strong> Fargate, <code>awsvpc</code> networking, container health check via <code>curl localhost:{port}/health</code>, environment variables injected from a map (see <a href="#secrets">Secrets & Variables</a>)</li>
+                <li><strong>ECS service:</strong> deployment circuit breaker with automatic rollback on failed deployments; <code>lifecycle { ignore_changes = [desired_count] }</code> so Terraform doesn't fight the autoscaler's decisions</li>
+                <li><strong>Autoscaling:</strong> target-tracking policy on <code>ECSServiceAverageCPUUtilization</code> at 70%, between <code>min_tasks</code> and <code>max_tasks</code>, 300s scale-in / 60s scale-out cooldowns</li>
+            </ul>
+
+            <h3>modules/rds</h3>
+            <p><strong>Path:</strong> <code>terraform/modules/rds/</code></p>
+            <p>Provisions the production PostgreSQL database:</p>
+            <ul>
+                <li>PostgreSQL 17.10 on <code>db.t4g.micro</code></li>
+                <li>Security group only allows inbound 5432 from the ECS tasks' security group (<code>var.ecs_security_group_id</code>) — the database is not reachable from outside the app's own network path</li>
+                <li><code>publicly_accessible = false</code>, storage encrypted, automated backups (configurable retention), a defined backup/maintenance window</li>
+                <li><code>skip_final_snapshot = false</code> — a final snapshot is always taken if the instance is ever destroyed</li>
+            </ul>
+            <div class="warning"><strong>Note:</strong> Because RDS isn't publicly accessible, nothing outside the ECS tasks' security group — including CI runners — can reach it directly. This is why the database migration step (below) runs <em>as an ECS task</em> rather than as a direct <code>alembic</code> invocation from the GitHub Actions runner.</div>
+
+            <!-- GitHub Actions Workflow -->
+            <h2 id="workflow">GitHub Actions Workflow</h2>
+            <p><strong>File:</strong> <code>.github/workflows/deploy.yml</code></p>
+            <p>Triggers on every push to <code>main</code>, or manually via <code>workflow_dispatch</code>. Two jobs run in parallel — <code>backend</code> and <code>frontend</code> — since they deploy to unrelated resources (ECS vs. S3/CloudFront) and don't need to be sequenced.</p>
+
+            <div class="code-block">permissions:
+  id-token: <span class="string">write</span>   <span class="comment"># required for OIDC — no AWS_ACCESS_KEY_ID/SECRET stored in GitHub</span>
+  contents: <span class="string">read</span></div>
+
+            <h3>backend job</h3>
+            <div class="endpoint">
+                <ol>
+                    <li>Checkout code</li>
+                    <li><code>aws-actions/configure-aws-credentials@v4</code> assumes <code>secrets.AWS_DEPLOY_ROLE_ARN</code> via OIDC — no static keys</li>
+                    <li><code>aws-actions/amazon-ecr-login@v2</code> logs Docker in to ECR</li>
+                    <li>Build the backend image, tag it both <code>{git-sha}</code> and <code>latest</code>, push both tags</li>
+                    <li>Run the one-off migration task — see <a href="#migrations">Migration Step</a> below</li>
+                    <li><code>aws ecs update-service --force-new-deployment</code> — rolls the service onto the new image</li>
+                </ol>
+            </div>
+
+            <h3>frontend job</h3>
+            <div class="endpoint">
+                <ol>
+                    <li>Checkout code</li>
+                    <li>Setup Node.js 22, <code>npm ci</code> in <code>frontend/</code></li>
+                    <li><code>npm run build</code> with <code>VITE_API_URL=https://api.costabirra.com</code> baked into the static build at build time</li>
+                    <li>Assume the same OIDC deploy role</li>
+                    <li><code>aws s3 sync dist/ s3://{FRONTEND_BUCKET} --delete</code> — mirrors the build output, removing stale files</li>
+                    <li><code>aws cloudfront create-invalidation --paths '/*'</code> — forces CloudFront to serve the new build immediately instead of stale cached assets</li>
+                </ol>
+            </div>
+
+            <div class="note"><strong>Note:</strong> Because <code>VITE_API_URL</code> is a Vite build-time env var, it's compiled into the static JS bundle — changing it requires a new frontend build and deploy, not just an environment variable change.</div>
+
+            <!-- Migration Step -->
+            <h2 id="migrations">Database Migration Step</h2>
+            <p>Since RDS only accepts connections from the ECS tasks' security group, migrations can't run directly from the GitHub Actions runner. Instead, the backend job launches a short-lived ECS task that reuses the running service's own network configuration and task definition, overriding only the container's command:</p>
+            <div class="code-block">aws ecs run-task \
+  --cluster $ECS_CLUSTER_NAME \
+  --task-definition <span class="string">"$TASK_DEF"</span> \
+  --launch-type FARGATE \
+  --network-configuration <span class="string">"{...same SG/subnets as the live service...}"</span> \
+  --overrides <span class="string">'{"containerOverrides":[{"name":"backend","command":["uv","run","alembic","upgrade","head"]}]}'</span></div>
+            <p>The workflow then polls with <code>aws ecs wait tasks-stopped</code>, reads the container's exit code, and fails the job (<code>exit 1</code>) if the migration didn't exit <code>0</code> — a failed migration blocks <code>update-service</code>, so the service is never rolled onto a schema the running migration didn't produce.</p>
+            <div class="note"><strong>Why this design:</strong> reusing the live service's <code>networkConfiguration</code> and task definition means the migration task automatically inherits the same security group RDS whitelists, without needing a separate bastion host or VPN just to run <code>alembic upgrade head</code> from CI.</div>
+
+            <!-- Secrets & Variables -->
+            <h2 id="secrets">Secrets & Variables</h2>
+            <p>The workflow expects the following configured in the GitHub repository settings:</p>
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Kind</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td><code>AWS_DEPLOY_ROLE_ARN</code></td>
+                    <td>Secret</td>
+                    <td>ARN of the <code>github-actions-deploy</code> IAM role created by <code>bootstrap/modules/iam</code></td>
+                </tr>
+                <tr>
+                    <td><code>ECS_CLUSTER_NAME</code></td>
+                    <td>Variable</td>
+                    <td>Terraform output <code>backend_ecs_cluster</code></td>
+                </tr>
+                <tr>
+                    <td><code>ECS_SERVICE_NAME</code></td>
+                    <td>Variable</td>
+                    <td>Terraform output <code>backend_ecs_service</code></td>
+                </tr>
+                <tr>
+                    <td><code>FRONTEND_BUCKET</code></td>
+                    <td>Variable</td>
+                    <td>Terraform output <code>frontend_bucket</code></td>
+                </tr>
+                <tr>
+                    <td><code>CLOUDFRONT_DISTRIBUTION_ID</code></td>
+                    <td>Variable</td>
+                    <td>Terraform output <code>frontend_cloudfront_id</code></td>
+                </tr>
+            </table>
+            <p>All five map directly to Terraform outputs in <code>terraform/outputs.tf</code>, so after any infrastructure change that affects these resources, re-check the outputs and update the corresponding GitHub repo variables/secrets if they changed.</p>
+
+            <!-- Data Flow -->
+            <h2 id="dataflow">Data Flow: Push to Live</h2>
+            <ol>
+                <li><strong>Developer action:</strong> Push (or merge) to <code>main</code></li>
+                <li><strong>GitHub Actions trigger:</strong> Both <code>backend</code> and <code>frontend</code> jobs start in parallel</li>
+                <li><strong>OIDC handshake:</strong> Each job's runner requests a short-lived token from GitHub's OIDC provider and exchanges it for temporary AWS credentials by assuming <code>github-actions-deploy</code></li>
+                <li><strong>Backend path:</strong> image built → pushed to ECR → migration task run and verified → ECS service force-deployed with circuit-breaker rollback protection</li>
+                <li><strong>Frontend path:</strong> static assets built with the production API URL → synced to S3 → CloudFront cache invalidated</li>
+                <li><strong>Result:</strong> new backend containers and new frontend assets are live, independently of each other</li>
+            </ol>
+
+            <!-- Testing & Validation -->
+            <h2 id="testing">Testing & Validation</h2>
+            <h3>Terraform</h3>
+            <div class="code-block">cd terraform
+terraform init
+terraform validate
+terraform plan          <span class="comment"># review before ever applying</span>
+terraform apply         <span class="comment"># manual, after review — see note below</span></div>
+            <p>Run the same for <code>terraform/bootstrap/</code> when changing ECR repos or the CI/CD IAM role.</p>
+
+            <h3>Workflow</h3>
+            <p>Use <code>workflow_dispatch</code> to manually re-trigger a deploy from the GitHub Actions UI without needing a new commit — useful for retrying a failed frontend sync without rebuilding the backend, for example.</p>
+
+            <!-- Deployment Considerations -->
+            <h2 id="deployment">Deployment Considerations</h2>
+
+            <h3>Why Terraform apply isn't automated</h3>
+            <p>Per the comment at the bottom of <code>deploy.yml</code>, infrastructure changes are deliberately kept out of the automated pipeline:</p>
+            <div class="code-block"><span class="comment"># Terraform deployments are managed locally via `terraform apply`
+# Infrastructure changes are infrequent and require manual review for safety.
+# To deploy infrastructure changes:
+#   1. Update Terraform files in terraform/ or terraform/bootstrap/
+#   2. Run `terraform plan` locally to review changes
+#   3. Run `terraform apply` manually after approval</span></div>
+            <p>Application deploys (image pushes, service updates, static asset syncs) happen many times a day and are low-risk/reversible; infrastructure changes (networking, IAM trust, database instance class) are rare and higher-blast-radius, so they get a human review gate instead of a merge-triggered <code>apply</code>.</p>
+
+            <h3>Rolling Deploys & Rollback</h3>
+            <ul>
+                <li>ECS <code>deployment_circuit_breaker</code> automatically rolls back a deployment that fails to stabilize (e.g. new tasks failing health checks)</li>
+                <li><code>lifecycle { ignore_changes = [desired_count] }</code> on the ECS service prevents Terraform from undoing autoscaler-driven scale-out/in on the next <code>apply</code></li>
+                <li>Frontend deploys are effectively instant rollback-capable: re-run the workflow against a previous commit to re-sync the old build and re-invalidate CloudFront</li>
+            </ul>
+
+            <h3>Secrets in Terraform Variables</h3>
+            <p><code>db_password</code>, <code>secret_key</code>, and <code>db_username</code> are marked <code>sensitive = true</code> in <code>variables.tf</code> and must be supplied via a local <code>.tfvars</code> file (gitignored) or environment variables — never committed to the repo.</p>
+
+            <!-- Troubleshooting -->
+            <h2 id="troubleshooting">Troubleshooting</h2>
+
+            <div class="troubleshooting-item">
+                <strong>❌ Deploy job fails at "Configure AWS credentials" with an OIDC trust error</strong>
+                <p><strong>Cause:</strong> The workflow is running on a branch/repo that doesn't match the trust policy's <code>StringLike</code> condition (<code>repo:jcascante/my-gym:ref:refs/heads/main</code>).</p>
+                <p><strong>Fix:</strong> Confirm the push is to <code>main</code> in this exact repository. A fork or a different branch will be rejected by design.</p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ Migration task fails or times out</strong>
+                <p><strong>Cause:</strong> Bad migration SQL, or the task can't reach RDS.</p>
+                <p><strong>Fix:</strong> Check the CloudWatch log group <code>/ecs/{project}-{env}</code> for the migration task's output. If it's a connectivity issue, confirm the task used the service's current <code>networkConfiguration</code> (the workflow re-fetches this each run) and that the RDS security group still allows the ECS tasks' security group.</p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ "AccessDenied" on <code>ecs:RunTask</code> or <code>ecs:UpdateService</code></strong>
+                <p><strong>Cause:</strong> The <code>github-actions-ecs</code> inline policy scopes actions to specific ARNs (<code>gym-app-production-cluster</code>, <code>gym-app-production-backend</code>). A renamed cluster/service or new environment name won't match.</p>
+                <p><strong>Fix:</strong> Update the ARNs in <code>bootstrap/modules/iam/main.tf</code> to match, then re-apply the bootstrap stack.</p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ Frontend changes not visible after deploy</strong>
+                <p><strong>Cause:</strong> CloudFront cache invalidation is asynchronous — it can take a few minutes to propagate to all edge locations.</p>
+                <p><strong>Fix:</strong> Wait a few minutes, or check invalidation status with <code>aws cloudfront get-invalidation</code>. Confirm the S3 sync step actually ran (check the job logs) before assuming it's a caching delay.</p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ <code>terraform apply</code> wants to destroy/recreate the OIDC provider or an existing resource</strong>
+                <p><strong>Cause:</strong> A resource referenced with <code>data</code> was accidentally converted to a managed resource, or vice versa, or the resource was created manually outside Terraform.</p>
+                <p><strong>Fix:</strong> Never accept a plan that destroys shared production infrastructure without understanding why. Use <code>terraform import</code> to bring an out-of-band resource under management instead of letting Terraform recreate it.</p>
+            </div>
+
+            <!-- References -->
+            <h2 id="references">References</h2>
+
+            <h3>Standards & Specifications</h3>
+            <ul>
+                <li><a href="https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect" target="_blank">GitHub Actions OIDC</a> — federated auth to AWS without stored credentials</li>
+                <li><a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc.html" target="_blank">AWS IAM OIDC Identity Providers</a></li>
+            </ul>
+
+            <h3>Framework & Tool Documentation</h3>
+            <ul>
+                <li><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs" target="_blank">Terraform AWS Provider</a></li>
+                <li><a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html" target="_blank">Amazon ECS Developer Guide</a></li>
+                <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Welcome.html" target="_blank">Amazon RDS User Guide</a></li>
+            </ul>
+
+            <h3>Related Documentation</h3>
+            <ul>
+                <li><a href="LOGIN_SIGNUP_TECHNICAL.html">Authentication Technical Reference</a> — <code>SECRET_KEY</code>, CORS origins, and cookie flags set via <code>backend_ecs</code> environment variables</li>
+                <li><a href="../DATABASE_MIGRATIONS.md">Database Migrations Guide</a> — writing and testing Alembic migrations locally before they run in the ECS migration task</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>MyGym Documentation — Technical Reference</p>
+            <p><a href="index.html">← Back to Technical Docs Index</a></p>
+        </footer>
+    </div>
+</body>
+</html>

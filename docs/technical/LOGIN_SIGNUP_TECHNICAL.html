@@ -354,6 +354,8 @@
             <h3>Key Features:</h3>
             <ul>
                 <li>User registration with email validation</li>
+                <li>Client-side password confirmation on sign-up</li>
+                <li>Password visibility toggle on all password fields</li>
                 <li>Secure password hashing (SHA-256 + bcrypt)</li>
                 <li>JWT access and refresh tokens</li>
                 <li>HTTP-only cookie storage</li>
@@ -463,6 +465,8 @@ Redirect to Onboarding       Redirect to Dashboard</div>
                     <li><code>422 Unprocessable Entity</code>: Missing required fields</li>
                     <li><code>500 Internal Server Error</code>: Database error</li>
                 </ul>
+
+                <div class="note"><strong>Note:</strong> The sign-up form collects a <code>confirm_password</code> field, but it is validated entirely client-side and never sent to this endpoint — <code>SignupPage.tsx</code> builds the request body from only <code>email</code>, <code>password</code>, <code>first_name</code>, and <code>last_name</code>. The API contract is unchanged.</div>
             </div>
 
             <h3>Login</h3>
@@ -548,6 +552,33 @@ Redirect to Onboarding       Redirect to Dashboard</div>
                 <li>Backward compatible with systems enforcing 72-byte limit</li>
             </ul>
 
+            <h3>Frontend: Password Confirmation</h3>
+            <p><strong>Location:</strong> <code>frontend/src/pages/SignupPage.tsx</code></p>
+            <p>The sign-up form keeps a <code>confirm_password</code> field alongside <code>password</code> in local form state. Submission is short-circuited with a form error before any API call if the two don't match:</p>
+            <div class="code-block"><span class="keyword">if</span> (formData.password !== formData.confirm_password) {
+  setError(<span class="string">'Passwords do not match'</span>);
+  <span class="keyword">return</span>;
+}</div>
+            <p>Because this check runs before <code>signup()</code> is called, a mismatch never reaches the backend — it's a pure UX guard, not a security boundary. Backend validation (min length, required fields) is unchanged.</p>
+
+            <h3>Frontend: Password Visibility Toggle</h3>
+            <p><strong>Location:</strong> <code>frontend/src/components/FormField.tsx</code></p>
+            <p>Any <code>FormField</code> rendered with <code>type="password"</code> automatically gets a show/hide toggle — this is opt-out by prop type, not something callers wire up individually, so it applies uniformly to Login, Sign-Up, and Confirm Password. The component tracks a local <code>revealPassword</code> boolean and swaps the underlying input's <code>type</code>:</p>
+            <div class="code-block"><span class="keyword">const</span> [revealPassword, setRevealPassword] = useState(<span class="keyword">false</span>);
+<span class="keyword">const</span> isPassword = type === <span class="string">'password'</span>;
+
+<span class="comment">// ...</span>
+&lt;input type={isPassword &amp;&amp; revealPassword ? <span class="string">'text'</span> : type} ... /&gt;
+&lt;button
+  type=<span class="string">"button"</span>
+  onClick={() =&gt; setRevealPassword((prev) =&gt; !prev)}
+  aria-label={revealPassword ? <span class="string">'Hide password'</span> : <span class="string">'Show password'</span>}
+  tabIndex={-1}
+&gt;
+  {<span class="comment">/* eye / eye-slash icon */</span>}
+&lt;/button&gt;</div>
+            <div class="note"><strong>Note:</strong> The toggle button uses <code>type="button"</code> (not <code>submit</code>) and <code>tabIndex={-1}</code> so it never intercepts form submission or disrupts keyboard tab order through the form fields.</div>
+
             <h3>Protected Routes</h3>
             <p><strong>Location:</strong> <code>backend/app/core/dependencies.py</code></p>
             <div class="code-block"><span class="keyword">async def</span> <span class="number">get_current_user</span>(
@@ -622,8 +653,12 @@ Redirect to Onboarding       Redirect to Dashboard</div>
             <div class="note"><strong>Target Coverage:</strong> > 80%</div>
 
             <h3>Frontend Tests</h3>
-            <p><strong>Location:</strong> <code>frontend/src/tests/</code></p>
+            <p><strong>Location:</strong> <code>frontend/src/tests/pages/SignupPage.test.tsx</code>, <code>frontend/src/tests/pages/LoginPage.test.tsx</code></p>
             <div class="code-block">docker-compose exec frontend npm run test:watch</div>
+            <ul>
+                <li>✅ Password/Confirm Password mismatch blocks submission and shows an error</li>
+                <li>✅ Eye-icon toggle switches the password input between <code>type="password"</code> and <code>type="text"</code></li>
+            </ul>
 
             <!-- Deployment -->
             <h2 id="deployment">Deployment Considerations</h2>

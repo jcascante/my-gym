@@ -255,10 +255,29 @@
 
         <div class="content">
             <h2>What Happens When You First Join</h2>
-            <p>MyGym is personalized to your fitness goals. When you sign up and log in for the first time, we'll ask you a few quick questions about your fitness experience and availability. This helps us create the perfect workout program just for you.</p>
+            <p>MyGym is personalized to your fitness goals. When you sign up and log in for the first time, we'll walk you through a short step-by-step wizard about your body, experience, and schedule. This helps us create the perfect workout program just for you.</p>
 
             <div class="success">
-                <strong>✓ First-Time Experience</strong> Your profile setup takes just 2-3 minutes. Answer a few questions about your goals and experience, and we'll build your personalized workout program.
+                <strong>✓ First-Time Experience</strong> Your profile setup takes just 2-3 minutes across 5 short steps. Answer a few questions about your body, experience, and goals, and we'll build your personalized workout program.
+            </div>
+
+            <h2>The Onboarding Wizard</h2>
+            <p>Instead of one long scrolling form, your profile is broken into 5 bite-sized steps. A progress bar at the top always shows exactly where you are:</p>
+
+            <div class="step">
+                <ol>
+                    <li><strong>Personal Information</strong> — Age, gender, weight, and height</li>
+                    <li><strong>Fitness Level</strong> — Your experience level and how active you currently are</li>
+                    <li><strong>Workout Preferences</strong> — Your training focus, days per week, session length, and available equipment</li>
+                    <li><strong>Your Goals</strong> — Optional short-term and medium-term goals in your own words</li>
+                    <li><strong>Additional Information</strong> — Optional notes on injuries or physical limitations</li>
+                </ol>
+            </div>
+
+            <p>On each step, click <strong>Next</strong> to continue. If a required field on that step is empty, you'll see a reminder message and stay on the same step until it's filled in — so you always know exactly what's missing. Changed your mind about something on an earlier step? Click <strong>Back</strong> to revisit it; your answers stay filled in. On the last step, the <strong>Next</strong> button becomes <strong>Complete Onboarding</strong>.</p>
+
+            <div class="tip">
+                💡 <strong>Tip:</strong> The Goals and Additional Information steps are optional — feel free to click Next through them if you'd rather fill them in later from Settings.
             </div>
 
             <h2>Your First Login: Step-by-Step</h2>
@@ -266,14 +285,8 @@
             <div class="step">
                 <ol>
                     <li><strong>Sign Up or Log In</strong> — Enter your email and password. If you're returning, you'll go straight to your dashboard.</li>
-                    <li><strong>Complete Your Profile</strong> — First-time users see a profile form asking:
-                        <ul style="margin-top: 0.5rem;">
-                            <li><strong>Fitness Goal:</strong> What are you training for? (Build muscle, lose weight, increase endurance, etc.)</li>
-                            <li><strong>Experience Level:</strong> Are you a beginner, intermediate, or advanced athlete?</li>
-                            <li><strong>Time Available:</strong> How many hours per week can you train?</li>
-                        </ul>
-                    </li>
-                    <li><strong>Click "Create Profile"</strong> — Your profile is saved to our servers</li>
+                    <li><strong>Complete Your Profile</strong> — First-time users see the 5-step onboarding wizard described above, one short screen at a time</li>
+                    <li><strong>Click "Complete Onboarding"</strong> — Shown on the final step; your profile is saved to our servers</li>
                     <li><strong>Welcome to MyGym!</strong> — You're taken to your personalized dashboard</li>
                 </ol>
             </div>
@@ -302,8 +315,8 @@
                     <p>Enter your credentials and you're authenticated</p>
                 </div>
                 <div class="timeline-item">
-                    <h4>Complete Profile (2-3 min)</h4>
-                    <p>Answer questions about your fitness goals and experience</p>
+                    <h4>Complete Profile Wizard (2-3 min)</h4>
+                    <p>Step through 5 short screens covering your body stats, experience, workout preferences, and goals</p>
                 </div>
                 <div class="timeline-item">
                     <h4>Program Generated (instant)</h4>
@@ -315,35 +328,37 @@
                 </div>
             </div>
 
-            <h2>Profile Questions Explained</h2>
+            <h2>Wizard Steps Explained</h2>
 
-            <h3>🎯 Fitness Goal</h3>
-            <p>What's your primary reason for training? Examples:</p>
+            <h3>1️⃣ Personal Information</h3>
+            <p>Your basic body stats, used to size your program correctly:</p>
             <ul>
-                <li><strong>Build Muscle</strong> — Increase strength and size</li>
-                <li><strong>Lose Weight</strong> — Reduce body fat and lean down</li>
-                <li><strong>Increase Endurance</strong> — Build cardiovascular fitness</li>
-                <li><strong>General Fitness</strong> — Balanced health and wellness</li>
-                <li><strong>Athletic Performance</strong> — Train for a sport or event</li>
+                <li><strong>Age</strong>, <strong>Gender</strong>, <strong>Weight (kg)</strong>, and <strong>Height (cm)</strong> — all required</li>
             </ul>
 
-            <h3>📊 Experience Level</h3>
-            <p>How long have you been training regularly?</p>
+            <h3>2️⃣ Fitness Level</h3>
+            <p>How trained and how active you currently are:</p>
             <ul>
-                <li><strong>Beginner</strong> — Less than 1 year of regular training</li>
-                <li><strong>Intermediate</strong> — 1-3 years of consistent training</li>
-                <li><strong>Advanced</strong> — 3+ years, comfortable with complex programs</li>
+                <li><strong>Experience Level</strong> — Beginner (less than 1 year training), Intermediate (1-3 years), or Advanced (3+ years)</li>
+                <li><strong>Activity Level</strong> — Sedentary, Lightly Active, Moderately Active, or Very Active, describing your day-to-day movement outside the gym</li>
             </ul>
 
-            <h3>⏰ Hours Per Week</h3>
-            <p>How many hours can you realistically dedicate to training each week?</p>
+            <h3>3️⃣ Workout Preferences</h3>
+            <p>What your training should focus on and how it fits your schedule:</p>
             <ul>
-                <li><strong>3 hours:</strong> 3-4 workouts per week</li>
-                <li><strong>5 hours:</strong> 4-5 workouts per week</li>
-                <li><strong>7+ hours:</strong> 5-6 workouts per week</li>
+                <li><strong>Fitness Focus</strong> — Strength, Endurance, Flexibility, Weight Loss, Muscle Gain, or General Fitness</li>
+                <li><strong>Days per Week</strong> — How many days you can train (1-7)</li>
+                <li><strong>Workout Duration</strong> — How long each session should run, in minutes</li>
+                <li><strong>Equipment Access</strong> — Home, Bodyweight Only, or full Gym access</li>
             </ul>
 
-            <p><strong>Be honest!</strong> It's better to underestimate than overcommit. You can always increase later.</p>
+            <p><strong>Be honest about your availability!</strong> It's better to underestimate days and duration than overcommit. You can always increase later.</p>
+
+            <h3>4️⃣ Your Goals <span style="font-weight:normal;">(optional)</span></h3>
+            <p>Free-text fields to describe, in your own words, what you're working toward — a short-term goal (e.g. "build a consistent habit") and a medium-term goal (e.g. "gain muscle and improve endurance"). Skip these if you're not sure yet.</p>
+
+            <h3>5️⃣ Additional Information <span style="font-weight:normal;">(optional)</span></h3>
+            <p>A free-text box for any injuries or physical limitations we should account for when building your program.</p>
 
             <h2>What Happens After You Create Your Profile</h2>
 
@@ -368,7 +383,7 @@
 
             <div class="faq-item">
                 <strong>❓ Can I skip the profile setup?</strong>
-                <p>No, we need your profile to create a program. But it only takes 2-3 minutes, and you can always change it later from Settings.</p>
+                <p>The required fields on each step (Personal Information, Fitness Level, Workout Preferences) must be filled in before you can click Next — we need those to create a safe program. The Goals and Additional Information steps are optional, so you can click through them. The whole wizard takes 2-3 minutes, and you can always change your answers later from Settings.</p>
             </div>
 
             <div class="faq-item">
@@ -377,8 +392,13 @@
             </div>
 
             <div class="faq-item">
-                <strong>❓ I entered the wrong hours per week. Can I change it?</strong>
-                <p>Yes! Go to <strong>Settings</strong> → <strong>Edit Profile</strong> and update your availability. Your program will adjust automatically.</p>
+                <strong>❓ I clicked Next but nothing happened</strong>
+                <p>A required field on that step is probably still empty — you'll see a message asking you to fill in all required fields before continuing. Scroll up to check for any blank dropdown or number field on the current step.</p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ I entered the wrong days per week or duration. Can I change it?</strong>
+                <p>Yes! While onboarding, click <strong>Back</strong> to return to the Workout Preferences step and edit it — your other answers stay filled in. After onboarding, go to <strong>Settings</strong> → <strong>Edit Profile</strong> and update your availability. Your program will adjust automatically.</p>
             </div>
 
             <div class="faq-item">

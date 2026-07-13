@@ -13,11 +13,17 @@ Welcome to the MyGym documentation hub. Start with [index.html](index.html) for 
 **Format: HTML** — Styled with friendly colors, emoji headers, and interactive elements
 
 - **[Login & Sign-Up Guide](user/LOGIN_SIGNUP.html)** — How to create an account, log in, and manage your account securely
-  - Account creation
+  - Account creation (with password confirmation)
   - Login process
+  - Password visibility toggle
   - Logout functionality
   - Password security
   - Account recovery
+
+- **[Getting Started / Onboarding Guide](user/ONBOARDING.html)** — The 5-step onboarding wizard new users complete on first login
+  - Personal Information, Fitness Level, Workout Preferences, Goals, Additional Information steps
+  - Progress bar and Back/Next navigation
+  - What returning users see instead
 
 ### Technical Documentation
 **For developers and system administrators**
@@ -26,10 +32,22 @@ Welcome to the MyGym documentation hub. Start with [index.html](index.html) for 
 - **[Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.html)** — Deep dive into JWT auth, password hashing, and session management
   - JWT token implementation
   - Password hashing with SHA-256 + bcrypt
+  - Client-side password confirmation and the password visibility toggle
   - API endpoints (sign-up, login, logout, refresh)
   - Frontend/backend architecture
   - Testing strategies
   - Deployment considerations
+
+- **[Onboarding Flow Technical Reference](technical/ONBOARDING_FLOW_TECHNICAL.html)** — Profile-gated routing and the multi-step onboarding wizard
+  - Conditional routing (profile null vs. exists)
+  - Multi-step wizard state management and per-step validation
+  - API endpoints and data models
+
+- **[Infrastructure & Deployment Technical Reference](technical/INFRASTRUCTURE_DEPLOYMENT_TECHNICAL.html)** — Terraform-managed AWS infrastructure and the GitHub Actions deploy pipeline
+  - Terraform modules: ECR, IAM/OIDC, ECS Fargate, RDS
+  - GitHub Actions workflow: backend and frontend deploy jobs
+  - OIDC-based AWS authentication (no stored credentials)
+  - Database migration strategy in CI
 
 ### Shared Reference Documentation
 **For all audiences**
@@ -57,20 +75,22 @@ See the `personal/` directory for development notes, architectural decisions, an
 ## 🚀 Quick Start by Role
 
 ### I'm a new user
-1. Start with [Login & Sign-Up Guide](user/LOGIN_SIGNUP.md)
+1. Start with [Login & Sign-Up Guide](user/LOGIN_SIGNUP.html)
 2. Create your account
-3. Set up your fitness profile
+3. Complete the [onboarding wizard](user/ONBOARDING.html) to set up your fitness profile
 
 ### I'm a developer
-1. Read [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.md) to understand the auth system
-2. Check [Database Migrations Guide](DATABASE_MIGRATIONS.md) for schema management
-3. See [UV Setup Guide](UV_SETUP.md) for dependency management
-4. Review the main [README.md](../README.md) for development commands
+1. Read [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.html) to understand the auth system
+2. Read [Onboarding Flow Technical Reference](technical/ONBOARDING_FLOW_TECHNICAL.html) for the conditional routing and wizard implementation
+3. Check [Database Migrations Guide](DATABASE_MIGRATIONS.md) for schema management
+4. See [UV Setup Guide](UV_SETUP.md) for dependency management
+5. Review the main [README.md](../README.md) for development commands
 
 ### I'm a DevOps/Infrastructure engineer
-1. Check [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.md) for deployment considerations
-2. Review [Database Migrations Guide](DATABASE_MIGRATIONS.md) for production migrations
-3. See the main [README.md](../README.md) for Docker and deployment commands
+1. Start with [Infrastructure & Deployment Technical Reference](technical/INFRASTRUCTURE_DEPLOYMENT_TECHNICAL.html) for Terraform modules and the GitHub Actions pipeline
+2. Check [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.html) for auth-related deployment considerations
+3. Review [Database Migrations Guide](DATABASE_MIGRATIONS.md) for how migrations run in CI
+4. See the main [README.md](../README.md) for Docker and deployment commands
 
 ### I'm reviewing code
 1. [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.md) covers implementation patterns
@@ -84,7 +104,10 @@ See the `personal/` directory for development notes, architectural decisions, an
 | Document | Purpose | Audience |
 |----------|---------|----------|
 | [Login & Sign-Up Guide](user/LOGIN_SIGNUP.html) | User-friendly authentication guide | End users |
+| [Onboarding Guide](user/ONBOARDING.html) | The 5-step onboarding wizard | End users |
 | [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.html) | Implementation details and architecture | Developers |
+| [Onboarding Flow Technical Reference](technical/ONBOARDING_FLOW_TECHNICAL.html) | Conditional routing and wizard implementation | Developers |
+| [Infrastructure & Deployment Technical Reference](technical/INFRASTRUCTURE_DEPLOYMENT_TECHNICAL.html) | Terraform modules and the GitHub Actions deploy pipeline | DevOps, Developers |
 | [Database Migrations Guide](DATABASE_MIGRATIONS.md) | Schema versioning with Alembic | DevOps, Developers |
 | [UV Setup Guide](UV_SETUP.md) | Package manager configuration | Developers |
 | [README.md](../README.md) | Project overview and quick start | Everyone |
@@ -94,8 +117,15 @@ See the `personal/` directory for development notes, architectural decisions, an
 ## 🔍 Finding What You Need
 
 **Login or authentication questions?**
-- User: [Login & Sign-Up Guide](user/LOGIN_SIGNUP.md)
-- Developer: [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.md)
+- User: [Login & Sign-Up Guide](user/LOGIN_SIGNUP.html)
+- Developer: [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.html)
+
+**Onboarding questions?**
+- User: [Onboarding Guide](user/ONBOARDING.html)
+- Developer: [Onboarding Flow Technical Reference](technical/ONBOARDING_FLOW_TECHNICAL.html)
+
+**Infrastructure or deployment questions?**
+- [Infrastructure & Deployment Technical Reference](technical/INFRASTRUCTURE_DEPLOYMENT_TECHNICAL.html)
 
 **Database or schema questions?**
 - [Database Migrations Guide](DATABASE_MIGRATIONS.md)
@@ -146,4 +176,4 @@ When adding new documentation:
 
 ---
 
-Last updated: 2026-07-09
+Last updated: 2026-07-12

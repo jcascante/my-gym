@@ -241,6 +241,8 @@
 
             <p><strong>Key principle:</strong> First login shows onboarding form (profile is null) → Returning login skips to dashboard (profile exists).</p>
 
+            <p>The onboarding form itself (<code>OnboardingPage.tsx</code>) is a client-only, 5-step wizard — one <code>&lt;form&gt;</code> element that reveals a different field group per step via conditional rendering, rather than five separate routes or forms. This is purely a frontend UX change: the underlying <code>POST /api/v1/users/profile</code> contract and payload are unchanged — the wizard still submits one combined <code>profileData</code> object on the final step, same as the old single-scroll form.</p>
+
             <h2 id="architecture">Architecture</h2>
 
             <h3>System Components</h3>
@@ -464,6 +466,31 @@ Database (PostgreSQL)</div>
   <span class="keyword">return</span> &lt;DashboardPage /&gt;
 }</div>
 
+            <h3>Frontend: Multi-Step Wizard</h3>
+            <p><strong>File:</strong> <code>frontend/src/pages/OnboardingPage.tsx</code></p>
+            <p>A <code>STEPS</code> constant defines each step's title and which fields are required before the user can advance:</p>
+            <div class="code-block"><span class="keyword">const</span> STEPS: { title: <span class="keyword">string</span>; requiredFields: (<span class="keyword">keyof</span> OnboardingFormData)[] }[] = [
+  { title: <span class="string">'Personal Information'</span>, requiredFields: [<span class="string">'age'</span>, <span class="string">'gender'</span>, <span class="string">'weight_kg'</span>, <span class="string">'height_cm'</span>] },
+  { title: <span class="string">'Fitness Level'</span>, requiredFields: [<span class="string">'experience_level'</span>, <span class="string">'activity_level'</span>] },
+  { title: <span class="string">'Workout Preferences'</span>, requiredFields: [<span class="string">'fitness_focus'</span>, <span class="string">'days_per_week'</span>, <span class="string">'workout_duration_min'</span>, <span class="string">'equipment'</span>] },
+  { title: <span class="string">'Your Goals'</span>, requiredFields: [] },
+  { title: <span class="string">'Additional Information'</span>, requiredFields: [] },
+];</div>
+            <p>All form fields live in one <code>formData</code> state object for the lifetime of the page — steps only control which subset is <em>rendered</em> (<code>{currentStep === 0 &amp;&amp; (...)}</code>), so navigating Back and Next never loses previously entered values.</p>
+            <p><code>handleNext</code> checks the current step's <code>requiredFields</code> against <code>formData</code> before advancing; if any are empty it sets a form error and stays on the same step instead of calling <code>setCurrentStep</code>:</p>
+            <div class="code-block"><span class="keyword">const</span> handleNext = () =&gt; {
+  <span class="keyword">const</span> missingFields = STEPS[currentStep].requiredFields.filter((field) =&gt; !formData[field]);
+  <span class="keyword">if</span> (missingFields.length &gt; 0) {
+    setError(<span class="string">'Please fill in all required fields before continuing.'</span>);
+    <span class="keyword">return</span>;
+  }
+  setError(<span class="keyword">null</span>);
+  setCurrentStep((step) =&gt; step + 1);
+};</div>
+            <p><code>handleSubmit</code> is unchanged except for a guard that no-ops unless <code>currentStep</code> is the last step — this means the browser's native Enter-to-submit only fires the real API call from the final step, since only that step renders a <code>type="submit"</code> button. A progress bar reflects <code>(currentStep + 1) / STEPS.length</code> as a percentage width.</p>
+
+            <div class="note"><strong>Note:</strong> Field-presence validation (<code>requiredFields</code>) is client-side UX only. The backend's <code>UserProfileRequest</code> schema still defines the authoritative required/optional fields and rejects invalid payloads independently of what the wizard allowed through.</div>
+
             <h2 id="testing">Testing</h2>
 
             <h3>Backend Test Coverage</h3>
@@ -491,7 +518,7 @@ Database (PostgreSQL)</div>
                 <li><code>frontend/src/tests/store/auth.test.ts</code> — Store state management</li>
                 <li><code>frontend/src/tests/pages/LoginPage.test.tsx</code> — Login flow</li>
                 <li><code>frontend/src/tests/pages/SignupPage.test.tsx</code> — Signup flow</li>
-                <li><code>frontend/src/tests/pages/OnboardingPage.test.tsx</code> — Form submission</li>
+                <li><code>frontend/src/tests/pages/OnboardingPage.test.tsx</code> — Wizard step navigation (Next/Back), per-step required-field validation, and final submission</li>
             </ul>
 
             <p><strong>Target:</strong> >80% coverage (achieved with 44+ test cases)</p>
