@@ -241,7 +241,7 @@
 
             <p><strong>Key principle:</strong> First login shows onboarding form (profile is null) → Returning login skips to dashboard (profile exists).</p>
 
-            <p>The onboarding form itself (<code>OnboardingPage.tsx</code>) is a client-only, 5-step wizard — one <code>&lt;form&gt;</code> element that reveals a different field group per step via conditional rendering, rather than five separate routes or forms. This is purely a frontend UX change: the underlying <code>POST /api/v1/users/profile</code> contract and payload are unchanged — the wizard still submits one combined <code>profileData</code> object on the final step, same as the old single-scroll form.</p>
+            <p>The onboarding form itself (<code>OnboardingPage.tsx</code>) is a client-only, 6-step wizard — one <code>&lt;form&gt;</code> element that reveals a different field group per step via conditional rendering, rather than six separate routes or forms. The core profile submission is unchanged: the underlying <code>POST /api/v1/users/profile</code> contract and payload still submit one combined <code>profileData</code> object on the final step. The one exception is the "Training Environments" step (see <a href="TRAINING_ENVIRONMENTS_TECHNICAL.html">Training Environments Technical Reference</a>), which persists each environment immediately via its own <code>POST /api/v1/training-environments</code> call as it's added, rather than batching it into the final profile submission — environments are an independent resource, not part of <code>UserProfile</code>.</p>
 
             <h2 id="architecture">Architecture</h2>
 
@@ -472,11 +472,35 @@ Database (PostgreSQL)</div>
             <div class="code-block"><span class="keyword">const</span> STEPS: { title: <span class="keyword">string</span>; requiredFields: (<span class="keyword">keyof</span> OnboardingFormData)[] }[] = [
   { title: <span class="string">'Personal Information'</span>, requiredFields: [<span class="string">'age'</span>, <span class="string">'gender'</span>, <span class="string">'weight_kg'</span>, <span class="string">'height_cm'</span>] },
   { title: <span class="string">'Fitness Level'</span>, requiredFields: [<span class="string">'experience_level'</span>, <span class="string">'activity_level'</span>] },
-  { title: <span class="string">'Workout Preferences'</span>, requiredFields: [<span class="string">'fitness_focus'</span>, <span class="string">'days_per_week'</span>, <span class="string">'workout_duration_min'</span>, <span class="string">'equipment'</span>] },
+  { title: <span class="string">'Workout Preferences'</span>, requiredFields: [<span class="string">'fitness_focus'</span>, <span class="string">'days_per_week'</span>, <span class="string">'workout_duration_min'</span>] },
+  { title: <span class="string">'Training Environments'</span>, requiredFields: [] }, <span class="comment">// optional — see below</span>
   { title: <span class="string">'Your Goals'</span>, requiredFields: [] },
   { title: <span class="string">'Additional Information'</span>, requiredFields: [] },
 ];</div>
-            <p>All form fields live in one <code>formData</code> state object for the lifetime of the page — steps only control which subset is <em>rendered</em> (<code>{currentStep === 0 &amp;&amp; (...)}</code>), so navigating Back and Next never loses previously entered values.</p>
+            <p>All form fields live in one <code>formData</code> state object for the lifetime of the page — steps only control which subset is <em>rendered</em> (<code>{currentStep === 0 &amp;&amp; (...)}</code>), so navigating Back and Next never loses previously entered values. <code>equipment</code> was removed from <code>OnboardingFormData</code> and the Workout Preferences step entirely — it moved to the per-environment <code>equipment_tags</code> field described below.</p>
+
+            <h3>The Optional Training Environments Step</h3>
+            <p>Step index 3 renders zero or more read-only <code>TrainingEnvironmentCard</code>s for environments already added this session, plus either an "Add Environment" button or an inline <code>TrainingEnvironmentForm</code>. Unlike the rest of the wizard, this step's data isn't held in <code>formData</code> — each environment is persisted immediately on save via <code>createTrainingEnvironment()</code> (<code>POST /api/v1/training-environments</code>), and the returned record is appended to local <code>environments</code> state purely for that step's display. <code>STEPS[3].requiredFields</code> is <code>[]</code>, so <code>handleNext</code> never blocks on it — zero environments is a valid, supported state.</p>
+            <div class="code-block"><span class="keyword">const</span> handleAddEnvironment = <span class="keyword">async</span> (payload: TrainingEnvironmentPayload) =&gt; {
+  setEnvironmentError(<span class="keyword">null</span>);
+  <span class="keyword">try</span> {
+    <span class="keyword">const</span> environment = <span class="keyword">await</span> createTrainingEnvironment(payload);
+    setEnvironments((prev) =&gt; [...prev, environment]);
+    setShowAddEnvironment(<span class="keyword">false</span>);
+  } <span class="keyword">catch</span> (err) {
+    setEnvironmentError(getErrorMessage(err));
+  }
+};</div>
+
+            <div class="troubleshooting-item">
+                <strong>⚠️ UX gotcha: two independent sets of Save/Cancel and Back/Next controls</strong>
+                <p>The inline <code>TrainingEnvironmentForm</code> has its own Save/Cancel buttons, separate from the wizard's own Back/Next. Early user testing showed that clicking the wizard's <strong>Next</strong> while the form was still open silently discarded whatever had been typed, since that data only becomes a saved <code>TrainingEnvironment</code> via the form's own submit handler. Fixed by disabling both wizard <code>Back</code> and <code>Next</code> buttons whenever <code>showAddEnvironment</code> is <code>true</code>, and by showing an inline hint pointing at the "Save Environment" button:</p>
+                <div class="code-block">&lt;Button type=<span class="string">"button"</span> ... onClick={handleNext} disabled={showAddEnvironment}&gt;
+  Next
+&lt;/Button&gt;</div>
+            </div>
+
+            <p>See <a href="TRAINING_ENVIRONMENTS_TECHNICAL.html">Training Environments Technical Reference</a> for the full <code>TrainingEnvironment</code> model, CRUD API, and the <code>ProgramCreationRequest</code> placeholder that follows once a user has at least one saved environment.</p>
             <p><code>handleNext</code> checks the current step's <code>requiredFields</code> against <code>formData</code> before advancing; if any are empty it sets a form error and stays on the same step instead of calling <code>setCurrentStep</code>:</p>
             <div class="code-block"><span class="keyword">const</span> handleNext = () =&gt; {
   <span class="keyword">const</span> missingFields = STEPS[currentStep].requiredFields.filter((field) =&gt; !formData[field]);
@@ -518,7 +542,7 @@ Database (PostgreSQL)</div>
                 <li><code>frontend/src/tests/store/auth.test.ts</code> — Store state management</li>
                 <li><code>frontend/src/tests/pages/LoginPage.test.tsx</code> — Login flow</li>
                 <li><code>frontend/src/tests/pages/SignupPage.test.tsx</code> — Signup flow</li>
-                <li><code>frontend/src/tests/pages/OnboardingPage.test.tsx</code> — Wizard step navigation (Next/Back), per-step required-field validation, and final submission</li>
+                <li><code>frontend/src/tests/pages/OnboardingPage.test.tsx</code> — Wizard step navigation (Next/Back), per-step required-field validation, final submission, completing onboarding with zero training environments added, and adding one environment before continuing</li>
             </ul>
 
             <p><strong>Target:</strong> >80% coverage (achieved with 44+ test cases)</p>

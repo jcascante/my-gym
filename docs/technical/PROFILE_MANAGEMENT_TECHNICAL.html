@@ -391,12 +391,13 @@ Database Layer
   <span class="string">"experience_level"</span>: <span class="string">"beginner"</span> | <span class="string">"intermediate"</span> | <span class="string">"advanced"</span> | <span class="keyword">null</span>,
   <span class="string">"days_per_week"</span>: <span class="keyword">3</span> | <span class="keyword">null</span>,
   <span class="string">"workout_duration_min"</span>: <span class="keyword">60</span> | <span class="keyword">null</span>,
-  <span class="string">"equipment"</span>: <span class="string">"home"</span> | <span class="string">"gym"</span> | <span class="string">"bodyweight"</span> | <span class="keyword">null</span>,
   <span class="string">"injuries_limitations"</span>: <span class="string">"Back pain, knee injury"</span> | <span class="keyword">null</span>,
   <span class="string">"short_term_goals"</span>: <span class="string">"Build consistency"</span> | <span class="keyword">null</span>,
   <span class="string">"medium_term_goals"</span>: <span class="string">"Gain muscle"</span> | <span class="keyword">null</span>
 }
                 </div>
+
+                <p><strong>Note:</strong> <code>UserProfile</code> no longer has an <code>equipment</code> field. Equipment is now scoped per training location on the separate <code>TrainingEnvironment</code> resource, since a user can train in multiple places with different equipment. See <a href="TRAINING_ENVIRONMENTS_TECHNICAL.html">Training Environments Technical Reference</a>.</p>
 
                 <h4>Partial Update Example</h4>
                 <p>To update only age and weight, send:</p>
@@ -500,7 +501,6 @@ Database Layer
     experience_level: Mapped[ExperienceLevel | <span class="keyword">None</span>] = mapped_column(Enum(ExperienceLevel))
     days_per_week: Mapped[int | <span class="keyword">None</span>] = mapped_column(Integer)
     workout_duration_min: Mapped[int | <span class="keyword">None</span>] = mapped_column(Integer)
-    equipment: Mapped[Equipment | <span class="keyword">None</span>] = mapped_column(Enum(Equipment))
     injuries_limitations: Mapped[str | <span class="keyword">None</span>] = mapped_column(String)
     short_term_goals: Mapped[str | <span class="keyword">None</span>] = mapped_column(String)
     medium_term_goals: Mapped[str | <span class="keyword">None</span>] = mapped_column(String)
@@ -525,7 +525,6 @@ Database Layer
     experience_level: Optional[ExperienceLevel] = <span class="keyword">None</span>
     days_per_week: Optional[int] = <span class="keyword">None</span>
     workout_duration_min: Optional[int] = <span class="keyword">None</span>
-    equipment: Optional[Equipment] = <span class="keyword">None</span>
     injuries_limitations: Optional[str] = <span class="keyword">None</span>
     short_term_goals: Optional[str] = <span class="keyword">None</span>
     medium_term_goals: Optional[str] = <span class="keyword">None</span>

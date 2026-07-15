@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Environments & Program Creation - Technical Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        nav a {
+            color: #2a5298;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        nav a:hover {
+            background: white;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        h2 {
+            color: #1e3c72;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #2a5298;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2a5298;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        p, li {
+            margin-bottom: 0.75rem;
+            color: #374151;
+        }
+
+        ul {
+            margin-left: 2rem;
+        }
+
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .endpoint {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .endpoint strong {
+            color: #1e40af;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .diagram {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+            color: #1f2937;
+        }
+
+        .keyword {
+            color: #7c3aed;
+        }
+
+        .string {
+            color: #16a34a;
+        }
+
+        .comment {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .note {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            color: #1e3a8a;
+        }
+
+        .troubleshooting-item {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .troubleshooting-item strong {
+            color: #92400e;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        table th, table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        table th {
+            background: #f3f4f6;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        a {
+            color: #2a5298;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            background: #f3f4f6;
+            padding: 1.5rem;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #f3f4f6;
+            color: #1f2937;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .back-button:hover {
+            background: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-button">← Back</a>
+
+        <header>
+            <h1>⚙️ Training Environments & Program Creation Technical Documentation</h1>
+            <p>Multi-environment data model, CRUD API, and the program-generation request placeholder</p>
+        </header>
+
+        <nav>
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#endpoints">API Endpoints</a>
+            <a href="#models">Models & Schemas</a>
+            <a href="#migration">Migration</a>
+            <a href="#implementation">Implementation</a>
+            <a href="#frontend">Frontend</a>
+            <a href="#dataflow">Data Flow</a>
+            <a href="#testing">Testing</a>
+            <a href="#deployment">Deployment</a>
+            <a href="#troubleshooting">Troubleshooting</a>
+        </nav>
+
+        <div class="content">
+            <h2 id="overview">Overview</h2>
+            <p>Users don't just have one training setup. The same person might lift at a commercial gym on weekdays, train bodyweight-only at home on weekends, and occasionally drop into a CrossFit box. Rather than force a single coarse <code>equipment</code> value onto <code>UserProfile</code>, equipment and location are modeled as their own first-class, multi-valued resource: <code>TrainingEnvironment</code>.</p>
+
+            <p>This introduces a three-tier data model:</p>
+            <table>
+                <tr><th>Tier</th><th>Resource</th><th>Changes</th><th>Persisted?</th></tr>
+                <tr><td>1</td><td><code>UserProfile</code></td><td>Rarely (age, experience, goals)</td><td>Yes — one per user</td></tr>
+                <tr><td>2</td><td><code>TrainingEnvironment</code></td><td>Occasionally (new gym, new equipment)</td><td>Yes — many per user</td></tr>
+                <tr><td>3</td><td><code>ProgramCreationRequest</code></td><td>Every time a program is generated</td><td><strong>No</strong> — one-shot request payload</td></tr>
+            </table>
+
+            <p>This work covers gathering and saving tiers 1 and 2, plus a placeholder endpoint (<code>POST /api/v1/programs</code>) that validates the full tier-3 payload and returns <code>501 Not Implemented</code> — real program generation is intentionally out of scope.</p>
+
+            <div class="note"><strong>Note:</strong> <code>UserProfile.equipment</code> was removed outright rather than kept alongside <code>TrainingEnvironment</code> — the codebase was pre-production (single initial migration, no seed data), so there was no need to support both concepts simultaneously.</div>
+
+            <h2 id="architecture">Architecture</h2>
+            <div class="diagram">User
+ ├── UserProfile        (1:1 — stable personal/fitness data)
+ └── TrainingEnvironment (1:N — where/with-what, reusable across program attempts)
+       id, user_id, name, environment_type, equipment_tags[], is_default
+
+ProgramCreationRequest   (not a table — validated request body only)
+ references: environment_id → TrainingEnvironment
+ fields: days_per_week, preferred_days[], session_duration_min, start_date,
+         focus_areas[], weight_unit, available_weight_increments[], progression_style</div>
+
+            <h2 id="endpoints">API Endpoints</h2>
+
+            <h3>Training Environments CRUD</h3>
+            <div class="endpoint">
+                <strong>GET /api/v1/training-environments</strong>
+                <p>List all environments owned by the current user.</p>
+            </div>
+            <div class="endpoint">
+                <strong>POST /api/v1/training-environments</strong>
+                <p>Create a new environment. Returns <strong>201</strong>.</p>
+                <div class="code-block">{
+  <span class="string">"name"</span>: <span class="string">"Home Gym"</span>,
+  <span class="string">"environment_type"</span>: <span class="string">"home"</span>,
+  <span class="string">"equipment_tags"</span>: [<span class="string">"dumbbells"</span>, <span class="string">"pull_up_bar"</span>],
+  <span class="string">"is_default"</span>: <span class="keyword">true</span>
+}</div>
+            </div>
+            <div class="endpoint">
+                <strong>GET /api/v1/training-environments/{environment_id}</strong>
+                <p>Fetch one environment, scoped to the current user. <strong>404</strong> if missing or owned by someone else.</p>
+            </div>
+            <div class="endpoint">
+                <strong>PATCH /api/v1/training-environments/{environment_id}</strong>
+                <p>Partial update (only provided fields change), same <code>exclude_unset</code> pattern used by <code>UserProfileRequest</code>.</p>
+            </div>
+            <div class="endpoint">
+                <strong>DELETE /api/v1/training-environments/{environment_id}</strong>
+                <p>Returns <strong>204</strong> on success.</p>
+            </div>
+
+            <h3>Program Creation Placeholder</h3>
+            <div class="endpoint">
+                <strong>POST /api/v1/programs</strong> <span class="badge">Stub — returns 501</span>
+                <p>Validates ownership of <code>environment_id</code> and the full preferences payload, then unconditionally raises <code>HTTPException(501)</code>. Demonstrates the intended request shape without generating anything.</p>
+                <div class="code-block">{
+  <span class="string">"environment_id"</span>: <span class="keyword">1</span>,
+  <span class="string">"days_per_week"</span>: <span class="keyword">4</span>,
+  <span class="string">"preferred_days"</span>: [<span class="string">"monday"</span>, <span class="string">"wednesday"</span>, <span class="string">"friday"</span>, <span class="string">"saturday"</span>],
+  <span class="string">"session_duration_min"</span>: <span class="keyword">60</span>,
+  <span class="string">"start_date"</span>: <span class="string">"2026-08-01"</span>,
+  <span class="string">"focus_areas"</span>: [<span class="string">"push"</span>, <span class="string">"pull"</span>, <span class="string">"legs"</span>],
+  <span class="string">"weight_unit"</span>: <span class="string">"kg"</span>,
+  <span class="string">"available_weight_increments"</span>: [<span class="keyword">1.25</span>, <span class="keyword">2.5</span>, <span class="keyword">5</span>],
+  <span class="string">"progression_style"</span>: <span class="string">"consistent"</span>
+}</div>
+                <table>
+                    <tr><th>Code</th><th>Meaning</th></tr>
+                    <tr><td>422</td><td>Malformed payload (Pydantic validation, before the handler runs)</td></tr>
+                    <tr><td>404</td><td><code>environment_id</code> missing or not owned by the current user</td></tr>
+                    <tr><td>501</td><td>Payload is valid and owned — program generation just isn't built yet</td></tr>
+                    <tr><td>401</td><td>Unauthenticated</td></tr>
+                </table>
+            </div>
+
+            <h2 id="models">Models & Schemas</h2>
+
+            <h3>TrainingEnvironment (SQLAlchemy)</h3>
+            <p>File: <code>backend/app/models/training_environment.py</code></p>
+            <div class="code-block"><span class="keyword">class</span> EnvironmentType(str, enum.Enum):
+    COMMERCIAL_GYM = <span class="string">"commercial_gym"</span>
+    HOME = <span class="string">"home"</span>
+    BODYWEIGHT = <span class="string">"bodyweight"</span>
+    CROSSFIT_BOX = <span class="string">"crossfit_box"</span>
+    OTHER = <span class="string">"other"</span>
+
+<span class="keyword">class</span> TrainingEnvironment(Base):
+    __tablename__ = <span class="string">"training_environments"</span>
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=<span class="keyword">True</span>)
+    user_id: Mapped[int] = mapped_column(ForeignKey(<span class="string">"users.id"</span>), nullable=<span class="keyword">False</span>, index=<span class="keyword">True</span>)
+    name: Mapped[str] = mapped_column(String(100), nullable=<span class="keyword">False</span>)
+    environment_type: Mapped[EnvironmentType] = mapped_column(Enum(EnvironmentType), nullable=<span class="keyword">False</span>)
+    equipment_tags: Mapped[list[str]] = mapped_column(JSON, nullable=<span class="keyword">False</span>, default=list)
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=<span class="keyword">False</span>, default=<span class="keyword">False</span>)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=<span class="keyword">False</span>)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=<span class="keyword">False</span>)
+
+    user: Mapped[<span class="string">"User"</span>] = relationship(back_populates=<span class="string">"environments"</span>)</div>
+
+            <div class="note"><strong>Why JSON, not an enum column?</strong> <code>equipment_tags</code> is a flexible <code>list[str]</code> stored as JSON rather than a fixed SQL enum, validated against a Python allow-list (<code>ALLOWED_EQUIPMENT_TAGS</code> in <code>backend/app/core/constants.py</code>) via a Pydantic <code>field_validator</code>. This works identically on SQLite (the test database) and PostgreSQL (production) — a native Postgres array/enum column would require dialect-specific handling in tests.</div>
+
+            <h3>Program Creation Schema (Pydantic only — no table)</h3>
+            <p>File: <code>backend/app/schemas/program.py</code></p>
+            <div class="code-block"><span class="keyword">class</span> FocusArea(str, enum.Enum):
+    PUSH = <span class="string">"push"</span>; PULL = <span class="string">"pull"</span>; LEGS = <span class="string">"legs"</span>; CORE = <span class="string">"core"</span>
+    CARDIO = <span class="string">"cardio"</span>; FLEXIBILITY = <span class="string">"flexibility"</span>; FULL_BODY = <span class="string">"full_body"</span>
+
+<span class="keyword">class</span> WeightUnit(str, enum.Enum):
+    KG = <span class="string">"kg"</span>; LBS = <span class="string">"lbs"</span>
+
+<span class="keyword">class</span> ProgressionStyle(str, enum.Enum):
+    CONSISTENT = <span class="string">"consistent"</span>   <span class="comment"># same sets/reps/weight jumps every week</span>
+    VARIABLE = <span class="string">"variable"</span>       <span class="comment"># undulating, varies across days/weeks</span>
+
+<span class="keyword">class</span> ProgramCreationRequest(BaseModel):
+    environment_id: int
+    days_per_week: int
+    preferred_days: list[DayOfWeek]
+    session_duration_min: int
+    start_date: date
+    focus_areas: list[FocusArea] = []
+    weight_unit: WeightUnit
+    available_weight_increments: list[float] = []
+    progression_style: ProgressionStyle</div>
+            <p><code>focus_areas</code> intentionally reuses the same vocabulary PROJECT_SCOPE defines for the (unbuilt) Exercise library, so it stays shared once real exercises exist.</p>
+
+            <h3>CRUD Layer — Default Exclusivity</h3>
+            <p>File: <code>backend/app/crud/training_environment.py</code></p>
+            <p>Exactly one environment per user can be <code>is_default=True</code>. This is enforced at the CRUD layer rather than a database constraint (a partial unique index behaves differently between SQLite and Postgres):</p>
+            <div class="code-block"><span class="keyword">async def</span> _clear_existing_default(db, user_id, exclude_id=<span class="keyword">None</span>):
+    <span class="comment"># Unsets any other default for this user before a new one is set</span>
+    ...</div>
+            <p>Both <code>create_training_environment</code> and <code>update_training_environment</code> call this whenever <code>is_default=True</code> is being set.</p>
+
+            <h2 id="migration">Migration</h2>
+            <p>Revision <code>77fcb49685a6</code> (<code>down_revision = "ebd4d0a4d103"</code>) does two things: drops <code>UserProfile.equipment</code> and creates <code>training_environments</code>.</p>
+            <div class="troubleshooting-item">
+                <strong>⚠️ Alembic autogenerate doesn't drop orphaned Postgres enum types</strong>
+                <p><code>op.drop_column("user_profiles", "equipment")</code> alone leaves the old <code>equipment</code> enum type in the database, which then blocks recreating a column with that name. Fixed by explicitly calling <code>equipment_enum.drop(op.get_bind(), checkfirst=True)</code> in <code>upgrade()</code>, and <code>.create(...)</code> in <code>downgrade()</code> (along with dropping the new <code>environmenttype</code> enum on downgrade). Verified with a live round-trip: <code>alembic upgrade head</code> → <code>alembic downgrade -1</code> → <code>alembic upgrade head</code>.</p>
+            </div>
+            <div class="code-block">docker-compose exec backend alembic upgrade head
+docker-compose exec backend alembic downgrade -1   <span class="comment"># lossy for environment data — acceptable pre-production</span>
+docker-compose exec backend alembic upgrade head</div>
+
+            <h2 id="implementation">Backend Implementation</h2>
+            <ul>
+                <li><code>backend/app/api/v1/endpoints/training_environments.py</code> — full CRUD router, private <code>_get_owned_environment()</code> helper raising <code>TrainingEnvironmentNotFoundError</code> (404) for missing/foreign IDs</li>
+                <li><code>backend/app/api/v1/endpoints/programs.py</code> — the placeholder router described above</li>
+                <li><code>backend/app/core/exceptions.py</code> — <code>TrainingEnvironmentNotFoundError(AppException)</code>, mapped to 404 by the global exception handler</li>
+                <li><code>backend/app/core/constants.py</code> — <code>ALLOWED_EQUIPMENT_TAGS</code> allow-list (barbell, squat_rack, dumbbells, kettlebell, resistance_bands, pull_up_bar, bench, cardio_machine, cable_machine, none)</li>
+            </ul>
+
+            <h2 id="frontend">Frontend Implementation</h2>
+
+            <h3>Types & API Modules</h3>
+            <ul>
+                <li><code>frontend/src/types/trainingEnvironment.ts</code> — <code>EnvironmentType</code>, option arrays for selects/checkboxes, <code>TrainingEnvironment</code>/<code>TrainingEnvironmentPayload</code></li>
+                <li><code>frontend/src/types/programCreation.ts</code> — mirrors <code>program.py</code>'s enums and <code>ProgramCreationPayload</code></li>
+                <li><code>frontend/src/api/trainingEnvironments.ts</code> — <code>listTrainingEnvironments</code>, <code>createTrainingEnvironment</code>, <code>updateTrainingEnvironment</code>, <code>deleteTrainingEnvironment</code></li>
+                <li><code>frontend/src/api/programs.ts</code> — <code>createProgram(payload)</code>, expected to reject with a 501 response until real generation ships</li>
+                <li><code>frontend/src/api/client.ts</code> — the shared <code>apiClient</code> axios instance + 401 interceptor, extracted out of <code>auth.ts</code> so both old and new API modules share one instance</li>
+            </ul>
+
+            <h3>Components</h3>
+            <ul>
+                <li><code>TrainingEnvironmentCard.tsx</code> — name, type badge, equipment chips, default badge, Edit/Delete/Generate Program actions; <code>readOnly</code> prop hides Edit/Delete for the onboarding context</li>
+                <li><code>TrainingEnvironmentForm.tsx</code> — add/edit form, shared between onboarding and the dedicated Environments page</li>
+                <li><code>ProgramCreationForm.tsx</code> — the tier-3 preferences questionnaire; on a 501 response shows a "coming soon, your preferences were recorded" message instead of a generic error</li>
+            </ul>
+
+            <div class="troubleshooting-item">
+                <strong>⚠️ Nested &lt;form&gt; is invalid HTML</strong>
+                <p><code>TrainingEnvironmentForm</code> is rendered inside <code>OnboardingPage</code>'s own <code>&lt;form&gt;</code> for the onboarding step. An earlier version used a native <code>&lt;form onSubmit&gt;</code> internally, which produced a DOM warning ("form cannot be a descendant of form") and invalid markup. Fixed by making it a plain <code>&lt;div&gt;</code> with a <code>type="button" onClick={handleSubmit}</code> submit button instead of native form submission. A regression test asserts <code>container.querySelector('form')</code> is <code>null</code> for this component.</p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>⚠️ <code>err instanceof AxiosError</code> is unreliable in component tests</strong>
+                <p><code>ProgramCreationForm</code> needs to distinguish the expected 501 from other errors. Checking <code>err instanceof AxiosError</code> works against a real backend but fails in Vitest component tests that mock rejections with plain objects. Fixed with a duck-typed check instead:</p>
+                <div class="code-block"><span class="keyword">const</span> status = (err <span class="keyword">as</span> { response?: { status?: number } })?.response?.status;
+<span class="keyword">if</span> (status === <span class="keyword">501</span>) { <span class="comment">/* coming-soon message */</span> } <span class="keyword">else</span> { <span class="comment">/* generic error */</span> }</div>
+            </div>
+
+            <h3>Pages & Routing</h3>
+            <ul>
+                <li><code>frontend/src/pages/EnvironmentsPage.tsx</code> — list, add/edit/delete, and per-card "Generate Program" panel, managed via a <code>PanelState</code> union (<code>none | add | edit | generate</code>)</li>
+                <li><code>frontend/src/App.tsx</code> — <code>/environments</code> route added inside the existing authenticated + profile-complete branch; no change to the routing gate itself</li>
+                <li><code>frontend/src/components/Header.tsx</code> — "Training Environments" entry added to the user menu dropdown</li>
+            </ul>
+
+            <h2 id="dataflow">Data Flow</h2>
+
+            <h3>Adding an Environment (from either Onboarding or the Environments page)</h3>
+            <div class="diagram">1. User fills TrainingEnvironmentForm, clicks "Save Environment"
+2. Frontend POST /api/v1/training-environments {name, environment_type, equipment_tags, is_default}
+3. Backend validates equipment_tags against ALLOWED_EQUIPMENT_TAGS (422 if unknown tag)
+4. If is_default=true, CRUD layer clears any other default for this user first
+5. Backend creates row, returns TrainingEnvironmentResponse (201)
+6. Frontend appends it to local list / refetches the page's environment list</div>
+
+            <h3>Generating a Program (placeholder)</h3>
+            <div class="diagram">1. User clicks "Generate Program" on an environment card
+2. ProgramCreationForm collects days/week, days, duration, start date,
+   focus areas, weight unit + increments, progression style
+3. Frontend POST /api/v1/programs { environment_id, ...preferences }
+4. Backend looks up environment_id scoped to current_user.id
+     → 404 TrainingEnvironmentNotFoundError if missing/foreign
+5. Backend raises HTTPException(501, "Program generation is not yet implemented.")
+6. Frontend catches the 501 specifically, shows a "coming soon" success-toned message</div>
+
+            <h2 id="testing">Testing</h2>
+
+            <h3>Backend</h3>
+            <ul>
+                <li><code>backend/tests/test_training_environments.py</code> — list (empty/populated), create, get-by-id, update, delete, cross-user ownership isolation, default-flag exclusivity, 404s, 401 unauthenticated (11 tests)</li>
+                <li><code>backend/tests/test_programs_stub.py</code> — 422 on malformed payload, 404 on missing/foreign <code>environment_id</code>, 501 on a valid request, 401 unauthenticated (5 tests)</li>
+                <li><code>backend/tests/test_users.py</code>, <code>test_onboarding_flow.py</code> — <code>equipment</code> removed from all profile payloads/assertions</li>
+            </ul>
+
+            <h3>Frontend</h3>
+            <ul>
+                <li><code>tests/api/trainingEnvironments.test.ts</code>, <code>tests/api/programs.test.ts</code> — API module request/response shape</li>
+                <li><code>tests/pages/EnvironmentsPage.test.tsx</code> — list/add/edit/delete flows, opening the program form from a card, load-error state</li>
+                <li><code>tests/components/TrainingEnvironmentCard.test.tsx</code>, <code>TrainingEnvironmentForm.test.tsx</code> (incl. no-nested-form assertion), <code>ProgramCreationForm.test.tsx</code></li>
+                <li><code>tests/pages/OnboardingPage.test.tsx</code> — completing onboarding with zero environments, and adding one before continuing</li>
+            </ul>
+
+            <p><strong>Result at last verification:</strong> backend 45/45 pytest passing (mypy, ruff, black clean); frontend 66/66 vitest passing (tsc, eslint, prettier clean); migration round-trip verified against live Postgres.</p>
+
+            <h2 id="deployment">Deployment Considerations</h2>
+
+            <h3>Database Migrations</h3>
+            <div class="code-block">docker-compose exec backend alembic upgrade head</div>
+
+            <h3>API Versioning</h3>
+            <p>Both new routers live under <code>/api/v1/</code>, consistent with existing endpoints.</p>
+
+            <h3>Backward Compatibility</h3>
+            <p>Any existing client still sending <code>equipment</code> in a <code>POST /users/profile</code> body will have that field silently ignored by Pydantic (extra fields aren't rejected by default) rather than erroring — but the profile response will no longer contain it.</p>
+
+            <h3>Rollback Plan</h3>
+            <ol>
+                <li>Remove the <code>/environments</code> route and header nav entry (frontend-only revert)</li>
+                <li><code>alembic downgrade -1</code> to restore <code>UserProfile.equipment</code> (environment data is lost — acceptable pre-production)</li>
+                <li>Redeploy the previous backend build</li>
+            </ol>
+
+            <h2 id="troubleshooting">Troubleshooting</h2>
+
+            <div class="troubleshooting-item">
+                <strong>❌ 422 on create/update: "unknown equipment tag"</strong>
+                <p>The tag sent isn't in <code>ALLOWED_EQUIPMENT_TAGS</code>. Frontend and backend allow-lists must be kept in sync manually (<code>frontend/src/types/trainingEnvironment.ts</code> vs. <code>backend/app/core/constants.py</code>) — there's no shared source of truth yet at this scale.</p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ 404 on an environment I just created</strong>
+                <p><code>get_training_environment</code> scopes every lookup by <code>user_id</code> — this is the ownership check, not a bug. Confirm you're authenticated as the same user who created it.</p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ Two environments both show "Default"</strong>
+                <p>Shouldn't happen — <code>_clear_existing_default</code> runs inside the same request as the create/update that sets a new default. If seen, check for a direct DB write that bypassed the CRUD layer.</p>
+            </div>
+
+            <div class="troubleshooting-item">
+                <strong>❌ An environment added during onboarding doesn't appear to save</strong>
+                <p>This is almost always the wizard's Next button being clicked instead of the form's own "Save Environment" button — see <a href="ONBOARDING_FLOW_TECHNICAL.html#implementation">Onboarding Flow Technical Reference</a> for the fix (Back/Next are disabled while the inline form is open).</p>
+            </div>
+
+            <h2>References</h2>
+            <ul>
+                <li><a href="ONBOARDING_FLOW_TECHNICAL.html">Conditional Onboarding Flow Technical Reference</a></li>
+                <li><a href="PROFILE_MANAGEMENT_TECHNICAL.html">Profile Management Technical Reference</a></li>
+                <li><a href="../user/TRAINING_ENVIRONMENTS.html">Training Environments — User Guide</a></li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 MyGym. Technical documentation for training environments and program creation.</p>
+        </footer>
+    </div>
+</body>
+</html>

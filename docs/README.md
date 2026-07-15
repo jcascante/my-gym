@@ -20,10 +20,15 @@ Welcome to the MyGym documentation hub. Start with [index.html](index.html) for 
   - Password security
   - Account recovery
 
-- **[Getting Started / Onboarding Guide](user/ONBOARDING.html)** — The 5-step onboarding wizard new users complete on first login
-  - Personal Information, Fitness Level, Workout Preferences, Goals, Additional Information steps
+- **[Getting Started / Onboarding Guide](user/ONBOARDING.html)** — The 6-step onboarding wizard new users complete on first login
+  - Personal Information, Fitness Level, Workout Preferences, Training Environments, Goals, Additional Information steps
   - Progress bar and Back/Next navigation
   - What returning users see instead
+
+- **[Training Environments Guide](user/TRAINING_ENVIRONMENTS.html)** — Saving the different places you train and their equipment
+  - Adding, editing, and deleting environments
+  - Setting a default environment
+  - The program-creation preferences questionnaire (placeholder)
 
 ### Technical Documentation
 **For developers and system administrators**
@@ -42,6 +47,11 @@ Welcome to the MyGym documentation hub. Start with [index.html](index.html) for 
   - Conditional routing (profile null vs. exists)
   - Multi-step wizard state management and per-step validation
   - API endpoints and data models
+
+- **[Training Environments & Program Creation Technical Reference](technical/TRAINING_ENVIRONMENTS_TECHNICAL.html)** — Multi-environment data model, CRUD API, and the program-generation request placeholder
+  - `TrainingEnvironment` model, migration, and default-exclusivity enforcement
+  - CRUD endpoints and the `POST /programs` 501 placeholder
+  - Frontend components, pages, and the onboarding Save/Next UX fix
 
 - **[Infrastructure & Deployment Technical Reference](technical/INFRASTRUCTURE_DEPLOYMENT_TECHNICAL.html)** — Terraform-managed AWS infrastructure and the GitHub Actions deploy pipeline
   - Terraform modules: ECR, IAM/OIDC, ECS Fargate, RDS
@@ -104,9 +114,11 @@ See the `personal/` directory for development notes, architectural decisions, an
 | Document | Purpose | Audience |
 |----------|---------|----------|
 | [Login & Sign-Up Guide](user/LOGIN_SIGNUP.html) | User-friendly authentication guide | End users |
-| [Onboarding Guide](user/ONBOARDING.html) | The 5-step onboarding wizard | End users |
+| [Onboarding Guide](user/ONBOARDING.html) | The 6-step onboarding wizard | End users |
+| [Training Environments Guide](user/TRAINING_ENVIRONMENTS.html) | Saving training locations and equipment | End users |
 | [Authentication Technical Reference](technical/LOGIN_SIGNUP_TECHNICAL.html) | Implementation details and architecture | Developers |
 | [Onboarding Flow Technical Reference](technical/ONBOARDING_FLOW_TECHNICAL.html) | Conditional routing and wizard implementation | Developers |
+| [Training Environments & Program Creation Technical Reference](technical/TRAINING_ENVIRONMENTS_TECHNICAL.html) | Multi-environment data model, CRUD API, and program creation placeholder | Developers |
 | [Infrastructure & Deployment Technical Reference](technical/INFRASTRUCTURE_DEPLOYMENT_TECHNICAL.html) | Terraform modules and the GitHub Actions deploy pipeline | DevOps, Developers |
 | [Database Migrations Guide](DATABASE_MIGRATIONS.md) | Schema versioning with Alembic | DevOps, Developers |
 | [UV Setup Guide](UV_SETUP.md) | Package manager configuration | Developers |
@@ -123,6 +135,10 @@ See the `personal/` directory for development notes, architectural decisions, an
 **Onboarding questions?**
 - User: [Onboarding Guide](user/ONBOARDING.html)
 - Developer: [Onboarding Flow Technical Reference](technical/ONBOARDING_FLOW_TECHNICAL.html)
+
+**Training environments or program creation questions?**
+- User: [Training Environments Guide](user/TRAINING_ENVIRONMENTS.html)
+- Developer: [Training Environments & Program Creation Technical Reference](technical/TRAINING_ENVIRONMENTS_TECHNICAL.html)
 
 **Infrastructure or deployment questions?**
 - [Infrastructure & Deployment Technical Reference](technical/INFRASTRUCTURE_DEPLOYMENT_TECHNICAL.html)
@@ -176,4 +192,4 @@ When adding new documentation:
 
 ---
 
-Last updated: 2026-07-12
+Last updated: 2026-07-15
