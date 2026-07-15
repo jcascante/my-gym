@@ -21,6 +21,7 @@ dependencies = [
     "aiopg>=1.4.0",
     "asyncpg>=0.31.0",
     "pre-commit>=4.0.1",
+    "python-multipart>=0.0.20",
 ]
 
 [dependency-groups]

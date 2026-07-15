@@ -1,6 +1,7 @@
 from .auth import (
     LoginRequest,
     SignupRequest,
+    TokenResponse,
     UserResponse,
 )
 from .exercise import ExerciseResponse
@@ -26,6 +27,7 @@ __all__ = [
     "SignupRequest",
     "LoginRequest",
     "UserResponse",
+    "TokenResponse",
     "UserProfileRequest",
     "UserProfileResponse",
     "UserWithProfileResponse",
