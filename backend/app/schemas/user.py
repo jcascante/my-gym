@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models import ActivityLevel, Equipment, ExperienceLevel, FitnessFocus
+from app.models import ActivityLevel, ExperienceLevel, FitnessFocus
 
 
 class UserProfileRequest(BaseModel):
@@ -17,7 +17,6 @@ class UserProfileRequest(BaseModel):
     experience_level: Optional[ExperienceLevel] = None
     days_per_week: Optional[int] = None
     workout_duration_min: Optional[int] = None
-    equipment: Optional[Equipment] = None
     injuries_limitations: Optional[str] = None
     short_term_goals: Optional[str] = None
     medium_term_goals: Optional[str] = None
@@ -36,7 +35,6 @@ class UserProfileResponse(BaseModel):
     experience_level: Optional[ExperienceLevel] = None
     days_per_week: Optional[int] = None
     workout_duration_min: Optional[int] = None
-    equipment: Optional[Equipment] = None
     injuries_limitations: Optional[str] = None
     short_term_goals: Optional[str] = None
     medium_term_goals: Optional[str] = None

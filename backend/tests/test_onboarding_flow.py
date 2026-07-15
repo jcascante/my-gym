@@ -54,7 +54,6 @@ async def test_first_time_user_flow(client: AsyncClient, db: AsyncSession):
             "experience_level": "beginner",
             "days_per_week": 5,
             "workout_duration_min": 45,
-            "equipment": "home",
             "short_term_goals": "Lose weight",
             "medium_term_goals": "Improve endurance",
         },
@@ -89,7 +88,6 @@ async def test_returning_user_flow(authenticated_client: AsyncClient, test_user:
             "experience_level": "intermediate",
             "days_per_week": 4,
             "workout_duration_min": 60,
-            "equipment": "gym",
         },
     )
     assert initial_profile.status_code == 200
@@ -146,7 +144,6 @@ async def test_profile_partial_updates(
         "experience_level": "beginner",
         "days_per_week": 3,
         "workout_duration_min": 30,
-        "equipment": "home",
         "short_term_goals": "Get fit",
         "medium_term_goals": "Build strength",
     }

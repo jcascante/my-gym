@@ -1,8 +1,8 @@
 from app.core.database import Base
 
+from .training_environment import EnvironmentType, TrainingEnvironment
 from .user import (
     ActivityLevel,
-    Equipment,
     ExperienceLevel,
     FitnessFocus,
     User,
@@ -16,5 +16,6 @@ __all__ = [
     "ActivityLevel",
     "FitnessFocus",
     "ExperienceLevel",
-    "Equipment",
+    "EnvironmentType",
+    "TrainingEnvironment",
 ]

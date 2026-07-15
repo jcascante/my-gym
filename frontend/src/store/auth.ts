@@ -19,7 +19,6 @@ export interface UserProfile {
   experience_level?: string | null;
   days_per_week?: number | null;
   workout_duration_min?: number | null;
-  equipment?: string | null;
   injuries_limitations?: string | null;
   short_term_goals?: string | null;
   medium_term_goals?: string | null;

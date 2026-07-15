@@ -28,6 +28,13 @@ class UserAlreadyExistsError(AppException):
         super().__init__(message, status_code=400)
 
 
+class TrainingEnvironmentNotFoundError(AppException):
+    error_code: str = "TRAINING_ENVIRONMENT_NOT_FOUND"
+
+    def __init__(self, message: str = "Training environment not found"):
+        super().__init__(message, status_code=404)
+
+
 class ValidationError(AppException):
     error_code: str = "VALIDATION_ERROR"
 

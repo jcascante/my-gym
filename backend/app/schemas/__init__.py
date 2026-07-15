@@ -3,6 +3,18 @@ from .auth import (
     SignupRequest,
     UserResponse,
 )
+from .program import (
+    DayOfWeek,
+    FocusArea,
+    ProgramCreationRequest,
+    ProgressionStyle,
+    WeightUnit,
+)
+from .training_environment import (
+    TrainingEnvironmentCreate,
+    TrainingEnvironmentResponse,
+    TrainingEnvironmentUpdate,
+)
 from .user import (
     UserProfileRequest,
     UserProfileResponse,
@@ -16,4 +28,12 @@ __all__ = [
     "UserProfileRequest",
     "UserProfileResponse",
     "UserWithProfileResponse",
+    "TrainingEnvironmentCreate",
+    "TrainingEnvironmentUpdate",
+    "TrainingEnvironmentResponse",
+    "FocusArea",
+    "WeightUnit",
+    "ProgressionStyle",
+    "DayOfWeek",
+    "ProgramCreationRequest",
 ]

@@ -2,8 +2,17 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { saveUserProfile } from '@/api/auth';
+import { createTrainingEnvironment } from '@/api/trainingEnvironments';
 import { getErrorMessage } from '@/api/errors';
-import { Button, FormField, Card, Alert } from '@/components';
+import {
+  Button,
+  FormField,
+  Card,
+  Alert,
+  TrainingEnvironmentCard,
+  TrainingEnvironmentForm,
+} from '@/components';
+import type { TrainingEnvironment, TrainingEnvironmentPayload } from '@/types/trainingEnvironment';
 
 type OnboardingFormData = {
   age: string;
@@ -15,7 +24,6 @@ type OnboardingFormData = {
   experience_level: string;
   days_per_week: string;
   workout_duration_min: string;
-  equipment: string;
   injuries_limitations: string;
   short_term_goals: string;
   medium_term_goals: string;
@@ -26,8 +34,9 @@ const STEPS: { title: string; requiredFields: (keyof OnboardingFormData)[] }[] =
   { title: 'Fitness Level', requiredFields: ['experience_level', 'activity_level'] },
   {
     title: 'Workout Preferences',
-    requiredFields: ['fitness_focus', 'days_per_week', 'workout_duration_min', 'equipment'],
+    requiredFields: ['fitness_focus', 'days_per_week', 'workout_duration_min'],
   },
+  { title: 'Training Environments', requiredFields: [] },
   { title: 'Your Goals', requiredFields: [] },
   { title: 'Additional Information', requiredFields: [] },
 ];
@@ -49,11 +58,13 @@ export default function OnboardingPage() {
     experience_level: '',
     days_per_week: '',
     workout_duration_min: '',
-    equipment: '',
     injuries_limitations: '',
     short_term_goals: '',
     medium_term_goals: '',
   });
+  const [environments, setEnvironments] = useState<TrainingEnvironment[]>([]);
+  const [showAddEnvironment, setShowAddEnvironment] = useState(false);
+  const [environmentError, setEnvironmentError] = useState<string | null>(null);
 
   const isLastStep = currentStep === STEPS.length - 1;
 
@@ -81,6 +92,17 @@ export default function OnboardingPage() {
     setCurrentStep((step) => step - 1);
   };
 
+  const handleAddEnvironment = async (payload: TrainingEnvironmentPayload) => {
+    setEnvironmentError(null);
+    try {
+      const environment = await createTrainingEnvironment(payload);
+      setEnvironments((prev) => [...prev, environment]);
+      setShowAddEnvironment(false);
+    } catch (err) {
+      setEnvironmentError(getErrorMessage(err));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -102,7 +124,6 @@ export default function OnboardingPage() {
         experience_level: formData.experience_level || undefined,
         days_per_week: parseInt(formData.days_per_week) || undefined,
         workout_duration_min: parseInt(formData.workout_duration_min) || undefined,
-        equipment: formData.equipment || undefined,
         injuries_limitations: formData.injuries_limitations || undefined,
         short_term_goals: formData.short_term_goals || undefined,
         medium_term_goals: formData.medium_term_goals || undefined,
@@ -311,29 +332,71 @@ export default function OnboardingPage() {
                     max="300"
                     step="15"
                   />
-                  <div className="input-group">
-                    <label htmlFor="equipment" className="input-label">
-                      Equipment Access <span className="text-error-600">*</span>
-                    </label>
-                    <select
-                      id="equipment"
-                      name="equipment"
-                      value={formData.equipment}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="">Select equipment</option>
-                      <option value="home">Home</option>
-                      <option value="bodyweight">Bodyweight Only</option>
-                      <option value="gym">Gym</option>
-                    </select>
-                  </div>
                 </div>
               </div>
             )}
 
-            {/* Goals */}
+            {/* Training Environments */}
             {currentStep === 3 && (
+              <div>
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
+                  Training Environments
+                </h2>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                  Tell us where you train (e.g., a commercial gym, your home setup, or
+                  bodyweight-only). This step is optional — you can skip it and add environments
+                  later.
+                </p>
+
+                {showAddEnvironment && (
+                  <p className="text-sm text-primary-700 dark:text-primary-400 mb-4 font-medium">
+                    Click "Save Environment" below to add it to your list — the wizard's Next button
+                    won't save it for you.
+                  </p>
+                )}
+
+                {environmentError && (
+                  <Alert
+                    type="error"
+                    dismissible
+                    onDismiss={() => setEnvironmentError(null)}
+                    className="mb-4"
+                  >
+                    {environmentError}
+                  </Alert>
+                )}
+
+                {environments.length > 0 && (
+                  <div className="space-y-3 mb-4">
+                    {environments.map((environment) => (
+                      <TrainingEnvironmentCard
+                        key={environment.id}
+                        environment={environment}
+                        readOnly
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {showAddEnvironment ? (
+                  <TrainingEnvironmentForm
+                    onSubmit={handleAddEnvironment}
+                    onCancel={() => setShowAddEnvironment(false)}
+                  />
+                ) : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setShowAddEnvironment(true)}
+                  >
+                    Add Environment
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Goals */}
+            {currentStep === 4 && (
               <div>
                 <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
                   Your Goals
@@ -358,7 +421,7 @@ export default function OnboardingPage() {
             )}
 
             {/* Additional Info */}
-            {currentStep === 4 && (
+            {currentStep === 5 && (
               <div>
                 <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
                   Additional Information
@@ -382,7 +445,13 @@ export default function OnboardingPage() {
 
             <div className="flex items-center justify-between gap-4 pt-2">
               {currentStep > 0 ? (
-                <Button type="button" variant="secondary" size="lg" onClick={handleBack}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  onClick={handleBack}
+                  disabled={showAddEnvironment}
+                >
                   Back
                 </Button>
               ) : (
@@ -394,7 +463,13 @@ export default function OnboardingPage() {
                   Complete Onboarding
                 </Button>
               ) : (
-                <Button type="button" variant="primary" size="lg" onClick={handleNext}>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="lg"
+                  onClick={handleNext}
+                  disabled={showAddEnvironment}
+                >
                   Next
                 </Button>
               )}

@@ -3,9 +3,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import OnboardingPage from '@/pages/OnboardingPage';
 import * as authApi from '@/api/auth';
+import * as trainingEnvironmentsApi from '@/api/trainingEnvironments';
 import { useAuthStore } from '@/store/auth';
 
 vi.mock('@/api/auth');
+vi.mock('@/api/trainingEnvironments');
 vi.mock('@/store/auth');
 
 const mockNavigate = vi.fn();
@@ -68,16 +70,19 @@ async function fillWorkoutPreferencesStep({
   fitness_focus = 'strength',
   days_per_week = '4',
   workout_duration_min = '60',
-  equipment = 'gym',
-}: Partial<
-  Record<'fitness_focus' | 'days_per_week' | 'workout_duration_min' | 'equipment', string>
-> = {}) {
+}: Partial<Record<'fitness_focus' | 'days_per_week' | 'workout_duration_min', string>> = {}) {
   fireEvent.change(screen.getByLabelText(/Fitness Focus/), { target: { value: fitness_focus } });
   fireEvent.change(screen.getByLabelText(/Days per Week/), { target: { value: days_per_week } });
   fireEvent.change(screen.getByLabelText(/Workout Duration/), {
     target: { value: workout_duration_min },
   });
-  fireEvent.change(screen.getByLabelText(/Equipment Access/), { target: { value: equipment } });
+  fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { name: /Training Environments/ })).toBeInTheDocument(),
+  );
+}
+
+async function skipTrainingEnvironmentsStep() {
   fireEvent.click(screen.getByRole('button', { name: /Next/i }));
   await waitFor(() =>
     expect(screen.getByRole('heading', { name: /Your Goals/ })).toBeInTheDocument(),
@@ -91,6 +96,14 @@ async function advanceThroughGoalsAndAdditionalInfoSteps() {
   );
 }
 
+async function completeOnboardingSkippingEnvironments() {
+  await fillPersonalInfoStep();
+  await fillFitnessLevelStep();
+  await fillWorkoutPreferencesStep();
+  await skipTrainingEnvironmentsStep();
+  await advanceThroughGoalsAndAdditionalInfoSteps();
+}
+
 describe('OnboardingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -102,7 +115,7 @@ describe('OnboardingPage', () => {
 
     expect(screen.getByText(/Welcome, John!/)).toBeInTheDocument();
     expect(screen.getByText(/Let's set up your fitness profile/)).toBeInTheDocument();
-    expect(screen.getByText('Step 1 of 5')).toBeInTheDocument();
+    expect(screen.getByText('Step 1 of 6')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Personal Information/ })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /Fitness Level/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Next/i })).toBeInTheDocument();
@@ -118,22 +131,22 @@ describe('OnboardingPage', () => {
         screen.getByText('Please fill in all required fields before continuing.'),
       ).toBeInTheDocument();
     });
-    expect(screen.getByText(/Step 1 of 5/)).toBeInTheDocument();
+    expect(screen.getByText(/Step 1 of 6/)).toBeInTheDocument();
   });
 
   it('should navigate back to a previous step', async () => {
     renderOnboardingPage();
 
     await fillPersonalInfoStep();
-    expect(screen.getByText('Step 2 of 5')).toBeInTheDocument();
+    expect(screen.getByText('Step 2 of 6')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Back/i }));
 
-    await waitFor(() => expect(screen.getByText('Step 1 of 5')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Step 1 of 6')).toBeInTheDocument());
     expect(screen.getByLabelText(/Age/)).toHaveValue(30);
   });
 
-  it('should submit profile with all fields after completing every step', async () => {
+  it('should allow completing onboarding without adding a training environment', async () => {
     const setUserProfileMock = vi.fn();
     const mockResponse = {
       id: 1,
@@ -151,7 +164,6 @@ describe('OnboardingPage', () => {
         experience_level: 'intermediate',
         days_per_week: 4,
         workout_duration_min: 60,
-        equipment: 'gym',
       },
     };
 
@@ -159,10 +171,7 @@ describe('OnboardingPage', () => {
 
     renderOnboardingPage(setUserProfileMock);
 
-    await fillPersonalInfoStep();
-    await fillFitnessLevelStep();
-    await fillWorkoutPreferencesStep();
-    await advanceThroughGoalsAndAdditionalInfoSteps();
+    await completeOnboardingSkippingEnvironments();
 
     fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
 
@@ -175,6 +184,55 @@ describe('OnboardingPage', () => {
           fitness_focus: 'strength',
         }),
       );
+      expect(trainingEnvironmentsApi.createTrainingEnvironment).not.toHaveBeenCalled();
+      expect(setUserProfileMock).toHaveBeenCalledWith(mockResponse.profile);
+      expect(mockNavigate).toHaveBeenCalledWith('/');
+    });
+  });
+
+  it('should allow adding a training environment before continuing', async () => {
+    const setUserProfileMock = vi.fn();
+    const mockEnvironment = {
+      id: 1,
+      name: 'Home Gym',
+      environment_type: 'home' as const,
+      equipment_tags: [],
+      is_default: false,
+    };
+    vi.mocked(trainingEnvironmentsApi.createTrainingEnvironment).mockResolvedValue(mockEnvironment);
+
+    const mockResponse = {
+      id: 1,
+      email: 'test@example.com',
+      first_name: 'John',
+      last_name: 'Doe',
+      profile: { id: 1, age: 30, gender: 'male' },
+    };
+    vi.mocked(authApi.saveUserProfile).mockResolvedValue(mockResponse);
+
+    renderOnboardingPage(setUserProfileMock);
+
+    await fillPersonalInfoStep();
+    await fillFitnessLevelStep();
+    await fillWorkoutPreferencesStep();
+
+    fireEvent.click(screen.getByRole('button', { name: /Add Environment/i }));
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Home Gym' } });
+    fireEvent.click(screen.getByRole('button', { name: /Save Environment/i }));
+
+    await waitFor(() => {
+      expect(trainingEnvironmentsApi.createTrainingEnvironment).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Home Gym' }),
+      );
+      expect(screen.getByText('Home Gym')).toBeInTheDocument();
+    });
+
+    await skipTrainingEnvironmentsStep();
+    await advanceThroughGoalsAndAdditionalInfoSteps();
+
+    fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
+
+    await waitFor(() => {
       expect(setUserProfileMock).toHaveBeenCalledWith(mockResponse.profile);
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
@@ -203,8 +261,8 @@ describe('OnboardingPage', () => {
     await fillWorkoutPreferencesStep({
       days_per_week: '1',
       workout_duration_min: '15',
-      equipment: 'home',
     });
+    await skipTrainingEnvironmentsStep();
     await advanceThroughGoalsAndAdditionalInfoSteps();
 
     fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
@@ -223,10 +281,7 @@ describe('OnboardingPage', () => {
 
     renderOnboardingPage(setUserProfileMock);
 
-    await fillPersonalInfoStep();
-    await fillFitnessLevelStep();
-    await fillWorkoutPreferencesStep();
-    await advanceThroughGoalsAndAdditionalInfoSteps();
+    await completeOnboardingSkippingEnvironments();
 
     fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
 
@@ -243,10 +298,7 @@ describe('OnboardingPage', () => {
 
     renderOnboardingPage(setUserProfileMock);
 
-    await fillPersonalInfoStep();
-    await fillFitnessLevelStep();
-    await fillWorkoutPreferencesStep();
-    await advanceThroughGoalsAndAdditionalInfoSteps();
+    await completeOnboardingSkippingEnvironments();
 
     fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
 

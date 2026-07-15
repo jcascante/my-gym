@@ -3,7 +3,7 @@ import { useAuthStore } from '@/store/auth';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '@/api/auth';
 import { getErrorMessage } from '@/api/errors';
-import { AlertCircle, ChevronDown, LogOut, Settings, User } from 'lucide-react';
+import { AlertCircle, ChevronDown, Dumbbell, LogOut, Settings, User } from 'lucide-react';
 
 export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -100,6 +100,18 @@ export default function Header() {
                   >
                     <User className="w-4 h-4" />
                     <span>My Profile</span>
+                  </button>
+
+                  {/* Training Environments Option */}
+                  <button
+                    onClick={() => {
+                      navigate('/environments');
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                  >
+                    <Dumbbell className="w-4 h-4" />
+                    <span>Training Environments</span>
                   </button>
 
                   {/* Settings Option */}
