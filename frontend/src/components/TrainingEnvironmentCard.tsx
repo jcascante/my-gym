@@ -1,6 +1,6 @@
 import { Button } from './Button';
 import { Card } from './Card';
-import { ENVIRONMENT_TYPE_OPTIONS, EQUIPMENT_TAG_OPTIONS } from '@/types/trainingEnvironment';
+import { ENVIRONMENT_TYPE_OPTIONS, EQUIPMENT_OPTIONS } from '@/types/trainingEnvironment';
 import type { TrainingEnvironment } from '@/types/trainingEnvironment';
 
 interface TrainingEnvironmentCardProps {
@@ -45,8 +45,7 @@ export function TrainingEnvironmentCard({
       {environment.equipment_tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {environment.equipment_tags.map((tag) => {
-            const label =
-              EQUIPMENT_TAG_OPTIONS.find((option) => option.value === tag)?.label ?? tag;
+            const label = EQUIPMENT_OPTIONS.find((option) => option.value === tag)?.label ?? tag;
             return (
               <span
                 key={tag}

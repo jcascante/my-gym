@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { Button } from './Button';
 import { FormField } from './FormField';
-import { ENVIRONMENT_TYPE_OPTIONS, EQUIPMENT_TAG_OPTIONS } from '@/types/trainingEnvironment';
+import { EquipmentPicker } from './EquipmentPicker';
+import {
+  ENVIRONMENT_TYPE_OPTIONS,
+  ENVIRONMENT_EQUIPMENT_PRESETS,
+} from '@/types/trainingEnvironment';
 import type { TrainingEnvironmentPayload } from '@/types/trainingEnvironment';
 
 interface TrainingEnvironmentFormProps {
@@ -23,10 +27,13 @@ export function TrainingEnvironmentForm({
   const [isDefault, setIsDefault] = useState(initialValues?.is_default ?? false);
   const [submitting, setSubmitting] = useState(false);
 
-  const toggleTag = (tag: string) => {
-    setEquipmentTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
+  const handleEnvironmentTypeChange = (newType: typeof environmentType) => {
+    setEnvironmentType(newType);
+    // Prefill with the archetype's typical equipment, but don't clobber tags
+    // the user already picked (e.g. when editing an existing environment).
+    if (equipmentTags.length === 0) {
+      setEquipmentTags(ENVIRONMENT_EQUIPMENT_PRESETS[newType]);
+    }
   };
 
   const handleSubmit = async () => {
@@ -64,7 +71,7 @@ export function TrainingEnvironmentForm({
           id="environment_type"
           name="environment_type"
           value={environmentType}
-          onChange={(e) => setEnvironmentType(e.target.value as typeof environmentType)}
+          onChange={(e) => handleEnvironmentTypeChange(e.target.value as typeof environmentType)}
           required
         >
           {ENVIRONMENT_TYPE_OPTIONS.map((option) => (
@@ -75,21 +82,11 @@ export function TrainingEnvironmentForm({
         </select>
       </div>
 
-      <div>
-        <span className="input-label block mb-2">Available Equipment</span>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {EQUIPMENT_TAG_OPTIONS.map((option) => (
-            <label key={option.value} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={equipmentTags.includes(option.value)}
-                onChange={() => toggleTag(option.value)}
-              />
-              {option.label}
-            </label>
-          ))}
-        </div>
-      </div>
+      <EquipmentPicker
+        selected={equipmentTags}
+        onChange={setEquipmentTags}
+        environmentType={environmentType}
+      />
 
       <label className="flex items-center gap-2 text-sm">
         <input
