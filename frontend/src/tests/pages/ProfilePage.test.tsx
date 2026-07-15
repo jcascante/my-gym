@@ -27,7 +27,6 @@ describe('ProfilePage', () => {
     experience_level: 'intermediate',
     days_per_week: 4,
     workout_duration_min: 60,
-    equipment: 'gym',
     injuries_limitations: 'None',
     short_term_goals: 'Build muscle',
     medium_term_goals: 'Improve overall fitness',
@@ -69,7 +68,6 @@ describe('ProfilePage', () => {
     expect(screen.getByText('strength')).toBeInTheDocument();
     expect(screen.getByText('4 days/week')).toBeInTheDocument();
     expect(screen.getByText('60 minutes')).toBeInTheDocument();
-    expect(screen.getByText('gym')).toBeInTheDocument();
     expect(screen.getByText('None')).toBeInTheDocument();
     expect(screen.getByText('Build muscle')).toBeInTheDocument();
     expect(screen.getByText('Improve overall fitness')).toBeInTheDocument();
@@ -276,7 +274,6 @@ describe('ProfilePage', () => {
           experience_level: 'intermediate',
           days_per_week: 4,
           workout_duration_min: 60,
-          equipment: 'gym',
           injuries_limitations: 'None',
           short_term_goals: 'Build muscle',
           medium_term_goals: 'Improve overall fitness',

@@ -1,10 +1,14 @@
 import enum
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.models.training_environment import TrainingEnvironment
 
 
 def _utcnow() -> datetime:
@@ -35,12 +39,6 @@ class ExperienceLevel(str, enum.Enum):
     ADVANCED = "advanced"
 
 
-class Equipment(str, enum.Enum):
-    HOME = "home"
-    GYM = "gym"
-    BODYWEIGHT = "bodyweight"
-
-
 class User(Base):
     __tablename__ = "users"
 
@@ -53,6 +51,9 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
 
     profile: Mapped["UserProfile | None"] = relationship(back_populates="user", uselist=False)
+    environments: Mapped[list["TrainingEnvironment"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email={self.email})>"
@@ -72,7 +73,6 @@ class UserProfile(Base):
     experience_level: Mapped[ExperienceLevel | None] = mapped_column(Enum(ExperienceLevel))
     days_per_week: Mapped[int | None] = mapped_column(Integer)
     workout_duration_min: Mapped[int | None] = mapped_column(Integer)
-    equipment: Mapped[Equipment | None] = mapped_column(Enum(Equipment))
     injuries_limitations: Mapped[str | None] = mapped_column(Text)
     short_term_goals: Mapped[str | None] = mapped_column(Text)
     medium_term_goals: Mapped[str | None] = mapped_column(Text)

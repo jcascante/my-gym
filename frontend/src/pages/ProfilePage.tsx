@@ -26,7 +26,6 @@ export default function ProfilePage() {
       experience_level: userProfile?.experience_level,
       days_per_week: userProfile?.days_per_week,
       workout_duration_min: userProfile?.workout_duration_min,
-      equipment: userProfile?.equipment,
       injuries_limitations: userProfile?.injuries_limitations,
       short_term_goals: userProfile?.short_term_goals,
       medium_term_goals: userProfile?.medium_term_goals,
@@ -84,7 +83,6 @@ export default function ProfilePage() {
         experience_level: parseStringOrNull(formData.experience_level),
         days_per_week: parseNumOrNull(formData.days_per_week),
         workout_duration_min: parseNumOrNull(formData.workout_duration_min),
-        equipment: parseStringOrNull(formData.equipment),
         injuries_limitations: parseStringOrNull(formData.injuries_limitations),
         short_term_goals: parseStringOrNull(formData.short_term_goals),
         medium_term_goals: parseStringOrNull(formData.medium_term_goals),
@@ -259,16 +257,6 @@ export default function ProfilePage() {
                       </p>
                       <p className="text-base font-medium text-neutral-900 dark:text-neutral-50">
                         {userProfile.workout_duration_min} minutes
-                      </p>
-                    </div>
-                  )}
-                  {userProfile.equipment && (
-                    <div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-500">
-                        Equipment Access
-                      </p>
-                      <p className="text-base font-medium text-neutral-900 dark:text-neutral-50">
-                        {userProfile.equipment}
                       </p>
                     </div>
                   )}
@@ -465,22 +453,6 @@ export default function ProfilePage() {
                     max="300"
                     step="15"
                   />
-                  <div className="input-group">
-                    <label htmlFor="equipment" className="input-label">
-                      Equipment Access
-                    </label>
-                    <select
-                      id="equipment"
-                      name="equipment"
-                      value={formData?.equipment || ''}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select equipment</option>
-                      <option value="home">Home</option>
-                      <option value="bodyweight">Bodyweight Only</option>
-                      <option value="gym">Gym</option>
-                    </select>
-                  </div>
                 </div>
               </div>
 

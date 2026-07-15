@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from app.api.v1 import auth_router, users_router
+from app.api.v1 import auth_router, programs_router, training_environments_router, users_router
 from app.core import AppException, get_logger, settings, setup_logging
 
 setup_logging()
@@ -75,6 +75,8 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(users_router, prefix=settings.API_V1_STR)
+app.include_router(training_environments_router, prefix=settings.API_V1_STR)
+app.include_router(programs_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")

@@ -9,6 +9,7 @@ import DashboardPage from '@/pages/DashboardPage';
 import OnboardingPage from '@/pages/OnboardingPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SettingsPage from '@/pages/SettingsPage';
+import EnvironmentsPage from '@/pages/EnvironmentsPage';
 
 export default function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/environments" element={<EnvironmentsPage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </>
         ) : (
