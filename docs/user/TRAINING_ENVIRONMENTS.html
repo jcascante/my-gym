@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Environments - MyGym</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
+        }
+
+        header {
+            background: #1a3a52;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        h2 {
+            color: #1a3a52;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #1a3a52;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2c5282;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        p, li {
+            margin-bottom: 0.75rem;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .step {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .step ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0;
+            color: white;
+        }
+
+        .step li {
+            margin-bottom: 0.75rem;
+            color: white;
+        }
+
+        .tip {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+
+        .success {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+
+        .warning {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+
+        .faq-item {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1rem;
+            margin: 1.25rem 0;
+            border-radius: 8px;
+        }
+
+        .faq-item strong {
+            color: white;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .faq-item p {
+            margin: 0;
+            color: #ccc;
+        }
+
+        .faq-item a {
+            color: #6eb3d1;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #e5e7eb;
+            color: #374151;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        table th, table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.6rem 0.75rem;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        table th {
+            background: #f3f4f6;
+            color: #1a3a52;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #1a3a52;
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background 0.3s;
+            font-weight: 500;
+        }
+
+        .back-button:hover {
+            background: #2c5282;
+        }
+
+        footer {
+            background: #2c5282;
+            padding: 1.5rem;
+            text-align: center;
+            border-top: none;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: #6eb3d1;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        strong {
+            color: #333;
+        }
+
+        .success strong, .step strong, .tip strong {
+            color: white;
+        }
+
+        a {
+            color: #2c5282;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-button">← Back</a>
+
+        <header>
+            <h1>📍 Training Environments</h1>
+            <p>Tell us where you train so we know what equipment you have to work with</p>
+        </header>
+
+        <div class="content">
+            <h2>Overview</h2>
+            <p>Your fitness profile (age, experience, goals) doesn't change much day to day — but where you train might. Maybe you lift at a commercial gym on weekdays, do bodyweight circuits at home on weekends, and drop into a CrossFit box occasionally. <strong>Training Environments</strong> let you save each of these setups separately, with its own name, type, and equipment list, so a program built for "Home" doesn't assume you have a squat rack.</p>
+
+            <div class="success">
+                ✓ <strong>Add as many as you need</strong> — a home setup, a commercial gym, a bodyweight-only routine — and pick the right one whenever you're ready to generate a program.
+            </div>
+
+            <h2>Before You Start</h2>
+            <ul>
+                <li>You must be logged into your MyGym account</li>
+                <li>You don't need to have completed onboarding's Training Environments step first — you can add environments anytime</li>
+                <li>Think about the different places you actually train and what's available at each</li>
+            </ul>
+
+            <h2>How to Add a Training Environment</h2>
+            <div class="step">
+                <ol>
+                    <li>Open the user menu in the header and click <strong>Training Environments</strong></li>
+                    <li>Click <strong>Add Environment</strong></li>
+                    <li>Give it a <strong>Name</strong> (e.g. "Home Gym", "Downtown CrossFit")</li>
+                    <li>Choose a <strong>Type</strong>: Commercial Gym, Home, Bodyweight Only, CrossFit Box, or Other</li>
+                    <li>Check off the <strong>equipment</strong> available there (barbell, squat rack, dumbbells, kettlebell, resistance bands, pull-up bar, bench, cardio machine, cable machine, or none)</li>
+                    <li>Optionally check <strong>Set as default environment</strong></li>
+                    <li>Click <strong>Save Environment</strong></li>
+                </ol>
+            </div>
+
+            <div class="tip">
+                💡 <strong>Adding one during onboarding?</strong> The onboarding wizard has the same form embedded in its "Training Environments" step. It has its own <strong>Save Environment</strong> button — separate from the wizard's Back/Next controls. Click Save Environment to add it to your list before moving to the next step.
+            </div>
+
+            <h2>Managing Your Environments</h2>
+            <p>From the Training Environments page, each saved environment shows as a card with:</p>
+            <ul>
+                <li><strong>Edit</strong> — Update the name, type, equipment, or default status</li>
+                <li><strong>Delete</strong> — Remove it permanently (you'll be asked to confirm)</li>
+                <li><strong>Generate Program</strong> — Start creating a workout program based on this environment (see below)</li>
+            </ul>
+
+            <h3>Default Environment</h3>
+            <p>Marking one environment as <strong>default</strong> is just a convenience flag — only one environment can be the default at a time. Setting a new one automatically un-defaults the previous one.</p>
+
+            <h2>Generating a Program <span class="badge">Coming Soon</span></h2>
+            <p>Clicking <strong>Generate Program</strong> on any environment opens a short questionnaire so we can tailor that specific program:</p>
+            <div class="step">
+                <ol>
+                    <li><strong>Days per Week</strong> and <strong>which specific days</strong> you plan to train</li>
+                    <li><strong>Session Duration</strong> — how long you have per workout</li>
+                    <li><strong>Start Date</strong> — when the program should begin</li>
+                    <li><strong>Focus Areas</strong> — push, pull, legs, core, cardio, flexibility, or full body</li>
+                    <li><strong>Weight Unit</strong> — kilograms or pounds</li>
+                    <li><strong>Available Weight Increments</strong> — the smallest jumps you can actually load (e.g. 1.25, 2.5, 5)</li>
+                    <li><strong>Progression Style</strong> — consistent (same every week) or variable (changes week to week)</li>
+                </ol>
+            </div>
+            <p>These preferences are specific to <em>this</em> program-generation attempt — they aren't saved to your profile or environment, since they might be different the next time you generate a program. Submitting the form today shows a "coming soon" message; program generation itself hasn't been built yet, but your preferences round-trip through the same request the real feature will use.</p>
+
+            <h2>Understanding Environment Types</h2>
+            <table>
+                <tr><th>Type</th><th>Typical Use</th></tr>
+                <tr><td>Commercial Gym</td><td>Full facility with machines, free weights, and cardio equipment</td></tr>
+                <tr><td>Home</td><td>Whatever equipment you've personally got at home</td></tr>
+                <tr><td>Bodyweight Only</td><td>No equipment — push-ups, squats, planks, etc.</td></tr>
+                <tr><td>CrossFit Box</td><td>Functional fitness gym with barbells, kettlebells, and rigs</td></tr>
+                <tr><td>Other</td><td>Anything that doesn't fit neatly into the above</td></tr>
+            </table>
+
+            <h2>Troubleshooting</h2>
+
+            <div class="faq-item">
+                <strong>❓ I filled in the form but my environment isn't saved</strong>
+                <p>Check that you clicked <strong>Save Environment</strong> — filling in fields alone doesn't save anything until that button is clicked. If you were in the onboarding wizard, make sure you clicked Save Environment before Next; the wizard's Next button is disabled while the form is open specifically to prevent this.</p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ Can I have more than one environment marked as default?</strong>
+                <p>No — only one at a time. Checking "Set as default" on a new or edited environment automatically clears the flag from whichever one had it before.</p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ Why can't I generate a real program yet?</strong>
+                <p>Program generation is still being built. The questionnaire is fully functional and your answers are validated, but submitting it currently returns a "not yet implemented" message instead of an actual program.</p>
+            </div>
+
+            <div class="faq-item">
+                <strong>❓ I deleted an environment by accident</strong>
+                <p>Deletion is permanent and can't be undone — you'll need to re-add it with the same details. We ask for confirmation before deleting specifically to help avoid this.</p>
+            </div>
+
+            <h2>Tips & Tricks</h2>
+            <ul>
+                <li><div class="tip">💡 Keep environment names specific ("Home — Garage Gym" vs. just "Home") if you might add more than one home setup later.</div></li>
+                <li><div class="tip">💡 Only check the equipment you actually have reliable access to — an accurate list means better exercise recommendations once program generation ships.</div></li>
+                <li><div class="tip">💡 It's fine to finish onboarding with zero environments — add your first one whenever you're ready from the Training Environments page.</div></li>
+            </ul>
+
+            <h2>Related Features</h2>
+            <ul>
+                <li><a href="ONBOARDING.html">Onboarding Guide</a> — Where the Training Environments step fits in your first-time setup</li>
+                <li><a href="PROFILE_SETUP.html">Profile Setup</a> — Your stable personal and fitness data</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 MyGym. Your personalized workout companion.</p>
+            <p><a href="../index.html">← Back to User Guide</a></p>
+        </footer>
+    </div>
+</body>
+</html>
