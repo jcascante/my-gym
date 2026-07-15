@@ -19,6 +19,11 @@ export const EQUIPMENT_TAG_OPTIONS: { value: string; label: string }[] = [
   { value: 'bench', label: 'Bench' },
   { value: 'cardio_machine', label: 'Cardio Machine' },
   { value: 'cable_machine', label: 'Cable Machine' },
+  { value: 'ez_bar', label: 'EZ Bar' },
+  { value: 'machine', label: 'Weight Machine' },
+  { value: 'medicine_ball', label: 'Medicine Ball' },
+  { value: 'ab_wheel', label: 'Ab Wheel' },
+  { value: 'sled', label: 'Sled' },
   { value: 'none', label: 'None' },
 ];
 

@@ -1,6 +1,7 @@
 from .config import settings
 from .exceptions import (
     AppException,
+    ExerciseNotFoundError,
     InvalidCredentialsError,
     InvalidTokenError,
     TokenExpiredError,
@@ -22,6 +23,7 @@ __all__ = [
     "TokenExpiredError",
     "InvalidTokenError",
     "TrainingEnvironmentNotFoundError",
+    "ExerciseNotFoundError",
     "hash_password",
     "verify_password",
     "create_access_token",

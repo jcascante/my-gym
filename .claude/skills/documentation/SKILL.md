@@ -3,6 +3,7 @@ name: documentation
 description: Create and maintain GitHub Pages HTML documentation for users and technical audiences
 skills: [documentation, html, github-pages, user-guides, technical-docs]
 allowed-tools: [Bash, Read, Edit, Write, Artifact]
+model: haiku
 ---
 
 # Documentation Skill

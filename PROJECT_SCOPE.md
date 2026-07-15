@@ -146,16 +146,28 @@ A personalized workout program manager that builds custom exercise programs base
 ```
 
 ### Exercises (Library)
+Classified by movement pattern and body region/muscle group — the same way a trainer or
+physical therapist reasons about substitutions — not by the program-day split
+(`FocusArea`: push/pull/legs/core/cardio/flexibility) used for weekly scheduling. See
+[docs/technical/EXERCISE_LIBRARY_TECHNICAL.html](docs/technical/EXERCISE_LIBRARY_TECHNICAL.html)
+for the full methodology.
 ```
 - id
 - name
-- category (push|pull|legs|core|cardio|flexibility)
-- muscle_groups (array: chest|back|shoulders|biceps|triceps|forearms|legs|glutes|core|etc)
-- equipment_required (bodyweight|dumbbells|barbell|kettlebell|etc)
-- difficulty_level (beginner|intermediate|advanced)
+- slug (unique, e.g. "barbell-bench-press")
+- movement_slug (groups equipment variants of the same exercise, e.g. "bench_press")
+- body_region (upper_body|lower_body|core|full_body)
+- movement_pattern (squat|hinge|lunge|horizontal_push|vertical_push|horizontal_pull|
+  vertical_pull|rotation|anti_rotation|carry|isolation|locomotion|mobility)
+- primary_muscles (array, validated against ALLOWED_MUSCLE_GROUPS)
+- secondary_muscles (array, same validation)
+- equipment_tags (array, validated against ALLOWED_EQUIPMENT_TAGS — shared with TrainingEnvironment)
+- difficulty_level (beginner|intermediate|advanced — reuses User's ExperienceLevel enum)
+- contraindications (array, e.g. knee|shoulder|lower_back|wrist|elbow|hip|neck|ankle)
 - instructions (text)
 - form_cues (array)
-- safety_notes (text)
+- safety_notes (text, nullable)
+- is_active (boolean — deactivated, never hard-deleted, once referenced by workout logs)
 ```
 
 ### User Workout Logs
@@ -259,7 +271,7 @@ A personalized workout program manager that builds custom exercise programs base
 ### Database Strategy
 - **Development**: SQLite for quick iteration
 - **Production**: PostgreSQL with migrations
-- **Seed data**: Exercise library pre-populated via migrations
+- **Seed data**: Exercise library populated via migration-created schema + idempotent seed script (`python -m app.db.seed.seed_exercises`). Content is versioned in `backend/app/db/seed/exercises.py` and re-runnable anytime without schema changes.
 
 ### Authentication
 - JWT tokens (stateless)

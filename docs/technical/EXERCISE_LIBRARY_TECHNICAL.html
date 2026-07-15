@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise Library - Technical Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        nav a {
+            color: #2a5298;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        nav a:hover {
+            background: white;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        h2 {
+            color: #1e3c72;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #2a5298;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2a5298;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        p, li {
+            margin-bottom: 0.75rem;
+            color: #374151;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+        }
+
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .endpoint {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .endpoint strong {
+            color: #1e40af;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .diagram {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+            color: #1f2937;
+        }
+
+        .keyword {
+            color: #7c3aed;
+        }
+
+        .string {
+            color: #16a34a;
+        }
+
+        .comment {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .note {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            color: #1e3a8a;
+        }
+
+        .method-card {
+            background: #f5f3ff;
+            border-left: 4px solid #7c3aed;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            color: #4c1d95;
+        }
+
+        .method-card strong {
+            color: #5b21b6;
+        }
+
+        .troubleshooting-item {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .troubleshooting-item strong {
+            color: #92400e;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        table th, table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        table th {
+            background: #f3f4f6;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        a {
+            color: #2a5298;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            background: #f3f4f6;
+            padding: 1.5rem;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #f3f4f6;
+            color: #1f2937;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .back-button:hover {
+            background: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-button">← Back</a>
+
+        <header>
+            <h1>⚙️ Exercise Library Technical Documentation</h1>
+            <p>Movement taxonomy, data model, read-only API, and the seed-content pipeline</p>
+        </header>
+
+        <nav>
+            <a href="#overview">Overview</a>
+            <a href="#methodology">Classification Methodology</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#constants">Constants</a>
+            <a href="#models">Models & Schema</a>
+            <a href="#migration">Migration</a>
+            <a href="#crud">CRUD & Filtering</a>
+            <a href="#endpoints">API Endpoints</a>
+            <a href="#seed">Seed Content Pipeline</a>
+            <a href="#testing">Testing</a>
+            <a href="#deployment">Deployment</a>
+            <a href="#troubleshooting">Troubleshooting</a>
+            <a href="#references">References</a>
+        </nav>
+
+        <div class="content">
+            <h2 id="overview">Overview</h2>
+            <p>The program-generation engine (<code>PROJECT_SCOPE.md</code>'s next major piece of work) needs something to select exercises from. The <strong>Exercise Library</strong> is that foundation: a read-only catalog of exercises tagged with everything the engine will eventually filter and substitute on — equipment required, muscle groups targeted, movement classification, difficulty, and injury contraindications — plus enough equipment variants of the same movement (barbell / dumbbell / band / machine / bodyweight versions of a bench press, for example) that the engine can swap one exercise for an equivalent when equipment or a limitation rules an option out.</p>
+
+            <p>This pass ships the data model, a schema-only migration, an idempotent content-seeding script, and a read-only API (<code>list</code> + <code>get-by-id</code>). It deliberately stops short of the substitution/alternatives logic itself — that's engine work, tracked separately.</p>
+
+            <div class="note"><strong>Scope decision:</strong> <code>UserProfile.injuries_limitations</code> stays free text for now. Only <code>Exercise.contraindications</code> is tag-based in this pass; wiring free-text limitations to structured tags is deferred to the engine work.</div>
+
+            <h2 id="methodology">Classification Methodology</h2>
+            <p>Exercises are classified the way a trainer or physical therapist actually reasons about them — by <strong>movement pattern</strong> first, and by <strong>body region → muscle group</strong> second — rather than by the program-day split (<code>push / pull / legs / core / cardio / flexibility</code>) that <code>FocusArea</code> already uses for weekly scheduling (see <a href="TRAINING_ENVIRONMENTS_TECHNICAL.html#models">Training Environments Technical Reference</a>). Those are two different, deliberately independent taxonomies:</p>
+            <table>
+                <tr><th>Taxonomy</th><th>Used for</th><th>Example values</th></tr>
+                <tr><td><code>FocusArea</code></td><td>Which <em>day</em> of a program a workout belongs to</td><td>push, pull, legs, core, cardio, flexibility, full_body</td></tr>
+                <tr><td><code>MovementPattern</code></td><td>Which exercises are functionally <em>interchangeable</em> with each other</td><td>squat, hinge, horizontal_push, anti_rotation, carry, mobility…</td></tr>
+            </table>
+
+            <div class="method-card">
+                <strong>Why movement pattern, not muscle group, is the primary substitution key</strong>
+                <p>Two exercises that hit the "same muscle" can load a joint completely differently — a barbell back squat and a Romanian deadlift both heavily recruit the glutes and hamstrings, but a squat is knee-flexion-dominant while a hinge is hip-flexion-dominant. For someone flagged with a knee contraindication, "same muscle group" is the wrong substitution rule; "same movement pattern" is the right one, because it's what actually determines whether a joint is loaded. This is standard functional-training classification, most closely associated with the <strong>NASM Optimum Performance Training (OPT) model</strong> and the <strong>NSCA's movement-pattern-based exercise categorization</strong> — both organize resistance training around fundamental human movements (squat, hinge, lunge, push, pull, rotation, gait/locomotion) rather than isolated muscle targets. See <a href="#references">References</a>.</p>
+            </div>
+
+            <h3>The Two Substitution Radii</h3>
+            <p><code>Exercise</code> carries <em>two</em> grouping fields at different granularities, so the future engine can try the narrowest safe swap first and widen only if needed:</p>
+            <ul>
+                <li><strong><code>movement_slug</code></strong> (narrow) — groups equipment variants of the <em>same specific exercise</em>. All four bench press variants (barbell, dumbbell, band, machine) share <code>movement_slug="bench_press"</code>. Near-identical joint loading and skill demand; the safest possible swap.</li>
+                <li><strong><code>movement_pattern</code></strong> (broad) — groups all exercises that train the same fundamental movement, regardless of specific exercise. Bench press variants <em>and</em> push-ups both share <code>movement_pattern=HORIZONTAL_PUSH</code>, even though push-ups don't share a <code>movement_slug</code> with any bench press variant. Functionally equivalent, but not the same skill/loading profile.</li>
+            </ul>
+            <p>Example: a user with only dumbbells and a knee contraindication needing a horizontal push exercise → the engine tries <code>movement_slug="bench_press"</code> first (finds Dumbbell Bench Press, no swap in exercise character needed), and would only widen to the full <code>movement_pattern=HORIZONTAL_PUSH</code> pool if no <code>bench_press</code> variant matched their equipment.</p>
+
+            <h3>Body Region → Muscle Group</h3>
+            <p>Muscle-level detail exists as a secondary axis for balance/volume reasoning (e.g. "make sure the program hits posterior chain, not just quads"), organized top-down: <code>BodyRegion</code> (upper_body / lower_body / core / full_body) contains <code>ALLOWED_MUSCLE_GROUPS</code> entries. Deltoids are deliberately split into <code>shoulders_anterior</code> / <code>shoulders_lateral</code> / <code>shoulders_posterior</code> rather than one generic <code>shoulders</code> tag — this is exactly the granularity a trainer uses to balance push/pull volume, and it's what lets a shoulder contraindication or an anterior-delt-overuse flag mean something precise (an overhead press loads anterior/lateral delts; a face pull targets posterior delts specifically).</p>
+
+            <h2 id="architecture">Architecture</h2>
+            <div class="diagram">Exercise (table: exercises)
+ ├── slug            (unique)      — e.g. "barbell-bench-press"
+ ├── movement_slug    (indexed)    — e.g. "bench_press"  [narrow substitution radius]
+ ├── body_region      (enum)       — upper_body | lower_body | core | full_body
+ ├── movement_pattern (enum)       — squat | hinge | lunge | horizontal_push | ... [broad substitution radius]
+ ├── primary_muscles  / secondary_muscles  (JSON list[str], validated against ALLOWED_MUSCLE_GROUPS)
+ ├── equipment_tags   (JSON list[str], validated against ALLOWED_EQUIPMENT_TAGS — shared with TrainingEnvironment)
+ ├── difficulty_level (enum — reuses User's ExperienceLevel, not redefined)
+ ├── contraindications (JSON list[str], validated against ALLOWED_CONTRAINDICATION_TAGS)
+ ├── instructions, form_cues[], safety_notes
+ └── is_active (bool) — deactivate, never hard-delete; future Workout/UserWorkoutLog rows may reference an id
+
+No FK to users — exercises are a shared, global library, not user-owned data.</div>
+
+            <h2 id="constants">Constants</h2>
+            <p>File: <code>backend/app/core/constants.py</code>. Three flat allow-lists back every tag column, the same pattern <code>TrainingEnvironment.equipment_tags</code> already established — not normalized <code>Equipment</code>/<code>MuscleGroup</code> tables.</p>
+            <div class="code-block">ALLOWED_EQUIPMENT_TAGS: list[str] = [
+    <span class="string">"barbell"</span>, <span class="string">"squat_rack"</span>, <span class="string">"dumbbells"</span>, <span class="string">"kettlebell"</span>, <span class="string">"resistance_bands"</span>,
+    <span class="string">"pull_up_bar"</span>, <span class="string">"bench"</span>, <span class="string">"cardio_machine"</span>, <span class="string">"cable_machine"</span>,
+    <span class="string">"ez_bar"</span>, <span class="string">"machine"</span>, <span class="string">"medicine_ball"</span>, <span class="string">"ab_wheel"</span>, <span class="string">"sled"</span>, <span class="string">"none"</span>,
+]
+
+ALLOWED_MUSCLE_GROUPS: list[str] = [
+    <span class="comment"># Upper body</span>
+    <span class="string">"chest"</span>, <span class="string">"upper_back"</span>, <span class="string">"lats"</span>, <span class="string">"traps"</span>,
+    <span class="string">"shoulders_anterior"</span>, <span class="string">"shoulders_lateral"</span>, <span class="string">"shoulders_posterior"</span>,
+    <span class="string">"biceps"</span>, <span class="string">"triceps"</span>, <span class="string">"forearms"</span>,
+    <span class="comment"># Lower body</span>
+    <span class="string">"quads"</span>, <span class="string">"hamstrings"</span>, <span class="string">"glutes"</span>, <span class="string">"calves"</span>,
+    <span class="string">"hip_flexors"</span>, <span class="string">"hip_abductors"</span>, <span class="string">"hip_adductors"</span>,
+    <span class="comment"># Core</span>
+    <span class="string">"abs"</span>, <span class="string">"obliques"</span>, <span class="string">"lower_back"</span>, <span class="string">"deep_core"</span>,
+    <span class="comment"># Full body / cardio</span>
+    <span class="string">"cardio"</span>,
+]
+
+ALLOWED_CONTRAINDICATION_TAGS: list[str] = [
+    <span class="string">"knee"</span>, <span class="string">"shoulder"</span>, <span class="string">"lower_back"</span>, <span class="string">"wrist"</span>,
+    <span class="string">"elbow"</span>, <span class="string">"hip"</span>, <span class="string">"neck"</span>, <span class="string">"ankle"</span>,
+]</div>
+            <div class="note"><strong>Equipment tags are shared with <code>TrainingEnvironment</code> on purpose.</strong> Reusing <code>ALLOWED_EQUIPMENT_TAGS</code> as-is (rather than a separate exercise-equipment vocabulary) means an exercise's <code>equipment_tags</code> can be checked directly against a <code>TrainingEnvironment.equipment_tags</code> set with no translation layer. The <code>ez_bar</code> / <code>machine</code> / <code>medicine_ball</code> / <code>ab_wheel</code> / <code>sled</code> tags were added to this shared list (and mirrored into <code>frontend/src/types/trainingEnvironment.ts</code>'s equipment picker) specifically to support machine- and implement-based exercise variants added when the library was expanded from 48 to 135 exercises — an exercise tagged for equipment nobody can select in the training-environment picker would be permanently unreachable by the equipment filter.</div>
+
+            <h2 id="models">Models & Schema</h2>
+            <p>File: <code>backend/app/models/exercise.py</code>. No relationships, no FK — a global, shared table.</p>
+            <div class="code-block"><span class="keyword">class</span> BodyRegion(str, enum.Enum):
+    UPPER_BODY = <span class="string">"upper_body"</span>; LOWER_BODY = <span class="string">"lower_body"</span>
+    CORE = <span class="string">"core"</span>; FULL_BODY = <span class="string">"full_body"</span>
+
+<span class="keyword">class</span> MovementPattern(str, enum.Enum):
+    SQUAT = <span class="string">"squat"</span>; HINGE = <span class="string">"hinge"</span>; LUNGE = <span class="string">"lunge"</span>
+    HORIZONTAL_PUSH = <span class="string">"horizontal_push"</span>; VERTICAL_PUSH = <span class="string">"vertical_push"</span>
+    HORIZONTAL_PULL = <span class="string">"horizontal_pull"</span>; VERTICAL_PULL = <span class="string">"vertical_pull"</span>
+    ROTATION = <span class="string">"rotation"</span>; ANTI_ROTATION = <span class="string">"anti_rotation"</span>
+    CARRY = <span class="string">"carry"</span>; ISOLATION = <span class="string">"isolation"</span>
+    LOCOMOTION = <span class="string">"locomotion"</span>; MOBILITY = <span class="string">"mobility"</span>
+
+<span class="keyword">class</span> Exercise(Base):
+    __tablename__ = <span class="string">"exercises"</span>
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=<span class="keyword">True</span>)
+    name: Mapped[str] = mapped_column(String(255), nullable=<span class="keyword">False</span>)
+    slug: Mapped[str] = mapped_column(String(255), nullable=<span class="keyword">False</span>, unique=<span class="keyword">True</span>, index=<span class="keyword">True</span>)
+    movement_slug: Mapped[str] = mapped_column(String(255), nullable=<span class="keyword">False</span>, index=<span class="keyword">True</span>)
+    body_region: Mapped[BodyRegion] = mapped_column(Enum(BodyRegion), nullable=<span class="keyword">False</span>)
+    movement_pattern: Mapped[MovementPattern] = mapped_column(Enum(MovementPattern), nullable=<span class="keyword">False</span>)
+    primary_muscles: Mapped[list[str]] = mapped_column(JSON, nullable=<span class="keyword">False</span>)
+    secondary_muscles: Mapped[list[str]] = mapped_column(JSON, nullable=<span class="keyword">False</span>, default=list)
+    equipment_tags: Mapped[list[str]] = mapped_column(JSON, nullable=<span class="keyword">False</span>)
+    difficulty_level: Mapped[ExperienceLevel] = mapped_column(Enum(ExperienceLevel), nullable=<span class="keyword">False</span>)  <span class="comment"># reused from app.models.user, not redefined</span>
+    instructions: Mapped[str] = mapped_column(Text, nullable=<span class="keyword">False</span>)
+    form_cues: Mapped[list[str]] = mapped_column(JSON, nullable=<span class="keyword">False</span>, default=list)
+    safety_notes: Mapped[str | <span class="keyword">None</span>] = mapped_column(Text, nullable=<span class="keyword">True</span>)
+    contraindications: Mapped[list[str]] = mapped_column(JSON, nullable=<span class="keyword">False</span>, default=list)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=<span class="keyword">False</span>, default=<span class="keyword">True</span>)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=<span class="keyword">False</span>)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=<span class="keyword">False</span>)</div>
+
+            <p><code>ExerciseResponse</code> (<code>backend/app/schemas/exercise.py</code>) mirrors every column except <code>is_active</code> — clients only ever see active exercises, so the flag is an internal implementation detail. No create/update schemas exist yet since the API is read-only this pass.</p>
+
+            <h2 id="migration">Migration</h2>
+            <p>Revision <code>a1b2c3d4e5f6</code> (<code>down_revision = "77fcb49685a6"</code>) is <strong>schema only</strong> — no data. Two new Postgres enum types are created (<code>bodyregion</code>, <code>movementpattern</code>); <code>difficulty_level</code> reuses the <strong>existing</strong> <code>experiencelevel</code> enum type (created by <code>ebd4d0a4d103_initial_schema.py</code> for <code>UserProfile.experience_level</code>) rather than recreating it.</p>
+
+            <div class="troubleshooting-item">
+                <strong>⚠️ Reusing an existing Postgres enum inside <code>op.create_table</code> silently tries to recreate it</strong>
+                <p>The obvious approach — <code>sa.Enum("BEGINNER", "INTERMEDIATE", "ADVANCED", name="experiencelevel", create_type=False)</code> — still emits <code>CREATE TYPE experiencelevel ...</code> and fails with <code>DuplicateObject</code>. Root cause: Alembic's <code>op.create_table</code> calls <code>table.dispatch.before_create(table, connection, checkfirst=False, ...)</code>, and the generic <code>sa.Enum</code>'s creation-guard logic only skips creation when the type has bound <code>metadata</code> <em>or</em> <code>checkfirst</code> is <code>True</code> — neither is true for a fresh, unbound table inside a single <code>op.create_table</code> call, so <code>create_type=False</code> is silently ignored on the generic type. The fix is to use the <strong>dialect-specific</strong> <code>sqlalchemy.dialects.postgresql.ENUM</code> class directly for any column referencing an already-existing type — its <code>create_type=False</code> is honored in this exact scenario. New types (<code>bodyregion</code>, <code>movementpattern</code>) still use plain <code>sa.Enum</code> since they need to be created.</p>
+            </div>
+
+            <div class="code-block"><span class="keyword">from</span> sqlalchemy.dialects <span class="keyword">import</span> postgresql
+
+body_region_enum = sa.Enum(<span class="string">"UPPER_BODY"</span>, <span class="string">"LOWER_BODY"</span>, <span class="string">"CORE"</span>, <span class="string">"FULL_BODY"</span>, name=<span class="string">"bodyregion"</span>)
+movement_pattern_enum = sa.Enum(<span class="string">"SQUAT"</span>, <span class="string">"HINGE"</span>, ... , name=<span class="string">"movementpattern"</span>)
+
+<span class="comment"># Must be the postgresql-dialect ENUM — only it honors create_type=False here.</span>
+experience_level_enum = postgresql.ENUM(
+    <span class="string">"BEGINNER"</span>, <span class="string">"INTERMEDIATE"</span>, <span class="string">"ADVANCED"</span>, name=<span class="string">"experiencelevel"</span>, create_type=<span class="keyword">False</span>
+)
+
+<span class="keyword">def</span> upgrade() -> <span class="keyword">None</span>:
+    op.create_table(
+        <span class="string">"exercises"</span>,
+        ...,
+        sa.Column(<span class="string">"body_region"</span>, body_region_enum, nullable=<span class="keyword">False</span>),
+        sa.Column(<span class="string">"movement_pattern"</span>, movement_pattern_enum, nullable=<span class="keyword">False</span>),
+        sa.Column(<span class="string">"difficulty_level"</span>, experience_level_enum, nullable=<span class="keyword">False</span>),
+        ...,
+    )
+    op.create_index(op.f(<span class="string">"ix_exercises_slug"</span>), <span class="string">"exercises"</span>, [<span class="string">"slug"</span>], unique=<span class="keyword">True</span>)
+    op.create_index(op.f(<span class="string">"ix_exercises_movement_slug"</span>), <span class="string">"exercises"</span>, [<span class="string">"movement_slug"</span>], unique=<span class="keyword">False</span>)
+
+<span class="keyword">def</span> downgrade() -> <span class="keyword">None</span>:
+    op.drop_index(...); op.drop_table(<span class="string">"exercises"</span>)
+    <span class="comment"># experiencelevel is NOT dropped — user_profiles still depends on it.</span>
+    body_region_enum.drop(op.get_bind(), checkfirst=<span class="keyword">True</span>)
+    movement_pattern_enum.drop(op.get_bind(), checkfirst=<span class="keyword">True</span>)</div>
+
+            <p>Verified with a live round-trip: <code>alembic upgrade head</code> → <code>alembic downgrade -1</code> → <code>alembic upgrade head</code>, confirming the table, both new enum types, and the two indexes all clean up and recreate correctly, and that <code>experiencelevel</code> is untouched throughout.</p>
+
+            <h2 id="crud">CRUD & Filtering Semantics</h2>
+            <p>File: <code>backend/app/crud/exercise.py</code>. <code>list_exercises</code> always filters <code>is_active.is_(True)</code>, applies <code>body_region</code> / <code>movement_pattern</code> / <code>difficulty_level</code> as SQL <code>.where(...)</code> equality (cheap, indexed/enum columns), then fetches once and applies <code>muscle_group</code> / <code>equipment_tags</code> / <code>exclude_contraindications</code> as Python-side filtering on the JSON list columns — this keeps the same query portable across the SQLite test database and Postgres, since JSON containment operators differ between the two dialects.</p>
+
+            <div class="code-block">result = <span class="keyword">await</span> db.execute(query)
+exercises = list(result.scalars().all())
+
+<span class="keyword">if</span> muscle_group <span class="keyword">is not None</span>:
+    exercises = [ex <span class="keyword">for</span> ex <span class="keyword">in</span> exercises
+                 <span class="keyword">if</span> muscle_group <span class="keyword">in</span> ex.primary_muscles <span class="keyword">or</span> muscle_group <span class="keyword">in</span> ex.secondary_muscles]
+
+<span class="keyword">if</span> equipment_tags:
+    equipment_set = set(equipment_tags)
+    <span class="comment"># exercise's full equipment requirement must be satisfiable by what the caller has —</span>
+    <span class="comment"># NOT "caller's tags must be a subset of the exercise's tags" (that's backwards).</span>
+    exercises = [ex <span class="keyword">for</span> ex <span class="keyword">in</span> exercises <span class="keyword">if</span> set(ex.equipment_tags).issubset(equipment_set)]
+
+<span class="keyword">if</span> exclude_contraindications:
+    contraindications_set = set(exclude_contraindications)
+    exercises = [ex <span class="keyword">for</span> ex <span class="keyword">in</span> exercises
+                 <span class="keyword">if not</span> contraindications_set.intersection(set(ex.contraindications))]</div>
+
+            <div class="troubleshooting-item">
+                <strong>⚠️ <code>equipment_tags</code> subset check direction is easy to get backwards</strong>
+                <p>The filter answers "what can I do with the equipment I actually have?" — so it must check that <strong>the exercise's</strong> equipment requirement is a subset of <strong>the caller's</strong> tags, not the other way around. The inverted form (<code>requested_tags.issubset(exercise.equipment_tags)</code>) reads plausibly but means "the exercise must require at least these tags," which returns exercises the caller <em>cannot</em> actually perform — e.g. querying <code>equipment_tags=dumbbells</code> would incorrectly return a Bulgarian split squat that also requires a bench. Caught during review by querying the live seed data and manually checking whether every returned exercise's tags were truly satisfiable by the single requested tag.</p>
+            </div>
+
+            <h2 id="endpoints">API Endpoints</h2>
+            <p>File: <code>backend/app/api/v1/endpoints/exercises.py</code>. Both routes require <code>Depends(get_current_user)</code> for consistency with every other endpoint in the API — exercises are a shared read-only library, not user-owned data, but there was no reason to make this the first unauthenticated route.</p>
+
+            <div class="endpoint">
+                <strong>GET /api/v1/exercises</strong>
+                <p>Query params: <code>body_region</code>, <code>movement_pattern</code>, <code>muscle_group</code>, <code>equipment_tags</code> (repeatable), <code>difficulty_level</code>, <code>exclude_contraindications</code> (repeatable) → <code>list[ExerciseResponse]</code></p>
+                <div class="code-block">GET /api/v1/exercises?equipment_tags=dumbbells&amp;movement_pattern=hinge&amp;exclude_contraindications=lower_back</div>
+            </div>
+            <div class="endpoint">
+                <strong>GET /api/v1/exercises/{exercise_id}</strong>
+                <p>Returns <strong>404</strong> via <code>ExerciseNotFoundError</code> (<code>error_code: "EXERCISE_NOT_FOUND"</code>) if the id doesn't exist or the exercise is inactive.</p>
+            </div>
+
+            <h2 id="seed">Seed Content Pipeline</h2>
+            <p>Migrations are meant to be immutable once applied — baking every future exercise add/remove/edit into a new schema migration would put routine content curation on the same ceremony as schema evolution. So content is split from schema entirely:</p>
+            <div class="diagram">1. Migration (a1b2c3d4e5f6)      → creates the empty "exercises" table + indexes. Runs once, immutable.
+2. exercises.py (seed data)      → EXERCISE_SEED_DATA: list[dict], 135 exercises. Plain Python, edited anytime.
+3. seed_exercises.py             → upsert_exercises(db): idempotent insert/update/deactivate by slug.
+4. seed-exercises.yml            → workflow_dispatch-only GitHub Action to re-run step 3 against the live ECS service.</div>
+
+            <p>File: <code>backend/app/db/seed/seed_exercises.py</code></p>
+            <div class="code-block"><span class="keyword">async def</span> upsert_exercises(db: AsyncSession) -> <span class="keyword">None</span>:
+    seed_slugs: set[str] = {str(ex[<span class="string">"slug"</span>]) <span class="keyword">for</span> ex <span class="keyword">in</span> EXERCISE_SEED_DATA}
+
+    <span class="keyword">for</span> data <span class="keyword">in</span> EXERCISE_SEED_DATA:
+        existing = <span class="keyword">await</span> db.execute(select(Exercise).where(Exercise.slug == data[<span class="string">"slug"</span>]))
+        exercise = existing.scalar_one_or_none()
+        <span class="keyword">if</span> exercise <span class="keyword">is None</span>:
+            db.add(Exercise(**data, is_active=<span class="keyword">True</span>))          <span class="comment"># new slug → insert</span>
+        <span class="keyword">else</span>:
+            <span class="keyword">for</span> key, value <span class="keyword">in</span> data.items(): setattr(exercise, key, value)
+            exercise.is_active = <span class="keyword">True</span>                          <span class="comment"># existing slug → update in place</span>
+
+    <span class="keyword">await</span> db.flush()
+    <span class="comment"># any row whose slug is no longer in the seed list gets deactivated, never deleted —</span>
+    <span class="comment"># future Workout / UserWorkoutLog rows may reference it by id.</span>
+    existing_exercises = <span class="keyword">await</span> db.execute(select(Exercise))
+    <span class="keyword">for</span> exercise <span class="keyword">in</span> existing_exercises.scalars().all():
+        <span class="keyword">if</span> exercise.slug <span class="keyword">not in</span> seed_slugs <span class="keyword">and</span> exercise.is_active:
+            exercise.is_active = <span class="keyword">False</span>
+    <span class="keyword">await</span> db.commit()</div>
+
+            <p>Runnable standalone: <code>python -m app.db.seed.seed_exercises</code> (backed by an <code>async def main()</code> using the app's own <code>async_session</code>).</p>
+
+            <h3>Content Coverage</h3>
+            <p><code>backend/app/db/seed/exercises.py</code> currently holds <strong>135 exercises</strong> across all 13 <code>MovementPattern</code> values, each specific movement represented by its equipment variants (e.g. the four bench-press variants, ten squat-pattern variants from bodyweight through Smith-machine and box squat). Every entry is validated in tests against the three <code>ALLOWED_*</code> constants, and no two entries share a <code>slug</code>.</p>
+            <div class="note"><strong>Modeling rule enforced during the 48 → 135 expansion:</strong> a single row's <code>equipment_tags</code> lists equipment that must <em>all</em> be present simultaneously (e.g. Bulgarian Split Squat genuinely needs <code>["dumbbells", "bench"]</code> together). Equipment that represents <em>alternative</em> ways to do a movement (e.g. Romanian Deadlift with a barbell <em>or</em> with dumbbells) must be split into <strong>separate rows</strong> sharing one <code>movement_slug</code> — combining them into one row's tag list would incorrectly require the caller to own both, given the AND semantics of the equipment_tags subset check described above.</div>
+
+            <h2 id="testing">Testing</h2>
+            <p>File: <code>backend/tests/test_exercises.py</code> (16 tests), reusing the async client / DB fixtures from <code>backend/tests/conftest.py</code>.</p>
+            <ul>
+                <li><strong>Seed data integrity</strong> — every <code>equipment_tags</code> / <code>primary_muscles</code> / <code>secondary_muscles</code> / <code>contraindications</code> value in the seed list is checked against its <code>ALLOWED_*</code> constant, catching typos before they ever reach the database.</li>
+                <li><strong><code>upsert_exercises</code> idempotency</strong> — running it twice produces the same row count with no duplicate slugs; changing a field and re-running updates the row in place; removing a slug and re-running sets <code>is_active=False</code> without deleting the row.</li>
+                <li><strong>API filtering</strong> — <code>GET /exercises</code> respects every filter param individually and combined, and excludes <code>is_active=False</code> rows.</li>
+                <li><strong>404 / 401</strong> — missing id via <code>ExerciseNotFoundError</code>, unauthenticated requests on both routes.</li>
+            </ul>
+            <p><strong>Result at last verification:</strong> backend 61/61 pytest passing (ruff, black, mypy clean); frontend 66/66 vitest passing (eslint, tsc clean) after the equipment-tag picker sync; migration round-trip verified against live Postgres; seed script re-run confirmed idempotent (135 rows, unchanged on re-run).</p>
+
+            <h2 id="deployment">Deployment Considerations</h2>
+            <h3>Applying the Migration</h3>
+            <div class="code-block">docker-compose exec backend alembic upgrade head</div>
+
+            <h3>Seeding / Updating Content</h3>
+            <p>Locally, run once after migrating:</p>
+            <div class="code-block">docker-compose exec backend python -m app.db.seed.seed_exercises</div>
+            <p>In production, content changes don't require a full deploy. <code>.github/workflows/seed-exercises.yml</code> is a separate, <code>workflow_dispatch</code>-only Action (no push trigger) that reuses <code>deploy.yml</code>'s <code>aws ecs run-task</code> pattern against the already-running ECS service, overriding only the container command:</p>
+            <div class="code-block">--overrides <span class="string">'{"containerOverrides":[{"name":"backend","command":["uv","run","python","-m","app.db.seed.seed_exercises"]}]}'</span></div>
+            <p>Anyone with repo write access can trigger it manually from the GitHub Actions UI after merging a change to <code>exercises.py</code>, independent of code deploys. See <a href="INFRASTRUCTURE_DEPLOYMENT_TECHNICAL.html#workflow">Infrastructure & Deployment Technical Reference</a> for how the underlying ECS task-run mechanism works.</p>
+
+            <h2 id="troubleshooting">Troubleshooting</h2>
+            <div class="troubleshooting-item">
+                <strong>❌ <code>GET /exercises?equipment_tags=X</code> returns an exercise I don't have the equipment for</strong>
+                <p>See the <a href="#crud">CRUD & Filtering</a> section above — confirm <code>list_exercises</code> checks <code>set(ex.equipment_tags).issubset(equipment_set)</code>, not the reverse.</p>
+            </div>
+            <div class="troubleshooting-item">
+                <strong>❌ Alembic migration fails with <code>DuplicateObject: type "experiencelevel" already exists</code></strong>
+                <p>A column is using generic <code>sa.Enum(..., create_type=False)</code> for a type that already exists. Switch to <code>sqlalchemy.dialects.postgresql.ENUM(..., create_type=False)</code> — see the <a href="#migration">Migration</a> section above.</p>
+            </div>
+            <div class="troubleshooting-item">
+                <strong>❌ A seed content change didn't show up after editing <code>exercises.py</code></strong>
+                <p>Editing the file alone doesn't touch the database — re-run <code>python -m app.db.seed.seed_exercises</code> locally, or trigger the <code>Seed Exercises</code> GitHub Action for production.</p>
+            </div>
+
+            <h2 id="references">References</h2>
+            <ul>
+                <li><a href="https://www.nasm.org" target="_blank">National Academy of Sports Medicine (NASM)</a> — Optimum Performance Training (OPT) model; the movement-pattern-first classification approach this taxonomy follows</li>
+                <li><a href="https://www.nsca.com" target="_blank">National Strength and Conditioning Association (NSCA)</a> — movement-pattern-based exercise categorization (squat, hinge, lunge, push, pull, rotation, locomotion)</li>
+                <li><a href="https://www.acefitness.org" target="_blank">American Council on Exercise (ACE)</a> — functional movement categories used as a secondary cross-check for the body-region / muscle-group taxonomy</li>
+                <li><a href="TRAINING_ENVIRONMENTS_TECHNICAL.html">Training Environments & Program Creation Technical Reference</a> — <code>ALLOWED_EQUIPMENT_TAGS</code>, <code>FocusArea</code>, and how this library's <code>equipment_tags</code> will intersect with a user's saved environments</li>
+                <li><a href="../DATABASE_MIGRATIONS.md">Database Migrations Guide</a> — general Alembic workflow this migration follows</li>
+                <li><a href="../user/EXERCISE_LIBRARY.html">Exercise Library — User Guide</a></li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 MyGym. Technical documentation for the exercise library.</p>
+        </footer>
+    </div>
+</body>
+</html>

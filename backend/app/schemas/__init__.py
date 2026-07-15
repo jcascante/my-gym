@@ -3,6 +3,7 @@ from .auth import (
     SignupRequest,
     UserResponse,
 )
+from .exercise import ExerciseResponse
 from .program import (
     DayOfWeek,
     FocusArea,
@@ -31,6 +32,7 @@ __all__ = [
     "TrainingEnvironmentCreate",
     "TrainingEnvironmentUpdate",
     "TrainingEnvironmentResponse",
+    "ExerciseResponse",
     "FocusArea",
     "WeightUnit",
     "ProgressionStyle",
