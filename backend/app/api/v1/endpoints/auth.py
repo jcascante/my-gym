@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Cookie, Depends, Response
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.dependencies import get_current_user
 from app.core import InvalidTokenError, get_logger, settings
 from app.core.database import get_db
 from app.models import User
-from app.schemas import LoginRequest, SignupRequest, UserResponse
+from app.schemas import LoginRequest, SignupRequest, TokenResponse, UserResponse
 from app.services.auth import create_tokens, login, signup, verify_refresh_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -63,6 +64,18 @@ async def login_endpoint(
     tokens = create_tokens(user.id)
     _set_auth_cookies(response, tokens)
     return user
+
+
+@router.post("/token", response_model=TokenResponse, include_in_schema=False)
+async def token_endpoint(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    # Backs Swagger UI's Authorize dialog; form_data.username is the email.
+    user = await login(db, form_data.username, form_data.password)
+    tokens = create_tokens(user.id)
+    logger.info(f"Token issued via OAuth2 password flow for user: {user.id}")
+    return {"access_token": tokens["access_token"], "token_type": "bearer"}
 
 
 @router.post("/refresh", status_code=200)

@@ -20,3 +20,8 @@ class UserResponse(BaseModel):
     email: str
     first_name: str
     last_name: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
