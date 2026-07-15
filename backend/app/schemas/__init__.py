@@ -12,6 +12,15 @@ from .program import (
     ProgressionStyle,
     WeightUnit,
 )
+from .template import (  # noqa: F401
+    ProgressionRef,
+    RequiredInput,
+    SchemeDef,
+    SessionDef,
+    SlotRule,
+    SplitDef,
+    TemplateDefinition,
+)
 from .training_environment import (
     TrainingEnvironmentCreate,
     TrainingEnvironmentResponse,
@@ -40,4 +49,11 @@ __all__ = [
     "ProgressionStyle",
     "DayOfWeek",
     "ProgramCreationRequest",
+    "ProgressionRef",
+    "RequiredInput",
+    "SchemeDef",
+    "SessionDef",
+    "SlotRule",
+    "SplitDef",
+    "TemplateDefinition",
 ]
