@@ -33,11 +33,12 @@ Independent Docker services:
 docker-compose up
 
 # Backend
-docker-compose exec backend pytest              # Run tests
-docker-compose exec backend ruff check . --fix  # Lint
-docker-compose exec backend black .             # Format
-docker-compose exec backend mypy app/           # Type check
-docker-compose exec backend alembic upgrade head # Migrations
+docker-compose exec backend pytest                                        # Run tests
+docker-compose exec backend ruff check . --fix                            # Lint
+docker-compose exec backend black .                                       # Format
+docker-compose exec backend mypy app/                                     # Type check
+docker-compose exec backend alembic upgrade head                          # Migrations
+docker-compose exec backend python -m app.db.seed.seed_exercises         # Seed/update exercise library
 
 # Frontend
 docker-compose exec frontend npm run test:watch # Tests

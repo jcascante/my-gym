@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise Library - MyGym</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
+        }
+
+        header {
+            background: #1a3a52;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        h2 {
+            color: #1a3a52;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #1a3a52;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2c5282;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        p, li {
+            margin-bottom: 0.75rem;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .step {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .step ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0;
+            color: white;
+        }
+
+        .step li {
+            margin-bottom: 0.75rem;
+            color: white;
+        }
+
+        .tip {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+
+        .success {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+
+        .warning {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+
+        .faq-item {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1rem;
+            margin: 1.25rem 0;
+            border-radius: 8px;
+        }
+
+        .faq-item strong {
+            color: white;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .faq-item p {
+            margin: 0;
+            color: #ccc;
+        }
+
+        .faq-item a {
+            color: #6eb3d1;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #e5e7eb;
+            color: #374151;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        table th, table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.6rem 0.75rem;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        table th {
+            background: #f3f4f6;
+            color: #1a3a52;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #1a3a52;
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background 0.3s;
+            font-weight: 500;
+        }
+
+        .back-button:hover {
+            background: #2c5282;
+        }
+
+        footer {
+            background: #2c5282;
+            padding: 1.5rem;
+            text-align: center;
+            border-top: none;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: #6eb3d1;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        strong {
+            color: #333;
+        }
+
+        .success strong, .step strong, .tip strong {
+            color: white;
+        }
+
+        a {
+            color: #2c5282;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-button">← Back</a>
+
+        <header>
+            <h1>💪 Exercise Library</h1>
+            <p>The catalog of exercises your future workout programs will be built from</p>
+        </header>
+
+        <div class="content">
+            <h2>Overview <span class="badge">Foundation for Program Generation</span></h2>
+            <p>Behind the scenes, MyGym now has a library of exercises — each one tagged with the muscles it works, the equipment it needs, how difficult it is, and any joint or injury concerns it might not be great for. This is the raw material the program-generation feature (coming soon) will draw from when it builds your personalized workouts.</p>
+
+            <div class="success">
+                ✓ <strong>There's nothing for you to set up here.</strong> The library is built in and maintained by MyGym — you won't add or edit exercises yourself. This page explains what's in it and how it's organized, so the logic behind your future programs isn't a black box.
+            </div>
+
+            <h2>What's In the Library</h2>
+            <p>Every exercise includes:</p>
+            <ul>
+                <li><strong>Name and instructions</strong> — clear, step-by-step how-to</li>
+                <li><strong>Form cues</strong> — the 2-3 things to focus on to do it safely and effectively</li>
+                <li><strong>Muscles worked</strong> — a primary target plus any secondary muscles involved</li>
+                <li><strong>Equipment needed</strong> — matched to the same equipment list you pick from in <a href="TRAINING_ENVIRONMENTS.html">Training Environments</a>, so a program can be built around what you actually have</li>
+                <li><strong>Difficulty level</strong> — beginner, intermediate, or advanced</li>
+                <li><strong>Contraindications</strong> — joints or areas (like knee, shoulder, or lower back) that this particular exercise loads, so it can be avoided or swapped if you've noted a limitation in your profile</li>
+            </ul>
+
+            <h2>How Exercises Are Grouped</h2>
+            <p>Rather than just sorting exercises by body part, MyGym groups them the way a trainer or physical therapist actually thinks about them: by the <strong>type of movement</strong> first, and by muscle second.</p>
+
+            <h3>Movement Pattern</h3>
+            <p>Every exercise belongs to one fundamental movement pattern — things like <em>squat</em>, <em>hinge</em> (think deadlifts), <em>push</em>, <em>pull</em>, <em>carry</em>, or <em>rotation</em>. Two exercises in the same movement pattern train your body in a similar way, even if they use completely different equipment.</p>
+
+            <div class="tip">
+                💡 <strong>Why this matters to you:</strong> if you have a knee issue and a program calls for a squat-pattern exercise, this classification is what will eventually let MyGym swap in a hinge-pattern exercise instead (like a Romanian deadlift) — one that works similar muscles without loading your knee the same way. Sorting exercises by muscle alone can't make that distinction; sorting by movement pattern can.
+            </div>
+
+            <h3>Equipment Variants</h3>
+            <p>Most movements come in several equipment versions — a bench press, for example, exists as a barbell, dumbbell, resistance-band, and machine variant. They all train the same movement, so if your gym doesn't have a bench press station, MyGym can point you to an equally effective alternative you can actually do.</p>
+
+            <table>
+                <tr><th>Movement Pattern</th><th>What it means</th><th>Example exercises</th></tr>
+                <tr><td>Squat</td><td>Knee-led lower body movement</td><td>Back squat, goblet squat, leg press</td></tr>
+                <tr><td>Hinge</td><td>Hip-led lower body movement (often knee-friendlier than squats)</td><td>Deadlift, Romanian deadlift, kettlebell swing</td></tr>
+                <tr><td>Push / Pull</td><td>Upper body pressing or rowing/pulling movements</td><td>Bench press, overhead press, rows, pull-ups</td></tr>
+                <tr><td>Carry</td><td>Loaded walking</td><td>Farmer's carry</td></tr>
+                <tr><td>Rotation / Anti-Rotation</td><td>Core movements that rotate, or resist rotating</td><td>Russian twist, plank, Pallof press</td></tr>
+                <tr><td>Locomotion</td><td>Cardio and gait-based movement</td><td>Jogging, rowing machine, cycling</td></tr>
+                <tr><td>Mobility</td><td>Stretching and joint mobility work</td><td>Hamstring stretch, cat-cow</td></tr>
+            </table>
+
+            <p>If you'd like the deeper, more technical explanation of this classification system, see the <a href="../technical/EXERCISE_LIBRARY_TECHNICAL.html#methodology">Exercise Library Technical Reference</a> — it references the training methodologies (like NASM's Optimum Performance Training model) this grouping is based on.</p>
+
+            <h2>Browsing the Library <span class="badge">Coming Soon</span></h2>
+            <p>There isn't a page to browse the exercise library directly yet — right now it exists purely to power the program-generation feature once that ships. When browsing is available, you'll be able to search and filter exercises the same way MyGym does internally: by movement pattern, muscle group, equipment you have, and difficulty.</p>
+
+            <h2>Troubleshooting</h2>
+            <div class="faq-item">
+                <strong>❓ Can I add my own exercise?</strong>
+                <p>Not yet — the library is currently curated and maintained by MyGym, not user-editable. That may change alongside a future custom-program feature.</p>
+            </div>
+            <div class="faq-item">
+                <strong>❓ Will this replace my Training Environments equipment list?</strong>
+                <p>No — they work together. Your <a href="TRAINING_ENVIRONMENTS.html">Training Environments</a> equipment list says what you have access to; the exercise library's equipment tags are what individual exercises need. The upcoming program generator will match the two.</p>
+            </div>
+            <div class="faq-item">
+                <strong>❓ My profile lists an injury or limitation — will the library account for that?</strong>
+                <p>Each exercise notes which joints or areas it loads, but connecting that to the free-text limitations you enter in your profile is part of the not-yet-built program-generation engine, not this library on its own.</p>
+            </div>
+
+            <h2>Related Features</h2>
+            <ul>
+                <li><a href="TRAINING_ENVIRONMENTS.html">Training Environments</a> — the equipment list this library's exercises are matched against</li>
+                <li><a href="PROFILE_SETUP.html">Profile Setup</a> — where your fitness level and any limitations are recorded</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 MyGym. Your personalized workout companion.</p>
+            <p><a href="../index.html">← Back to User Guide</a></p>
+        </footer>
+    </div>
+</body>
+</html>
