@@ -43,7 +43,6 @@ class ProgramTemplate(Base):
     session_duration_min: Mapped[int] = mapped_column(Integer, nullable=False)
     session_duration_max: Mapped[int] = mapped_column(Integer, nullable=False)
     split: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
-    slot_rules: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     progression_ref: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     required_inputs: Mapped[list[Any]] = mapped_column(JSON, nullable=False, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

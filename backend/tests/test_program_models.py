@@ -19,7 +19,6 @@ async def test_template_and_program_persist(db_session: AsyncSession, test_user)
         session_duration_min=45,
         session_duration_max=75,
         split={"sessions": []},
-        slot_rules={"upper_a": []},
         progression_ref={"model_key": "linear_load", "params": {}},
         required_inputs=[],
     )
