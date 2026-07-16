@@ -9,3 +9,5 @@ export { TrainingEnvironmentCard } from './TrainingEnvironmentCard';
 export { TrainingEnvironmentForm } from './TrainingEnvironmentForm';
 export { EquipmentPicker } from './EquipmentPicker';
 export { ProgramCreationForm } from './ProgramCreationForm';
+export { TemplateMatchCard } from './TemplateMatchCard';
+export { TemplateMatchList } from './TemplateMatchList';
