@@ -114,7 +114,7 @@ async def draft(
         days_per_week=data.days_per_week,
         duration_weeks=data.duration_weeks,
         weight_unit=data.weight_unit,
-        required_inputs=cast(dict[str, float], data.required_inputs),
+        required_inputs=data.required_inputs,
     )
     await save_program(db, program)
     saved = await get_program(db, user.id, program.id)

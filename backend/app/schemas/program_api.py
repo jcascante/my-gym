@@ -21,7 +21,7 @@ class TemplateMatchOut(BaseModel):
 
 class DraftRequest(MatchRequest):
     template_id: int
-    required_inputs: dict[str, object] = {}
+    required_inputs: dict[str, float] = {}
 
 
 class FeedbackRequest(BaseModel):

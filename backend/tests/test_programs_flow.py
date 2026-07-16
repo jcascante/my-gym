@@ -1,5 +1,9 @@
 import pytest
 
+from app.core import hash_password
+from app.crud.training_environment import create_training_environment
+from app.models import User
+
 
 @pytest.mark.asyncio
 async def test_full_flow(client, auth_headers, seeded_templates, seeded_exercises, user_environment):
@@ -37,3 +41,93 @@ async def test_full_flow(client, auth_headers, seeded_templates, seeded_exercise
     # 4. accept
     r = await client.post(f"/api/v1/programs/{pid}/accept", headers=auth_headers)
     assert r.status_code == 200 and r.json()["status"] == "active"
+
+
+@pytest.mark.asyncio
+async def test_draft_malformed_required_inputs_returns_422(
+    client, auth_headers, seeded_templates, seeded_exercises, user_environment
+):
+    body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+    }
+    r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
+    template_id = r.json()[0]["template_id"]
+
+    draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": "not-a-number"}}
+    r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
+    assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_match_unauthorized(client, user_environment):
+    body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+    }
+    r = await client.post("/api/v1/programs/match", json=body)
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_match_404_missing_environment(client, auth_headers):
+    body = {
+        "environment_id": 9999,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+    }
+    r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_match_404_foreign_environment(client, auth_headers, db_session):
+    other_user = User(
+        email="other-program@example.com",
+        password_hash=hash_password("password123"),
+        first_name="Other",
+        last_name="User",
+    )
+    db_session.add(other_user)
+    await db_session.commit()
+    await db_session.refresh(other_user)
+
+    other_environment = await create_training_environment(
+        db_session, other_user.id, {"name": "Other's Gym", "environment_type": "home", "equipment_tags": []}
+    )
+
+    body = {
+        "environment_id": other_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+    }
+    r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_match_422_malformed_payload(client, auth_headers, user_environment):
+    body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+        # fitness_focus omitted
+    }
+    r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
+    assert r.status_code == 422
