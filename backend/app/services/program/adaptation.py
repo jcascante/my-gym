@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 
+from app.core.exceptions import ValidationError
 from app.models.exercise import Exercise
 from app.models.program import Workout, WorkoutExercise, WorkoutProgram
 from app.schemas.template import SlotRule, TemplateDefinition
-from app.services.program.selection import SelectionContext, select_for_slot
+from app.services.program.selection import SelectionContext, _matches_rule, _passes_filters, select_for_slot
 
 
 class FeedbackAction(BaseModel):
@@ -57,6 +58,10 @@ def apply_feedback(
     elif action.type == "swap" and action.workout_exercise_id is not None and action.exercise_id is not None:
         _, ex = _find_slot(program, action.workout_exercise_id)
         if ex is not None and not ex.is_locked:
+            rule = SlotRule(**ex.fills_rule)
+            candidate = next((e for e in exercises if e.id == action.exercise_id), None)
+            if candidate is None or not (_matches_rule(candidate, rule) and _passes_filters(candidate, ctx)):
+                raise ValidationError(f"Exercise {action.exercise_id} is not a valid substitute for this slot")
             c["swaps"][str(action.workout_exercise_id)] = action.exercise_id
             ex.exercise_id = action.exercise_id
             ex.is_user_swapped = True
@@ -94,6 +99,4 @@ def alternatives_for_slot(
     if ex is None:
         return []
     rule = SlotRule(**ex.fills_rule)
-    from app.services.program.selection import _matches_rule, _passes_filters
-
     return [e for e in exercises if _matches_rule(e, rule) and _passes_filters(e, ctx) and e.id != ex.exercise_id]
