@@ -104,7 +104,7 @@ export default function ProgramBuilderPage() {
             selectedId={chosen?.template_id ?? null}
             onSelect={onPick}
           />
-          <div className="mt-6 flex justify-start">
+          <div className="mt-6 flex gap-3 justify-between">
             <Button variant="secondary" onClick={handleBack}>
               Back
             </Button>
@@ -113,16 +113,19 @@ export default function ProgramBuilderPage() {
       )}
       {step === 2 && chosen && (
         <div>
-          <div className="flex gap-3 justify-between">
-            <Button variant="secondary" onClick={handleBack}>
-              Back
-            </Button>
-          </div>
           <RequiredInputsForm
             inputs={chosen.required_inputs}
             onSubmit={(v) => makeDraft(chosen, v)}
             initialValues={requiredInputValues}
           />
+          <div className="mt-6 flex gap-3 justify-between">
+            <Button variant="secondary" onClick={handleBack}>
+              Back
+            </Button>
+            <Button form="required-inputs-form" type="submit" variant="primary">
+              Next
+            </Button>
+          </div>
         </div>
       )}
       {step === 3 && draft && (
@@ -132,7 +135,9 @@ export default function ProgramBuilderPage() {
             <Button variant="secondary" onClick={handleBack}>
               Back
             </Button>
-            <Button onClick={onAccept}>Accept program</Button>
+            <Button variant="primary" onClick={onAccept}>
+              Accept program
+            </Button>
           </div>
         </div>
       )}

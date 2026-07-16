@@ -43,7 +43,7 @@ export function RequiredInputsForm({
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form id="required-inputs-form" onSubmit={submit} className="space-y-4">
       {inputs.map((inp) => (
         <FormField
           key={inp.key}
@@ -54,7 +54,9 @@ export function RequiredInputsForm({
           onChange={(e) => setValues((v) => ({ ...v, [inp.key]: e.target.value }))}
         />
       ))}
-      <Button type="submit">Next</Button>
+      <Button type="submit" variant="primary" className="hidden">
+        Next
+      </Button>
     </form>
   );
 }
