@@ -11,3 +11,4 @@ export { EquipmentPicker } from './EquipmentPicker';
 export { ProgramCreationForm } from './ProgramCreationForm';
 export { TemplateMatchCard } from './TemplateMatchCard';
 export { TemplateMatchList } from './TemplateMatchList';
+export { RequiredInputsForm } from './RequiredInputsForm';
