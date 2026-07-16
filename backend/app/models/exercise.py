@@ -35,6 +35,83 @@ class MovementPattern(str, enum.Enum):
     MOBILITY = "mobility"
 
 
+class Equipment(str, enum.Enum):
+    AB_WHEEL = "ab_wheel"
+    ASSAULT_BIKE = "assault_bike"
+    ASSISTED_DIP_MACHINE = "assisted_dip_machine"
+    ASSISTED_PULLUP_MACHINE = "assisted_pullup_machine"
+    BARBELL = "barbell"
+    BATTLE_ROPES = "battle_ropes"
+    BENCH = "bench"
+    CABLE_MACHINE = "cable_machine"
+    CALF_RAISE_MACHINE = "calf_raise_machine"
+    CHEST_PRESS_MACHINE = "chest_press_machine"
+    DUMBBELLS = "dumbbells"
+    EZ_BAR = "ez_bar"
+    GYMNASTIC_RINGS = "gymnastic_rings"
+    HACK_SQUAT_MACHINE = "hack_squat_machine"
+    HIP_ABDUCTION_MACHINE = "hip_abduction_machine"
+    HIP_ADDUCTION_MACHINE = "hip_adduction_machine"
+    JUMP_ROPE = "jump_rope"
+    KETTLEBELL = "kettlebell"
+    LAT_PULLDOWN_MACHINE = "lat_pulldown_machine"
+    LEG_CURL_MACHINE = "leg_curl_machine"
+    LEG_EXTENSION_MACHINE = "leg_extension_machine"
+    LEG_PRESS_MACHINE = "leg_press_machine"
+    MEDICINE_BALL = "medicine_ball"
+    NONE = "none"
+    PEC_DECK_MACHINE = "pec_deck_machine"
+    PLYO_BOX = "plyo_box"
+    PULL_UP_BAR = "pull_up_bar"
+    RESISTANCE_BANDS = "resistance_bands"
+    ROWING_MACHINE = "rowing_machine"
+    SANDBAG = "sandbag"
+    SEATED_ROW_MACHINE = "seated_row_machine"
+    SHOULDER_PRESS_MACHINE = "shoulder_press_machine"
+    SLED = "sled"
+    SMITH_MACHINE = "smith_machine"
+    SQUAT_RACK = "squat_rack"
+    STAIR_CLIMBER = "stair_climber"
+    STATIONARY_BIKE = "stationary_bike"
+    TREADMILL = "treadmill"
+
+
+class Muscle(str, enum.Enum):
+    ABS = "abs"
+    BICEPS = "biceps"
+    CALVES = "calves"
+    CARDIO = "cardio"
+    CHEST = "chest"
+    DEEP_CORE = "deep_core"
+    FOREARMS = "forearms"
+    GLUTES = "glutes"
+    HAMSTRINGS = "hamstrings"
+    HIP_ABDUCTORS = "hip_abductors"
+    HIP_ADDUCTORS = "hip_adductors"
+    HIP_FLEXORS = "hip_flexors"
+    LATS = "lats"
+    LOWER_BACK = "lower_back"
+    OBLIQUES = "obliques"
+    QUADS = "quads"
+    SHOULDERS_ANTERIOR = "shoulders_anterior"
+    SHOULDERS_LATERAL = "shoulders_lateral"
+    SHOULDERS_POSTERIOR = "shoulders_posterior"
+    TRAPS = "traps"
+    TRICEPS = "triceps"
+    UPPER_BACK = "upper_back"
+
+
+class Contraindication(str, enum.Enum):
+    ANKLE = "ankle"
+    ELBOW = "elbow"
+    HIP = "hip"
+    KNEE = "knee"
+    LOWER_BACK = "lower_back"
+    NECK = "neck"
+    SHOULDER = "shoulder"
+    WRIST = "wrist"
+
+
 class Exercise(Base):
     __tablename__ = "exercises"
 
@@ -52,6 +129,8 @@ class Exercise(Base):
     form_cues: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     safety_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     contraindications: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    is_unilateral: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_compound: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
