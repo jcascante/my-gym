@@ -12,6 +12,16 @@ from .program import (
     ProgressionStyle,
     WeightUnit,
 )
+from .program_api import (  # noqa: F401
+    AlternativeOut,
+    DraftRequest,
+    FeedbackRequest,
+    MatchRequest,
+    ProgramPreviewOut,
+    SlotPreviewOut,
+    TemplateMatchOut,
+    WorkoutPreviewOut,
+)
 from .template import (  # noqa: F401
     ProgressionRef,
     RequiredInput,
@@ -56,4 +66,12 @@ __all__ = [
     "SlotRule",
     "SplitDef",
     "TemplateDefinition",
+    "MatchRequest",
+    "TemplateMatchOut",
+    "DraftRequest",
+    "FeedbackRequest",
+    "SlotPreviewOut",
+    "WorkoutPreviewOut",
+    "ProgramPreviewOut",
+    "AlternativeOut",
 ]

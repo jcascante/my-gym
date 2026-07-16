@@ -61,3 +61,17 @@ class InvalidTokenError(AppException):
 
     def __init__(self, message: str = "Invalid token"):
         super().__init__(message, status_code=401)
+
+
+class ProgramTemplateNotFoundError(AppException):
+    error_code: str = "PROGRAM_TEMPLATE_NOT_FOUND"
+
+    def __init__(self, message: str = "Program template not found"):
+        super().__init__(message, status_code=404)
+
+
+class ProgramNotFoundError(AppException):
+    error_code: str = "PROGRAM_NOT_FOUND"
+
+    def __init__(self, message: str = "Program not found"):
+        super().__init__(message, status_code=404)
