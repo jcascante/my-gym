@@ -55,10 +55,10 @@ describe('TrainingEnvironmentCard', () => {
     expect(screen.queryByRole('button', { name: /Delete/i })).not.toBeInTheDocument();
   });
 
-  it('should link to /programs/new for Generate Program', () => {
+  it('should link to /programs/new/:environmentId for Generate Program', () => {
     renderWithRouter(<TrainingEnvironmentCard environment={environment} />);
 
     const link = screen.getByRole('link', { name: /Generate Program/i });
-    expect(link).toHaveAttribute('href', '/programs/new');
+    expect(link).toHaveAttribute('href', `/programs/new/${environment.id}`);
   });
 });

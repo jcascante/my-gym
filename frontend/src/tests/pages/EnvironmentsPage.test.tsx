@@ -133,7 +133,7 @@ describe('EnvironmentsPage', () => {
     });
   });
 
-  it('should navigate to /programs/new when Generate Program is clicked', async () => {
+  it('should navigate to /programs/new/:environmentId when Generate Program is clicked', async () => {
     vi.mocked(trainingEnvironmentsApi.listTrainingEnvironments).mockResolvedValue([
       mockEnvironment,
     ]);
@@ -143,7 +143,7 @@ describe('EnvironmentsPage', () => {
     await waitFor(() => screen.getByText('Home Gym'));
     const generateButton = screen.getByRole('link', { name: /Generate Program/i });
 
-    expect(generateButton).toHaveAttribute('href', '/programs/new');
+    expect(generateButton).toHaveAttribute('href', `/programs/new/${mockEnvironment.id}`);
   });
 
   it('should display an error when loading environments fails', async () => {

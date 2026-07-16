@@ -15,7 +15,7 @@ describe('RequiredInputsForm', () => {
     );
     const input = screen.getByLabelText('Squat weight');
     fireEvent.change(input, { target: { value: '80' } });
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /next/i }));
     expect(onSubmit).toHaveBeenCalledWith({ squat_start: 80 });
   });
 
@@ -29,7 +29,7 @@ describe('RequiredInputsForm', () => {
     );
     const input = screen.getByLabelText('Training focus');
     fireEvent.change(input, { target: { value: 'strength' } });
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /next/i }));
     expect(onSubmit).toHaveBeenCalledWith({ focus: 'strength' });
   });
 
@@ -48,7 +48,7 @@ describe('RequiredInputsForm', () => {
     const goal = screen.getByLabelText('Your goal');
     fireEvent.change(squat, { target: { value: '100' } });
     fireEvent.change(goal, { target: { value: 'strength' } });
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /next/i }));
     expect(onSubmit).toHaveBeenCalledWith({ squat_start: 100, goal: 'strength' });
   });
 });

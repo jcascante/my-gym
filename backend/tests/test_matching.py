@@ -20,7 +20,9 @@ def test_goal_and_experience_rank_highest():
     assert ranked[0].fit_pct > ranked[1].fit_pct
 
 
-def test_infeasible_template_excluded():
+def test_infeasible_template_still_ranked():
     templates = [_T(1, "ul", ["strength"], ["intermediate"], 4, 4, 45, 75)]
     inp = MatchInput("strength", "intermediate", 4, 60, [])
-    assert rank_templates(templates, inp, feasibility={1: False}) == []
+    ranked = rank_templates(templates, inp, feasibility={1: False})
+    assert len(ranked) == 1
+    assert ranked[0].template_id == 1

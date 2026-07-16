@@ -55,7 +55,7 @@ export default function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/environments" element={<EnvironmentsPage />} />
             <Route path="/programs" element={<ProgramsListPage />} />
-            <Route path="/programs/new" element={<ProgramBuilderPage />} />
+            <Route path="/programs/new/:environmentId?" element={<ProgramBuilderPage />} />
             <Route path="/programs/:id" element={<ProgramPreviewPage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </>

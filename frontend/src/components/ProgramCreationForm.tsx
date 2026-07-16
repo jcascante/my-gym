@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { FormField } from './FormField';
 import { WEIGHT_UNIT_OPTIONS } from '@/types/programCreation';
@@ -8,16 +8,28 @@ interface ProgramCreationFormProps {
   environmentId: number;
   onSubmit: (values: MatchRequest) => void;
   onCancel: () => void;
+  initialValues?: MatchRequest;
 }
 
 export function ProgramCreationForm({
   environmentId,
   onSubmit,
   onCancel,
+  initialValues,
 }: ProgramCreationFormProps) {
-  const [daysPerWeek, setDaysPerWeek] = useState('3');
-  const [sessionDurationMin, setSessionDurationMin] = useState('60');
-  const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
+  const [daysPerWeek, setDaysPerWeek] = useState(initialValues?.days_per_week.toString() ?? '3');
+  const [sessionDurationMin, setSessionDurationMin] = useState(
+    initialValues?.session_duration_min.toString() ?? '60',
+  );
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>(initialValues?.weight_unit ?? 'kg');
+
+  useEffect(() => {
+    if (initialValues) {
+      setDaysPerWeek(initialValues.days_per_week.toString());
+      setSessionDurationMin(initialValues.session_duration_min.toString());
+      setWeightUnit(initialValues.weight_unit);
+    }
+  }, [initialValues]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +91,7 @@ export function ProgramCreationForm({
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" variant="primary" className="flex-1">
-          Generate Program
+          Next
         </Button>
         <Button type="button" variant="secondary" onClick={onCancel} className="flex-1">
           Cancel

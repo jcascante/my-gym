@@ -10,7 +10,7 @@ import {
 import { ProgramCreationForm } from '@/components/ProgramCreationForm';
 import { useAcceptProgram, useCreateDraft, useMatchTemplates } from '@/hooks/usePrograms';
 import type { MatchRequest, ProgramPreview, TemplateMatch } from '@/types/program';
-import type { MatchRequest as FormMatchRequest } from '@/types/programCreation';
+import type { MatchRequest as FormMatchRequest, WeightUnit } from '@/types/programCreation';
 
 const STEPS = ['Preferences', 'Select', 'Details', 'Review'];
 
@@ -21,6 +21,9 @@ export default function ProgramBuilderPage() {
   const [prefs, setPrefs] = useState<MatchRequest | null>(null);
   const [chosen, setChosen] = useState<TemplateMatch | null>(null);
   const [draft, setDraft] = useState<ProgramPreview | null>(null);
+  const [requiredInputValues, setRequiredInputValues] = useState<Record<string, number | string>>(
+    {},
+  );
 
   const match = useMatchTemplates();
   const createDraft = useCreateDraft();
@@ -48,6 +51,7 @@ export default function ProgramBuilderPage() {
 
   const makeDraft = async (m: TemplateMatch, requiredInputs: Record<string, number | string>) => {
     if (!prefs) return;
+    setRequiredInputValues(requiredInputs);
     const program = await createDraft.mutateAsync({
       ...prefs,
       template_id: m.template_id,
@@ -62,6 +66,17 @@ export default function ProgramBuilderPage() {
     navigate(`/programs/${accepted.program_id}`);
   };
 
+  const handleBack = () => {
+    if (step === 3 && chosen && chosen.required_inputs.length === 0) {
+      setStep(1);
+      return;
+    }
+    if (step === 2) {
+      setRequiredInputValues({});
+    }
+    setStep(step - 1);
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-4">
       <Stepper steps={STEPS} current={step} />
@@ -70,25 +85,53 @@ export default function ProgramBuilderPage() {
           environmentId={parseInt(environmentId || '1', 10)}
           onSubmit={onPrefs}
           onCancel={() => navigate(-1)}
+          initialValues={
+            prefs
+              ? {
+                  environment_id: prefs.environment_id,
+                  days_per_week: prefs.days_per_week,
+                  session_duration_min: prefs.session_duration_min,
+                  weight_unit: prefs.weight_unit as WeightUnit,
+                }
+              : undefined
+          }
         />
       )}
       {step === 1 && (
-        <TemplateMatchList
-          matches={match.data ?? []}
-          selectedId={chosen?.template_id ?? null}
-          onSelect={onPick}
-        />
+        <div>
+          <TemplateMatchList
+            matches={match.data ?? []}
+            selectedId={chosen?.template_id ?? null}
+            onSelect={onPick}
+          />
+          <div className="mt-6 flex justify-start">
+            <Button variant="secondary" onClick={handleBack}>
+              Back
+            </Button>
+          </div>
+        </div>
       )}
       {step === 2 && chosen && (
-        <RequiredInputsForm
-          inputs={chosen.required_inputs}
-          onSubmit={(v) => makeDraft(chosen, v)}
-        />
+        <div>
+          <div className="flex gap-3 justify-between">
+            <Button variant="secondary" onClick={handleBack}>
+              Back
+            </Button>
+          </div>
+          <RequiredInputsForm
+            inputs={chosen.required_inputs}
+            onSubmit={(v) => makeDraft(chosen, v)}
+            initialValues={requiredInputValues}
+          />
+        </div>
       )}
       {step === 3 && draft && (
         <div>
           <DraftProgramView program={draft} programId={draft.program_id} />
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex gap-3 justify-between">
+            <Button variant="secondary" onClick={handleBack}>
+              Back
+            </Button>
             <Button onClick={onAccept}>Accept program</Button>
           </div>
         </div>

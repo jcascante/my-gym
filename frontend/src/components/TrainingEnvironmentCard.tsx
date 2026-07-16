@@ -69,7 +69,7 @@ export function TrainingEnvironmentCard({
           </Button>
         )}
         <Link
-          to="/programs/new"
+          to={`/programs/new/${environment.id}`}
           className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 px-3 py-1.5 text-sm bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800"
         >
           Generate Program
