@@ -17,6 +17,8 @@ class EnvironmentType(str, enum.Enum):
     HOME = "home"
     BODYWEIGHT = "bodyweight"
     CROSSFIT_BOX = "crossfit_box"
+    POWERLIFTING_GYM = "powerlifting_gym"
+    STRENGTH_GYM = "strength_gym"
     OTHER = "other"
 
 

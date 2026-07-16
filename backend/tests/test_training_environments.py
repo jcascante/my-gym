@@ -32,6 +32,19 @@ async def test_create_training_environment(authenticated_client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_create_training_environment_new_archetypes(authenticated_client: AsyncClient):
+    for environment_type in ("powerlifting_gym", "strength_gym"):
+        payload = {
+            "name": f"{environment_type} test",
+            "environment_type": environment_type,
+            "equipment_tags": ["barbell", "squat_rack", "bench"],
+        }
+        response = await authenticated_client.post("/api/v1/training-environments", json=payload)
+        assert response.status_code == 201, response.text
+        assert response.json()["environment_type"] == environment_type
+
+
+@pytest.mark.asyncio
 async def test_create_training_environment_rejects_unknown_tag(authenticated_client: AsyncClient):
     payload = {
         "name": "Bad Gym",

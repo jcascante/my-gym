@@ -7,4 +7,5 @@ export { default as Header } from './Header';
 export { default as Layout } from './Layout';
 export { TrainingEnvironmentCard } from './TrainingEnvironmentCard';
 export { TrainingEnvironmentForm } from './TrainingEnvironmentForm';
+export { EquipmentPicker } from './EquipmentPicker';
 export { ProgramCreationForm } from './ProgramCreationForm';
