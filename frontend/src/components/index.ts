@@ -12,6 +12,7 @@ export { ProgramCreationForm } from './ProgramCreationForm';
 export { TemplateMatchCard } from './TemplateMatchCard';
 export { TemplateMatchList } from './TemplateMatchList';
 export { RequiredInputsForm } from './RequiredInputsForm';
+export { Stepper } from './Stepper';
 export { WeekTabs } from './WeekTabs';
 export { SessionCard } from './SessionCard';
 export { SlotRow } from './SlotRow';
