@@ -246,11 +246,11 @@ export function ProgramCreationForm({
         </div>
       </div>
 
-      <div className="mt-6 flex gap-3 justify-between">
-        <Button type="button" variant="secondary" onClick={onCancel}>
+      <div className="mt-6 flex gap-3">
+        <Button type="button" variant="secondary" onClick={onCancel} className="flex-1">
           Cancel
         </Button>
-        <Button type="submit" variant="primary">
+        <Button type="submit" variant="primary" className="flex-1">
           Next
         </Button>
       </div>
