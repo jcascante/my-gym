@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
-  ProgramCreationForm,
   Spinner,
   TrainingEnvironmentCard,
   TrainingEnvironmentForm,
@@ -16,11 +15,7 @@ import {
 import { getErrorMessage } from '@/api/errors';
 import type { TrainingEnvironment, TrainingEnvironmentPayload } from '@/types/trainingEnvironment';
 
-type PanelState =
-  | { mode: 'none' }
-  | { mode: 'add' }
-  | { mode: 'edit'; environmentId: number }
-  | { mode: 'generate'; environmentId: number };
+type PanelState = { mode: 'none' } | { mode: 'add' } | { mode: 'edit'; environmentId: number };
 
 export default function EnvironmentsPage() {
   const [environments, setEnvironments] = useState<TrainingEnvironment[]>([]);
@@ -131,22 +126,12 @@ export default function EnvironmentsPage() {
                 onCancel={() => setPanel({ mode: 'none' })}
               />
             </div>
-          ) : panel.mode === 'generate' && panel.environmentId === environment.id ? (
-            <div key={environment.id} className="card p-6">
-              <ProgramCreationForm
-                environmentId={environment.id}
-                onCancel={() => setPanel({ mode: 'none' })}
-              />
-            </div>
           ) : (
             <TrainingEnvironmentCard
               key={environment.id}
               environment={environment}
               onEdit={() => setPanel({ mode: 'edit', environmentId: environment.id })}
               onDelete={() => handleDelete(environment.id)}
-              onGenerateProgram={() =>
-                setPanel({ mode: 'generate', environmentId: environment.id })
-              }
             />
           ),
         )}

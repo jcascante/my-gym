@@ -1,67 +1,60 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ProgramCreationForm } from '@/components';
-import { createProgram } from '@/api/programs';
-
-vi.mock('@/api/programs');
 
 describe('ProgramCreationForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should show a coming-soon message after a 501 response', async () => {
-    vi.mocked(createProgram).mockRejectedValue({ response: { status: 501 } });
+  it('should invoke onSubmit callback with collected values', async () => {
+    const onSubmit = vi.fn();
+    const onCancel = vi.fn();
 
-    render(<ProgramCreationForm environmentId={1} onCancel={vi.fn()} />);
+    render(<ProgramCreationForm environmentId={1} onSubmit={onSubmit} onCancel={onCancel} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Generate Program/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Days per Week/i), {
+      target: { value: '4' },
     });
-  });
+    fireEvent.change(screen.getByLabelText(/Session Duration/i), {
+      target: { value: '45' },
+    });
 
-  it('should submit the full preferences payload', async () => {
-    vi.mocked(createProgram).mockRejectedValue({ response: { status: 501 } });
+    const weightUnitSelect = screen.getByLabelText(/Weight Unit/i);
+    fireEvent.change(weightUnitSelect, { target: { value: 'lbs' } });
 
-    render(<ProgramCreationForm environmentId={7} onCancel={vi.fn()} />);
-
-    fireEvent.click(screen.getByLabelText('Monday'));
-    fireEvent.click(screen.getByLabelText('Push (chest, shoulders, triceps)'));
     fireEvent.click(screen.getByRole('button', { name: /Generate Program/i }));
 
     await waitFor(() => {
-      expect(createProgram).toHaveBeenCalledWith(
+      expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({
-          environment_id: 7,
-          preferred_days: ['monday'],
-          focus_areas: ['push'],
-          weight_unit: 'kg',
-          progression_style: 'consistent',
+          environment_id: 1,
+          days_per_week: 4,
+          session_duration_min: 45,
+          weight_unit: 'lbs',
         }),
       );
     });
   });
 
-  it('should show a generic error message on unexpected failures', async () => {
-    vi.mocked(createProgram).mockRejectedValue(new Error('boom'));
-
-    render(<ProgramCreationForm environmentId={1} onCancel={vi.fn()} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /Generate Program/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
-    });
-  });
-
   it('should call onCancel when Cancel is clicked', () => {
+    const onSubmit = vi.fn();
     const onCancel = vi.fn();
-    render(<ProgramCreationForm environmentId={1} onCancel={onCancel} />);
+    render(<ProgramCreationForm environmentId={1} onSubmit={onSubmit} onCancel={onCancel} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
 
     expect(onCancel).toHaveBeenCalled();
+  });
+
+  it('should render as a controlled form with required fields', () => {
+    const onSubmit = vi.fn();
+    const onCancel = vi.fn();
+
+    render(<ProgramCreationForm environmentId={1} onSubmit={onSubmit} onCancel={onCancel} />);
+
+    expect(screen.getByLabelText(/Days per Week/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Session Duration/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Weight Unit/i)).toBeInTheDocument();
   });
 });

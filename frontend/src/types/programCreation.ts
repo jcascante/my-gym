@@ -48,3 +48,10 @@ export interface ProgramCreationPayload {
   available_weight_increments: number[];
   progression_style: ProgressionStyle;
 }
+
+export interface MatchRequest {
+  environment_id: number;
+  days_per_week: number;
+  session_duration_min: number;
+  weight_unit: WeightUnit;
+}

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
 import { TrainingEnvironmentCard } from '@/components';
 import type { TrainingEnvironment } from '@/types/trainingEnvironment';
 
@@ -11,9 +12,13 @@ const environment: TrainingEnvironment = {
   is_default: true,
 };
 
+function renderWithRouter(element: React.ReactElement) {
+  return render(<BrowserRouter>{element}</BrowserRouter>);
+}
+
 describe('TrainingEnvironmentCard', () => {
   it('should render name, type, tags, and default badge', () => {
-    render(<TrainingEnvironmentCard environment={environment} />);
+    renderWithRouter(<TrainingEnvironmentCard environment={environment} />);
 
     expect(screen.getByText('Home Gym')).toBeInTheDocument();
     expect(screen.getByText('Home')).toBeInTheDocument();
@@ -25,7 +30,7 @@ describe('TrainingEnvironmentCard', () => {
   it('should call onEdit and onDelete when clicked', () => {
     const onEdit = vi.fn();
     const onDelete = vi.fn();
-    render(
+    renderWithRouter(
       <TrainingEnvironmentCard environment={environment} onEdit={onEdit} onDelete={onDelete} />,
     );
 
@@ -37,7 +42,7 @@ describe('TrainingEnvironmentCard', () => {
   });
 
   it('should hide Edit/Delete when readOnly', () => {
-    render(
+    renderWithRouter(
       <TrainingEnvironmentCard
         environment={environment}
         readOnly
@@ -50,14 +55,10 @@ describe('TrainingEnvironmentCard', () => {
     expect(screen.queryByRole('button', { name: /Delete/i })).not.toBeInTheDocument();
   });
 
-  it('should call onGenerateProgram when the button is clicked', () => {
-    const onGenerateProgram = vi.fn();
-    render(
-      <TrainingEnvironmentCard environment={environment} onGenerateProgram={onGenerateProgram} />,
-    );
+  it('should link to /programs/new for Generate Program', () => {
+    renderWithRouter(<TrainingEnvironmentCard environment={environment} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Generate Program/i }));
-
-    expect(onGenerateProgram).toHaveBeenCalled();
+    const link = screen.getByRole('link', { name: /Generate Program/i });
+    expect(link).toHaveAttribute('href', '/programs/new');
   });
 });

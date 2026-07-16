@@ -133,7 +133,7 @@ describe('EnvironmentsPage', () => {
     });
   });
 
-  it('should open the program creation form from a card', async () => {
+  it('should navigate to /programs/new when Generate Program is clicked', async () => {
     vi.mocked(trainingEnvironmentsApi.listTrainingEnvironments).mockResolvedValue([
       mockEnvironment,
     ]);
@@ -141,11 +141,9 @@ describe('EnvironmentsPage', () => {
     renderPage();
 
     await waitFor(() => screen.getByText('Home Gym'));
-    fireEvent.click(screen.getByRole('button', { name: /Generate Program/i }));
+    const generateButton = screen.getByRole('link', { name: /Generate Program/i });
 
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Generate a Program/i })).toBeInTheDocument();
-    });
+    expect(generateButton).toHaveAttribute('href', '/programs/new');
   });
 
   it('should display an error when loading environments fails', async () => {
