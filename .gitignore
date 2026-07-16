@@ -55,3 +55,5 @@ frontend/vite.config.d.ts
 htmlcov/
 
 postgres_data/
+
+.worktrees/
