@@ -59,6 +59,7 @@ def build_draft(
             if chosen is None:
                 continue
             ctx.used_movement_slugs.add(chosen.movement_slug)
+            ctx.used_unilateral_flags.append(chosen.is_unilateral)
             workout.exercises.append(
                 WorkoutExercise(
                     order=i,
