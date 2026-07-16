@@ -1,12 +1,15 @@
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core import hash_password
 from app.core.database import Base, get_db
+from app.db.seed.seed_exercises import upsert_exercises
+from app.db.seed.seed_program_templates import seed_program_templates
 from app.main import app
-from app.models import User
+from app.models import Exercise, ProgramTemplate, User
 from app.services.auth import create_tokens
 
 
@@ -71,3 +74,19 @@ async def authenticated_client(client: AsyncClient, test_user_token: str) -> Asy
 @pytest.fixture
 def db(db_session: AsyncSession) -> AsyncSession:
     return db_session
+
+
+@pytest_asyncio.fixture
+async def sample_template_orm(db_session: AsyncSession) -> ProgramTemplate:
+    """The seeded full-body-x3 ProgramTemplate row, with a real DB-assigned id."""
+    await seed_program_templates(db_session)
+    result = await db_session.execute(select(ProgramTemplate).where(ProgramTemplate.slug == "full-body-x3"))
+    return result.scalar_one()
+
+
+@pytest_asyncio.fixture
+async def sample_exercises(db_session: AsyncSession) -> list[Exercise]:
+    """The full seeded exercise library, with real DB-assigned ids."""
+    await upsert_exercises(db_session)
+    result = await db_session.execute(select(Exercise).where(Exercise.is_active.is_(True)))
+    return list(result.scalars().all())
