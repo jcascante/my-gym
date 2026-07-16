@@ -19,3 +19,4 @@ export { SlotRow } from './SlotRow';
 export { SlotFeedbackMenu } from './SlotFeedbackMenu';
 export { ExerciseAlternativesModal } from './ExerciseAlternativesModal';
 export { DraftProgramView } from './DraftProgramView';
+export { ProgramListCard } from './ProgramListCard';
