@@ -6,10 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.core import hash_password
 from app.core.database import Base, get_db
+from app.crud.training_environment import create_training_environment
 from app.db.seed.seed_exercises import upsert_exercises
 from app.db.seed.seed_program_templates import seed_program_templates
 from app.main import app
-from app.models import Exercise, ProgramTemplate, User
+from app.models import Exercise, ProgramTemplate, TrainingEnvironment, User
 from app.services.auth import create_tokens
 
 
@@ -90,3 +91,42 @@ async def sample_exercises(db_session: AsyncSession) -> list[Exercise]:
     await upsert_exercises(db_session)
     result = await db_session.execute(select(Exercise).where(Exercise.is_active.is_(True)))
     return list(result.scalars().all())
+
+
+@pytest.fixture
+def auth_headers(test_user_token: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {test_user_token}"}
+
+
+@pytest_asyncio.fixture
+async def seeded_templates(db_session: AsyncSession) -> None:
+    await seed_program_templates(db_session)
+
+
+@pytest_asyncio.fixture
+async def seeded_exercises(db_session: AsyncSession) -> list[Exercise]:
+    await upsert_exercises(db_session)
+    result = await db_session.execute(select(Exercise).where(Exercise.is_active.is_(True)))
+    return list(result.scalars().all())
+
+
+@pytest_asyncio.fixture
+async def user_environment(db_session: AsyncSession, test_user: User) -> TrainingEnvironment:
+    return await create_training_environment(
+        db_session,
+        test_user.id,
+        {
+            "name": "Test Gym",
+            "environment_type": "commercial_gym",
+            "equipment_tags": [
+                "barbell",
+                "squat_rack",
+                "bench",
+                "dumbbells",
+                "pull_up_bar",
+                "cable_machine",
+                "resistance_bands",
+                "none",
+            ],
+        },
+    )
