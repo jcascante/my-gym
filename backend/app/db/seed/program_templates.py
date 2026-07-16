@@ -1,0 +1,282 @@
+PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
+    {
+        "name": "Full Body",
+        "slug": "full-body-x3",
+        "description": "Three full-body days for beginners building general strength.",
+        "goals": ["general", "strength"],
+        "experience_levels": ["beginner"],
+        "days_per_week_min": 3,
+        "days_per_week_max": 3,
+        "session_duration_min": 45,
+        "session_duration_max": 60,
+        "progression_ref": {"model_key": "linear_load", "params": {"increment": 2.5}, "deload_every": 4},
+        "required_inputs": [
+            {"key": "squat_start", "label": "Comfortable squat weight", "type": "number", "applies_to": "squat"},
+            {
+                "key": "bench_start",
+                "label": "Comfortable bench weight",
+                "type": "number",
+                "applies_to": "horizontal_push",
+            },
+        ],
+        "split": {
+            "schemes": {
+                "main": {"sets": 3, "reps_min": 5, "reps_max": 5, "rest_seconds": 120},
+                "accessory": {"sets": 3, "reps_min": 10, "reps_max": 12, "rest_seconds": 60},
+            },
+            "sessions": [
+                {
+                    "key": "full_a",
+                    "name": "Full Body A",
+                    "order": 1,
+                    "slots": [
+                        {"pattern": "squat", "priority": "primary", "scheme": "main"},
+                        {"pattern": "horizontal_push", "priority": "primary", "scheme": "main"},
+                        {"pattern": "horizontal_pull", "priority": "primary", "scheme": "main"},
+                        {"region": "core", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "full_b",
+                    "name": "Full Body B",
+                    "order": 2,
+                    "slots": [
+                        {"pattern": "hinge", "priority": "primary", "scheme": "main"},
+                        {"pattern": "vertical_push", "priority": "primary", "scheme": "main"},
+                        {"pattern": "vertical_pull", "priority": "primary", "scheme": "main"},
+                        {"region": "core", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "full_c",
+                    "name": "Full Body C",
+                    "order": 3,
+                    "slots": [
+                        {"pattern": "squat", "priority": "primary", "scheme": "main"},
+                        {"pattern": "horizontal_push", "priority": "secondary", "scheme": "accessory"},
+                        {"pattern": "horizontal_pull", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "core", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        "name": "Bodyweight Full Body",
+        "slug": "bodyweight-full-body-x3",
+        "description": "Three full-body bodyweight days for beginners with no equipment.",
+        "goals": ["general"],
+        "experience_levels": ["beginner"],
+        "days_per_week_min": 3,
+        "days_per_week_max": 3,
+        "session_duration_min": 30,
+        "session_duration_max": 45,
+        "progression_ref": {"model_key": "double_progression", "params": {"increment": 0}},
+        "required_inputs": [],
+        "split": {
+            "schemes": {
+                "main": {"sets": 3, "reps_min": 8, "reps_max": 15, "rest_seconds": 90},
+                "accessory": {"sets": 3, "reps_min": 8, "reps_max": 15, "rest_seconds": 60},
+            },
+            "sessions": [
+                {
+                    "key": "full_a",
+                    "name": "Full Body A",
+                    "order": 1,
+                    "slots": [
+                        {"pattern": "squat", "priority": "primary", "scheme": "main"},
+                        {"pattern": "horizontal_push", "priority": "primary", "scheme": "main"},
+                        {"pattern": "vertical_pull", "priority": "primary", "scheme": "main"},
+                        {"region": "core", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "full_b",
+                    "name": "Full Body B",
+                    "order": 2,
+                    "slots": [
+                        {"pattern": "squat", "priority": "primary", "scheme": "main"},
+                        {"pattern": "horizontal_push", "priority": "secondary", "scheme": "accessory"},
+                        {"pattern": "vertical_pull", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "core", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "full_c",
+                    "name": "Full Body C",
+                    "order": 3,
+                    "slots": [
+                        {"pattern": "squat", "priority": "primary", "scheme": "main"},
+                        {"pattern": "horizontal_push", "priority": "primary", "scheme": "main"},
+                        {"pattern": "vertical_pull", "priority": "primary", "scheme": "main"},
+                        {"region": "core", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        "name": "Upper / Lower",
+        "slug": "upper-lower-x4",
+        "description": "Four-day upper/lower split for intermediate lifters building strength and muscle.",
+        "goals": ["strength", "muscle_gain"],
+        "experience_levels": ["intermediate"],
+        "days_per_week_min": 4,
+        "days_per_week_max": 4,
+        "session_duration_min": 45,
+        "session_duration_max": 75,
+        "progression_ref": {"model_key": "double_progression", "params": {"increment": 2.5}, "deload_every": 4},
+        "required_inputs": [
+            {"key": "squat_start", "label": "Comfortable squat weight", "type": "number", "applies_to": "squat"},
+            {
+                "key": "bench_start",
+                "label": "Comfortable bench weight",
+                "type": "number",
+                "applies_to": "horizontal_push",
+            },
+        ],
+        "split": {
+            "schemes": {
+                "main": {"sets": 4, "reps_min": 6, "reps_max": 8, "rest_seconds": 120},
+                "accessory": {"sets": 3, "reps_min": 10, "reps_max": 12, "rest_seconds": 75},
+            },
+            "sessions": [
+                {
+                    "key": "upper_a",
+                    "name": "Upper A",
+                    "order": 1,
+                    "slots": [
+                        {"pattern": "horizontal_push", "priority": "primary", "scheme": "main"},
+                        {"pattern": "horizontal_pull", "priority": "primary", "scheme": "main"},
+                        {"pattern": "vertical_push", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "biceps", "priority": "accessory", "scheme": "accessory"},
+                        {"region": "triceps", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "lower_a",
+                    "name": "Lower A",
+                    "order": 2,
+                    "slots": [
+                        {"pattern": "squat", "priority": "primary", "scheme": "main"},
+                        {"pattern": "hinge", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "core", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "upper_b",
+                    "name": "Upper B",
+                    "order": 3,
+                    "slots": [
+                        {"pattern": "vertical_push", "priority": "primary", "scheme": "main"},
+                        {"pattern": "vertical_pull", "priority": "primary", "scheme": "main"},
+                        {"pattern": "horizontal_push", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "shoulders", "priority": "accessory", "scheme": "accessory"},
+                        {"region": "triceps", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "lower_b",
+                    "name": "Lower B",
+                    "order": 4,
+                    "slots": [
+                        {"pattern": "hinge", "priority": "primary", "scheme": "main"},
+                        {"pattern": "squat", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "core", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        "name": "Push / Pull / Legs",
+        "slug": "push-pull-legs-x6",
+        "description": "Six-day push/pull/legs split for intermediate to advanced lifters focused on muscle gain.",
+        "goals": ["muscle_gain"],
+        "experience_levels": ["intermediate", "advanced"],
+        "days_per_week_min": 6,
+        "days_per_week_max": 6,
+        "session_duration_min": 45,
+        "session_duration_max": 75,
+        "progression_ref": {"model_key": "double_progression", "params": {"increment": 2.5}, "deload_every": 6},
+        "required_inputs": [
+            {"key": "squat_start", "label": "Comfortable squat weight", "type": "number", "applies_to": "squat"},
+            {
+                "key": "bench_start",
+                "label": "Comfortable bench weight",
+                "type": "number",
+                "applies_to": "horizontal_push",
+            },
+        ],
+        "split": {
+            "schemes": {
+                "main": {"sets": 4, "reps_min": 6, "reps_max": 10, "rest_seconds": 90},
+                "accessory": {"sets": 3, "reps_min": 10, "reps_max": 15, "rest_seconds": 60},
+            },
+            "sessions": [
+                {
+                    "key": "push_a",
+                    "name": "Push A",
+                    "order": 1,
+                    "slots": [
+                        {"pattern": "horizontal_push", "priority": "primary", "scheme": "main"},
+                        {"pattern": "vertical_push", "priority": "primary", "scheme": "main"},
+                        {"region": "shoulders", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "triceps", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "pull_a",
+                    "name": "Pull A",
+                    "order": 2,
+                    "slots": [
+                        {"pattern": "horizontal_pull", "priority": "primary", "scheme": "main"},
+                        {"pattern": "vertical_pull", "priority": "primary", "scheme": "main"},
+                        {"region": "biceps", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "legs_a",
+                    "name": "Legs A",
+                    "order": 3,
+                    "slots": [
+                        {"pattern": "squat", "priority": "primary", "scheme": "main"},
+                        {"pattern": "hinge", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "core", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "push_b",
+                    "name": "Push B",
+                    "order": 4,
+                    "slots": [
+                        {"pattern": "vertical_push", "priority": "primary", "scheme": "main"},
+                        {"pattern": "horizontal_push", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "shoulders", "priority": "accessory", "scheme": "accessory"},
+                        {"region": "triceps", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "pull_b",
+                    "name": "Pull B",
+                    "order": 5,
+                    "slots": [
+                        {"pattern": "vertical_pull", "priority": "primary", "scheme": "main"},
+                        {"pattern": "horizontal_pull", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "biceps", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+                {
+                    "key": "legs_b",
+                    "name": "Legs B",
+                    "order": 6,
+                    "slots": [
+                        {"pattern": "hinge", "priority": "primary", "scheme": "main"},
+                        {"pattern": "squat", "priority": "secondary", "scheme": "accessory"},
+                        {"region": "core", "priority": "accessory", "scheme": "accessory"},
+                    ],
+                },
+            ],
+        },
+    },
+]
