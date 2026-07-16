@@ -18,7 +18,7 @@ class WeeklyUndulating:
             load = base.base_load * float(cast(float, wave["intensity"])) + increment * cycle
         return SetScheme(
             sets=base.sets,
-            reps=int(cast(int, wave["reps"])),
+            reps=int(cast(int, wave.get("reps", base.reps_min))),
             load=load,
             rest_seconds=base.rest_seconds,
         )
