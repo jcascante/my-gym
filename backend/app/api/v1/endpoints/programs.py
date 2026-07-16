@@ -10,7 +10,7 @@ from app.core import (
     TrainingEnvironmentNotFoundError,
 )
 from app.core.database import get_db
-from app.crud.exercise import list_exercises  # existing; returns active Exercise rows
+from app.crud.exercise import get_exercises_by_ids, list_exercises
 from app.crud.program import get_program, get_template, list_active_templates, save_program
 from app.crud.training_environment import get_training_environment
 from app.models import ProgramStatus, TrainingEnvironment, User, WorkoutProgram
@@ -42,9 +42,11 @@ async def _ctx_for(db: AsyncSession, user: User, environment: TrainingEnvironmen
     return SelectionContext(list(environment.equipment_tags), experience, injuries, set())
 
 
-def _preview_out(program: WorkoutProgram, definition: TemplateDefinition) -> ProgramPreviewOut:
+async def _preview_out(db: AsyncSession, program: WorkoutProgram, definition: TemplateDefinition) -> ProgramPreviewOut:
+    exercise_ids = [ex.exercise_id for w in program.workouts for ex in w.exercises]
+    exercises = await get_exercises_by_ids(db, exercise_ids) if exercise_ids else {}
     weeks = {
-        w: [WorkoutPreviewOut(**day) for day in derive_week(program, definition, w)]
+        w: [WorkoutPreviewOut(**day) for day in derive_week(program, definition, w, exercises)]
         for w in range(1, program.duration_weeks + 1)
     }
     return ProgramPreviewOut(
@@ -119,7 +121,7 @@ async def draft(
     await save_program(db, program)
     saved = await get_program(db, user.id, program.id)
     assert saved is not None
-    return _preview_out(saved, definition)
+    return await _preview_out(db, saved, definition)
 
 
 async def _load(db: AsyncSession, user: User, program_id: int) -> tuple[WorkoutProgram, TemplateDefinition]:
@@ -135,7 +137,7 @@ async def get_one(
     program_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ) -> ProgramPreviewOut:
     program, definition = await _load(db, user, program_id)
-    return _preview_out(program, definition)
+    return await _preview_out(db, program, definition)
 
 
 @router.get("/{program_id}/preview", response_model=ProgramPreviewOut)
@@ -143,7 +145,7 @@ async def preview(
     program_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ) -> ProgramPreviewOut:
     program, definition = await _load(db, user, program_id)
-    return _preview_out(program, definition)
+    return await _preview_out(db, program, definition)
 
 
 @router.post("/{program_id}/feedback", response_model=ProgramPreviewOut)
@@ -163,7 +165,7 @@ async def feedback(
     await save_program(db, program)
     saved = await get_program(db, user.id, program.id)
     assert saved is not None
-    return _preview_out(saved, definition)
+    return await _preview_out(db, saved, definition)
 
 
 @router.get("/{program_id}/slots/{we_id}/alternatives", response_model=list[AlternativeOut])
@@ -190,4 +192,4 @@ async def accept(
     program, definition = await _load(db, user, program_id)
     program.status = ProgramStatus.ACTIVE
     await save_program(db, program)
-    return _preview_out(program, definition)
+    return await _preview_out(db, program, definition)

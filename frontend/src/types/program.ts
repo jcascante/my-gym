@@ -17,6 +17,7 @@ export interface TemplateMatch {
 export interface SlotPreview {
   workout_exercise_id: number;
   exercise_id: number;
+  exercise_name: string;
   sets: number;
   reps: number;
   load: number | null;

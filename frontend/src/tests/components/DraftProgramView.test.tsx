@@ -24,6 +24,7 @@ const program = {
           {
             workout_exercise_id: 9,
             exercise_id: 3,
+            exercise_name: 'Barbell Squat',
             sets: 3,
             reps: 5,
             load: 60,

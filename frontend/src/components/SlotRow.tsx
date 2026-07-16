@@ -19,7 +19,7 @@ export function SlotRow({
             swapped
           </span>
         )}
-        <span>Exercise #{slot.exercise_id}</span>
+        <span>{slot.exercise_name}</span>
       </div>
       <div className="flex items-center gap-3 text-sm text-gray-700">
         <span>

@@ -36,6 +36,7 @@ class SlotPreviewOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     workout_exercise_id: int
     exercise_id: int
+    exercise_name: str
     sets: int
     reps: int
     load: float | None
