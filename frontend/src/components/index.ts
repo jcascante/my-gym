@@ -20,3 +20,6 @@ export { SlotFeedbackMenu } from './SlotFeedbackMenu';
 export { ExerciseAlternativesModal } from './ExerciseAlternativesModal';
 export { DraftProgramView } from './DraftProgramView';
 export { ProgramListCard } from './ProgramListCard';
+export { WorkoutCard } from './WorkoutCard';
+export { ProgressBar } from './ProgressBar';
+export { StatCard } from './StatCard';

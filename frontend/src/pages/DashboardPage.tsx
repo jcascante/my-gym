@@ -1,112 +1,112 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
-import { Card } from '@/components';
+import { useProgramPreview } from '@/hooks/usePrograms';
+import { Card, WorkoutCard, ProgressBar, StatCard } from '@/components';
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const userProfile = useAuthStore((state) => state.userProfile);
+  const [activeProgramId] = useState<number | null>(null);
+
+  const { data: program, isLoading } = useProgramPreview(activeProgramId);
+
+  const today = new Date();
+  const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
+  const dateStr = today.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  const getTodayWorkout = () => {
+    if (!program?.weeks) return null;
+
+    const weekKeys = Object.keys(program.weeks).sort();
+    if (weekKeys.length === 0) return null;
+
+    const firstWeekWorkouts = program.weeks[weekKeys[0]];
+    if (firstWeekWorkouts.length === 0) return null;
+
+    return firstWeekWorkouts[0];
+  };
+
+  const todayWorkout = getTodayWorkout();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-neutral-900 dark:to-neutral-800 py-8 px-4">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">Dashboard</h1>
-            <p className="text-lg text-neutral-600 dark:text-neutral-400">
-              Welcome, {user?.first_name}! 👋
+        <div className="mb-8">
+          <p className="label-sm text-neutral-600 dark:text-neutral-400 mb-1">
+            {dayOfWeek}, {dateStr}
+          </p>
+          <h1 className="display-md">
+            Good {getTimeOfDay()}, {user?.first_name}
+          </h1>
+        </div>
+
+        {/* Today's Workout Section */}
+        {activeProgramId ? (
+          isLoading ? (
+            <div className="card card-elevated p-8 text-center">
+              <p className="text-neutral-600 dark:text-neutral-400">Loading workout...</p>
+            </div>
+          ) : todayWorkout ? (
+            <div className="mb-8">
+              <WorkoutCard
+                workout={todayWorkout}
+                programName={program?.name || 'Your Program'}
+                weekNumber={1}
+                durationMin={userProfile?.workout_duration_min || 45}
+                onStartClick={() => navigate(`/workouts/${todayWorkout.workout_id}/track`)}
+              />
+            </div>
+          ) : (
+            <div className="card card-elevated border-l-4 border-neutral-300 dark:border-neutral-600 mb-8 p-6">
+              <p className="body-md text-neutral-600 dark:text-neutral-400">
+                No workouts scheduled for today.
+              </p>
+            </div>
+          )
+        ) : (
+          <div className="card card-elevated border-l-4 border-secondary-600 mb-8 p-6">
+            <h2 className="heading-lg mb-2">Get Started</h2>
+            <p className="body-md text-neutral-600 dark:text-neutral-400 mb-4">
+              Create your first workout program to get started.
             </p>
+            <button onClick={() => navigate('/programs/new')} className="btn btn-secondary">
+              Create Program
+            </button>
           </div>
-        </div>
+        )}
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Workout Program Card */}
-          <Card>
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
-                Your Program
-              </h2>
-              <p className="text-neutral-600 dark:text-neutral-400">
-                Personalized workout plan coming soon
-              </p>
-            </div>
-            <div className="bg-neutral-100 dark:bg-neutral-700 rounded-lg p-6 text-center">
-              <svg
-                className="w-16 h-16 mx-auto text-neutral-400 mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-              <p className="text-neutral-600 dark:text-neutral-400">
-                Your workout program will be displayed here
-              </p>
-            </div>
+        {/* This Week Section */}
+        {activeProgramId && program && (
+          <Card className="mb-8">
+            <h2 className="heading-lg mb-6">This Week</h2>
+            <ProgressBar completed={0} total={5} showPercentage label="Weekly Progress" />
           </Card>
-
-          {/* Tracking Card */}
-          <Card>
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
-                Track Workouts
-              </h2>
-              <p className="text-neutral-600 dark:text-neutral-400">
-                Log your daily exercises and progress
-              </p>
-            </div>
-            <div className="bg-neutral-100 dark:bg-neutral-700 rounded-lg p-6 text-center">
-              <svg
-                className="w-16 h-16 mx-auto text-neutral-400 mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-              <p className="text-neutral-600 dark:text-neutral-400">
-                Start tracking your workouts today
-              </p>
-            </div>
-          </Card>
-        </div>
+        )}
 
         {/* Stats Section */}
         <Card>
-          <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-6">
-            Your Progress
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-primary-50 dark:bg-primary-900 rounded-lg p-6">
-              <p className="text-sm font-medium text-primary-600 dark:text-primary-300 mb-2">
-                Workouts Completed
-              </p>
-              <p className="text-3xl font-bold text-primary-900 dark:text-primary-100">0</p>
-            </div>
-            <div className="bg-success-50 dark:bg-success-900 rounded-lg p-6">
-              <p className="text-sm font-medium text-success-600 dark:text-success-300 mb-2">
-                Current Streak
-              </p>
-              <p className="text-3xl font-bold text-success-900 dark:text-success-100">0 days</p>
-            </div>
-            <div className="bg-warning-50 dark:bg-warning-900 rounded-lg p-6">
-              <p className="text-sm font-medium text-warning-600 dark:text-warning-300 mb-2">
-                This Week
-              </p>
-              <p className="text-3xl font-bold text-warning-900 dark:text-warning-100">0/4</p>
-            </div>
+          <h2 className="heading-lg mb-6">Your Stats</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Workouts This Month" value="0" icon="🏋️" variant="primary" />
+            <StatCard label="Current Streak" value="0 days" icon="🔥" variant="success" />
+            <StatCard label="Personal Records" value="0" icon="🥇" variant="warning" />
+            <StatCard label="Total Volume" value="0 lbs" icon="⚖️" variant="info" />
           </div>
         </Card>
       </div>
     </div>
   );
+}
+
+function getTimeOfDay(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
+  return 'evening';
 }
