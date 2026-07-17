@@ -27,3 +27,5 @@ export { SetLogger } from './SetLogger';
 export { CompletedSets } from './CompletedSets';
 export { RestTimer } from './RestTimer';
 export { Toast } from './Toast';
+export { ProgramGridCard } from './ProgramGridCard';
+export { RegenerateCard } from './RegenerateCard';
