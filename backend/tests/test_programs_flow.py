@@ -131,3 +131,26 @@ async def test_match_422_malformed_payload(client, auth_headers, user_environmen
     }
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
     assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_match_returns_new_factor_keys(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    resp = await authenticated_client.post(
+        "/api/v1/programs/match",
+        json={
+            "environment_id": user_environment.id,
+            "days_per_week": 3,
+            "session_duration_min": 60,
+            "fitness_focus": "strength",
+            "movement_preferences": {"kettlebell": 1.5},
+            "complementary_focus": True,
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body
+    assert "movement_preference" in body[0]["factors"]
+    assert "focus_complement" in body[0]["factors"]
+    assert "periodization" in body[0]["factors"]

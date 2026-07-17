@@ -97,8 +97,11 @@ async def match(
         data.days_per_week,
         data.session_duration_min,
         list(environment.equipment_tags),
+        movement_preferences=data.movement_preferences,
+        complementary_focus=data.complementary_focus,
+        progression_style=data.progression_style.value,
     )
-    ranked = rank_templates(templates, inp, feasibility)
+    ranked = rank_templates(templates, inp, feasibility, definitions=definitions, all_exercises=exercises)
     return [
         TemplateMatchOut(
             **m.__dict__,
