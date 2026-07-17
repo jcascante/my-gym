@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from app.schemas.program import ProgressionStyle
+from app.schemas.program import EffortMethod, ProgressionStyle
 
 
 class MatchRequest(BaseModel):
@@ -25,6 +25,7 @@ class DraftRequest(MatchRequest):
     template_id: int
     required_inputs: dict[str, float] = {}
     progression_style: ProgressionStyle = ProgressionStyle.CONSISTENT
+    effort_method: EffortMethod | None = None
 
 
 class FeedbackRequest(BaseModel):
@@ -47,6 +48,7 @@ class SlotPreviewOut(BaseModel):
     note: str | None
     is_locked: bool
     is_user_swapped: bool
+    effort_target: dict[str, object] | None = None
 
 
 class WorkoutPreviewOut(BaseModel):
