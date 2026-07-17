@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, Spinner, WeekTabs } from '@/components';
+import { Card, Spinner, WeekTabs, SlotRow } from '@/components';
 import { useProgramPreview } from '@/hooks/usePrograms';
 
 export default function ProgramPreviewPage() {
@@ -21,17 +21,7 @@ export default function ProgramPreviewPage() {
           <Card key={w.workout_id}>
             <h3 className="font-semibold mb-2">{w.name}</h3>
             {w.slots.map((s) => (
-              <div key={s.workout_exercise_id} className="flex justify-between py-1 text-sm">
-                <span>
-                  Exercise #{s.exercise_id}
-                  {s.is_locked ? ' 🔒' : ''}
-                </span>
-                <span>
-                  {s.sets} × {s.reps}
-                  {s.load != null ? ` @ ${s.load}` : ''}
-                  {s.note ? ` (${s.note})` : ''}
-                </span>
-              </div>
+              <SlotRow key={s.workout_exercise_id} slot={s} readOnly={true} />
             ))}
           </Card>
         ))}

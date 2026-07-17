@@ -13,10 +13,12 @@ export function SlotRow({
   slot,
   onAction,
   onSwap,
+  readOnly = false,
 }: {
   slot: SlotPreview;
-  onAction: (a: FeedbackAction) => void;
-  onSwap: () => void;
+  onAction?: (a: FeedbackAction) => void;
+  onSwap?: () => void;
+  readOnly?: boolean;
 }) {
   const effortLabel = formatEffortTarget(slot.effort_target);
   return (
@@ -37,7 +39,9 @@ export function SlotRow({
         </span>
         {effortLabel && <span className="text-xs text-neutral-500">{effortLabel}</span>}
         {slot.note && <span className="text-amber-600">{slot.note}</span>}
-        <SlotFeedbackMenu slot={slot} onAction={onAction} onSwap={onSwap} />
+        {!readOnly && onAction && onSwap && (
+          <SlotFeedbackMenu slot={slot} onAction={onAction} onSwap={onSwap} />
+        )}
       </div>
     </div>
   );
