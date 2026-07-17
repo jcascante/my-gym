@@ -248,6 +248,50 @@ async def test_derive_week_omits_effort_target_when_effort_method_unset(sample_t
 
 
 @pytest.mark.asyncio
+async def test_derive_week_applies_rotation_pool_week_to_week(sample_template_orm, sample_exercises):
+    """Rotation pool cycles the resolved exercise week over week and is surfaced in the slot."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(["barbell", "bench", "squat_rack"], "intermediate", [], set())
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80},
+    )
+    global_id = 0
+    for w in program.workouts:
+        w.id = w.order
+        for ex in w.exercises:
+            global_id += 1
+            ex.id = global_id
+    exercise_map = {e.id: e for e in sample_exercises}
+
+    target_we = program.workouts[0].exercises[0]
+    pool = [e.id for e in sample_exercises[:3]]
+    target_we.rotation_pool = pool
+
+    def slot_for(week: int) -> dict:
+        days = derive_week(program, definition, week, exercise_map)
+        return next(s for d in days for s in d["slots"] if s["workout_exercise_id"] == target_we.id)
+
+    week1_slot = slot_for(1)
+    assert week1_slot["exercise_id"] == pool[0]
+    assert week1_slot["rotation_pool"] == pool
+
+    week4_slot = slot_for(len(pool) + 1)  # cycles back to pool[0]
+    assert week4_slot["exercise_id"] == pool[0]
+
+    week2_slot = slot_for(2)
+    assert week2_slot["exercise_id"] == pool[1]
+
+
+@pytest.mark.asyncio
 async def test_derive_week_fallback_for_missing_exercise(sample_template_orm, sample_exercises):
     """Verify placeholder name when exercise is missing (e.g., deactivated)."""
     definition = TemplateDefinition.from_orm_template(sample_template_orm)

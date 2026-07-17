@@ -1,6 +1,6 @@
 from typing import Any
 
-from app.models import Exercise, WorkoutProgram
+from app.models import Exercise, WorkoutExercise, WorkoutProgram
 from app.schemas.template import TemplateDefinition
 from app.services.program.progression.base import SetScheme, SlotBase, get_model
 from app.services.program.progression.deload import apply_deload
@@ -20,6 +20,13 @@ def _effort_target(
     if effort_method == "percent_1rm" and intensity_pct is not None:
         return {"method": "percent_1rm", "pct": intensity_pct, "target_load": scheme.load}
     return None
+
+
+def _resolved_exercise_id(ex: WorkoutExercise, week: int) -> int:
+    pool = ex.rotation_pool
+    if pool and len(pool) > 1:
+        return pool[(week - 1) % len(pool)]
+    return ex.exercise_id
 
 
 def derive_week(
@@ -42,12 +49,13 @@ def derive_week(
                 base_load=ex.base_load,
             )
             scheme = apply_deload(model.resolve(base, week, params), week, every)
-            exercise = exercise_map.get(ex.exercise_id)
-            exercise_name = exercise.name if exercise else f"Exercise #{ex.exercise_id}"
+            resolved_exercise_id = _resolved_exercise_id(ex, week)
+            exercise = exercise_map.get(resolved_exercise_id)
+            exercise_name = exercise.name if exercise else f"Exercise #{resolved_exercise_id}"
             slots.append(
                 {
                     "workout_exercise_id": ex.id,
-                    "exercise_id": ex.exercise_id,
+                    "exercise_id": resolved_exercise_id,
                     "exercise_name": exercise_name,
                     "sets": scheme.sets,
                     "reps": scheme.reps,
@@ -57,6 +65,7 @@ def derive_week(
                     "is_locked": ex.is_locked,
                     "is_user_swapped": ex.is_user_swapped,
                     "effort_target": _effort_target(scheme, ex.target_rpe, ex.intensity_pct, effort_method),
+                    "rotation_pool": ex.rotation_pool,
                 }
             )
         days.append({"workout_id": workout.id, "key": workout.key, "name": workout.name, "slots": slots})

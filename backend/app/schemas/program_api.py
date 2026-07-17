@@ -60,6 +60,7 @@ class SlotPreviewOut(BaseModel):
     is_locked: bool
     is_user_swapped: bool
     effort_target: dict[str, object] | None = None
+    rotation_pool: list[int] = []
 
 
 class WorkoutPreviewOut(BaseModel):
