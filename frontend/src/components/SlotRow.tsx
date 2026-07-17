@@ -1,6 +1,14 @@
 import type { FeedbackAction, SlotPreview } from '@/types/program';
 import { SlotFeedbackMenu } from './SlotFeedbackMenu';
 
+function formatEffortTarget(target: SlotPreview['effort_target']): string | null {
+  if (!target) return null;
+  if (target.method === 'percent_1rm') {
+    return `${Math.round((target.pct ?? 0) * 100)}%`;
+  }
+  return `${target.method.toUpperCase()} ${target.value}`;
+}
+
 export function SlotRow({
   slot,
   onAction,
@@ -10,6 +18,7 @@ export function SlotRow({
   onAction: (a: FeedbackAction) => void;
   onSwap: () => void;
 }) {
+  const effortLabel = formatEffortTarget(slot.effort_target);
   return (
     <div className="flex items-center justify-between py-2 border-b">
       <div className="flex items-center gap-2">
@@ -26,6 +35,7 @@ export function SlotRow({
           {slot.sets} × {slot.reps}
           {slot.load != null ? ` @ ${slot.load}` : ''}
         </span>
+        {effortLabel && <span className="text-xs text-neutral-500">{effortLabel}</span>}
         {slot.note && <span className="text-amber-600">{slot.note}</span>}
         <SlotFeedbackMenu slot={slot} onAction={onAction} onSwap={onSwap} />
       </div>

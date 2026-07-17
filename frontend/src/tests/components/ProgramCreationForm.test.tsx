@@ -67,6 +67,7 @@ describe('ProgramCreationForm', () => {
       session_duration_min: 90,
       weight_unit: 'lbs' as const,
       progression_style: 'consistent' as const,
+      effort_method: '' as const,
     };
 
     render(
@@ -129,6 +130,7 @@ describe('ProgramCreationForm', () => {
       session_duration_min: 60,
       weight_unit: 'kg' as const,
       progression_style: 'consistent' as const,
+      effort_method: '' as const,
     };
 
     const { rerender } = render(
@@ -148,6 +150,7 @@ describe('ProgramCreationForm', () => {
       session_duration_min: 120,
       weight_unit: 'lbs' as const,
       progression_style: 'consistent' as const,
+      effort_method: '' as const,
     };
 
     rerender(
@@ -163,6 +166,22 @@ describe('ProgramCreationForm', () => {
       expect(screen.getByLabelText(/Days per Week/i)).toHaveValue(6);
       expect(screen.getByLabelText(/Session Duration/i)).toHaveValue(120);
       expect(screen.getByLabelText(/Weight Unit/i)).toHaveValue('lbs');
+    });
+  });
+
+  it('should default effort_method to empty (no preference) and submit a chosen method', async () => {
+    const onSubmit = vi.fn();
+    const onCancel = vi.fn();
+
+    render(<ProgramCreationForm environmentId={1} onSubmit={onSubmit} onCancel={onCancel} />);
+
+    fireEvent.change(screen.getByLabelText(/Effort Tracking/i), {
+      target: { value: 'rpe' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ effort_method: 'rpe' }));
     });
   });
 });

@@ -1,0 +1,40 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { SlotRow } from '@/components/SlotRow';
+import type { SlotPreview } from '@/types/program';
+
+const baseSlot: SlotPreview = {
+  workout_exercise_id: 1,
+  exercise_id: 1,
+  exercise_name: 'Barbell Back Squat',
+  sets: 3,
+  reps: 5,
+  load: 100,
+  rest_seconds: 120,
+  note: null,
+  is_locked: false,
+  is_user_swapped: false,
+  effort_target: null,
+};
+
+describe('SlotRow', () => {
+  it('renders nothing extra when effort_target is null', () => {
+    render(<SlotRow slot={baseSlot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.queryByText(/RPE|RIR|Borg|%/)).not.toBeInTheDocument();
+  });
+
+  it('renders an RPE effort target', () => {
+    const slot = { ...baseSlot, effort_target: { method: 'rpe' as const, value: 8 } };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText(/RPE 8/i)).toBeInTheDocument();
+  });
+
+  it('renders a percent_1rm effort target as a percentage', () => {
+    const slot = {
+      ...baseSlot,
+      effort_target: { method: 'percent_1rm' as const, pct: 0.8, target_load: 80 },
+    };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText(/80%/)).toBeInTheDocument();
+  });
+});

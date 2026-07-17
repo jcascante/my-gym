@@ -11,7 +11,7 @@ import { ProgramCreationForm } from '@/components/ProgramCreationForm';
 import { useAcceptProgram, useCreateDraft, useMatchTemplates } from '@/hooks/usePrograms';
 import type { MatchRequest, ProgramPreview, TemplateMatch } from '@/types/program';
 import type { MatchRequest as FormMatchRequest, WeightUnit } from '@/types/programCreation';
-import type { ProgressionStyle } from '@/types/programCreation';
+import type { ProgressionStyle, EffortMethod } from '@/types/programCreation';
 
 const STEPS = ['Preferences', 'Select', 'Details', 'Review'];
 
@@ -26,6 +26,7 @@ export default function ProgramBuilderPage() {
     {},
   );
   const [progressionStyle, setProgressionStyle] = useState<ProgressionStyle>('consistent');
+  const [effortMethod, setEffortMethod] = useState<EffortMethod | null>(null);
 
   const match = useMatchTemplates();
   const createDraft = useCreateDraft();
@@ -42,6 +43,7 @@ export default function ProgramBuilderPage() {
     };
     setPrefs(matchRequest);
     setProgressionStyle(values.progression_style);
+    setEffortMethod(values.effort_method || null);
     match.mutate(matchRequest, { onSuccess: () => setStep(1) });
   };
 
@@ -62,6 +64,7 @@ export default function ProgramBuilderPage() {
       template_id: m.template_id,
       required_inputs: requiredInputs,
       progression_style: progressionStyle,
+      effort_method: effortMethod,
     });
     setDraft(program);
     setStep(3);
@@ -99,6 +102,7 @@ export default function ProgramBuilderPage() {
                   session_duration_min: prefs.session_duration_min,
                   weight_unit: prefs.weight_unit as WeightUnit,
                   progression_style: progressionStyle,
+                  effort_method: effortMethod ?? '',
                 }
               : undefined
           }

@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { FormField } from './FormField';
-import { WEIGHT_UNIT_OPTIONS, PROGRESSION_STYLE_OPTIONS } from '@/types/programCreation';
-import type { MatchRequest, WeightUnit, ProgressionStyle } from '@/types/programCreation';
+import {
+  WEIGHT_UNIT_OPTIONS,
+  PROGRESSION_STYLE_OPTIONS,
+  EFFORT_METHOD_OPTIONS,
+} from '@/types/programCreation';
+import type {
+  MatchRequest,
+  WeightUnit,
+  ProgressionStyle,
+  EffortMethod,
+} from '@/types/programCreation';
 
 interface ProgramCreationFormProps {
   environmentId: number;
@@ -25,6 +34,9 @@ export function ProgramCreationForm({
   const [progressionStyle, setProgressionStyle] = useState<ProgressionStyle>(
     initialValues?.progression_style ?? 'consistent',
   );
+  const [effortMethod, setEffortMethod] = useState<EffortMethod | ''>(
+    initialValues?.effort_method ?? '',
+  );
 
   useEffect(() => {
     if (initialValues) {
@@ -32,6 +44,7 @@ export function ProgramCreationForm({
       setSessionDurationMin(initialValues.session_duration_min.toString());
       setWeightUnit(initialValues.weight_unit);
       setProgressionStyle(initialValues.progression_style);
+      setEffortMethod(initialValues.effort_method);
     }
   }, [initialValues]);
 
@@ -43,6 +56,7 @@ export function ProgramCreationForm({
       session_duration_min: parseInt(sessionDurationMin, 10),
       weight_unit: weightUnit,
       progression_style: progressionStyle,
+      effort_method: effortMethod,
     });
   };
 
@@ -104,6 +118,23 @@ export function ProgramCreationForm({
             required
           >
             {PROGRESSION_STYLE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="input-group">
+          <label htmlFor="effort_method" className="input-label">
+            Effort Tracking Style
+          </label>
+          <select
+            id="effort_method"
+            name="effort_method"
+            value={effortMethod}
+            onChange={(e) => setEffortMethod(e.target.value as EffortMethod | '')}
+          >
+            {EFFORT_METHOD_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
