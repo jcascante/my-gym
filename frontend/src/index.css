@@ -9,7 +9,7 @@
   }
 
   body {
-    @apply bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-50;
+    @apply bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -225,6 +225,16 @@
     }
   }
 
+  @keyframes pulse-glow-dark {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(107, 216, 203, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(107, 216, 203, 0);
+    }
+  }
+
   .animate-fade-in {
     animation: fade-in 300ms ease-out;
   }
@@ -245,6 +255,10 @@
     animation: pulse-glow 2s infinite;
   }
 
+  .dark .animate-pulse-glow {
+    animation: pulse-glow-dark 2s infinite;
+  }
+
   /* Smooth transitions for interactive elements */
   .transition-smooth {
     @apply transition-all duration-200 ease-out;
@@ -253,5 +267,26 @@
   /* Focus ring utility with animation */
   .focus-ring {
     @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500;
+  }
+
+  /* Dark mode enhancements */
+  .dark .card {
+    @apply bg-neutral-800 border-neutral-700 shadow-md;
+  }
+
+  .dark .animate-fade-in {
+    animation: fade-in 300ms ease-out;
+  }
+
+  .dark .animate-scale-in {
+    animation: scale-in 300ms ease-out;
+  }
+
+  .dark .animate-slide-in-up {
+    animation: slide-in-up 300ms ease-out;
+  }
+
+  .dark .animate-slide-in-down {
+    animation: slide-in-down 300ms ease-out;
   }
 }
