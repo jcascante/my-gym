@@ -66,6 +66,7 @@ describe('ProgramCreationForm', () => {
       days_per_week: 5,
       session_duration_min: 90,
       weight_unit: 'lbs' as const,
+      progression_style: 'consistent' as const,
     };
 
     render(
@@ -86,6 +87,39 @@ describe('ProgramCreationForm', () => {
     expect(weightSelect).toHaveValue('lbs');
   });
 
+  it('should include progression_style in submitted values, defaulting to consistent', async () => {
+    const onSubmit = vi.fn();
+    const onCancel = vi.fn();
+
+    render(<ProgramCreationForm environmentId={1} onSubmit={onSubmit} onCancel={onCancel} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ progression_style: 'consistent' }),
+      );
+    });
+  });
+
+  it('should submit variable progression style when selected', async () => {
+    const onSubmit = vi.fn();
+    const onCancel = vi.fn();
+
+    render(<ProgramCreationForm environmentId={1} onSubmit={onSubmit} onCancel={onCancel} />);
+
+    fireEvent.change(screen.getByLabelText(/Progression Style/i), {
+      target: { value: 'variable' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ progression_style: 'variable' }),
+      );
+    });
+  });
+
   it('should update form fields when initialValues prop changes', async () => {
     const onSubmit = vi.fn();
     const onCancel = vi.fn();
@@ -94,6 +128,7 @@ describe('ProgramCreationForm', () => {
       days_per_week: 3,
       session_duration_min: 60,
       weight_unit: 'kg' as const,
+      progression_style: 'consistent' as const,
     };
 
     const { rerender } = render(
@@ -112,6 +147,7 @@ describe('ProgramCreationForm', () => {
       days_per_week: 6,
       session_duration_min: 120,
       weight_unit: 'lbs' as const,
+      progression_style: 'consistent' as const,
     };
 
     rerender(

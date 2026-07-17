@@ -54,4 +54,5 @@ export interface MatchRequest {
   days_per_week: number;
   session_duration_min: number;
   weight_unit: WeightUnit;
+  progression_style: ProgressionStyle;
 }

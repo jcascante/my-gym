@@ -11,6 +11,7 @@ import { ProgramCreationForm } from '@/components/ProgramCreationForm';
 import { useAcceptProgram, useCreateDraft, useMatchTemplates } from '@/hooks/usePrograms';
 import type { MatchRequest, ProgramPreview, TemplateMatch } from '@/types/program';
 import type { MatchRequest as FormMatchRequest, WeightUnit } from '@/types/programCreation';
+import type { ProgressionStyle } from '@/types/programCreation';
 
 const STEPS = ['Preferences', 'Select', 'Details', 'Review'];
 
@@ -24,19 +25,23 @@ export default function ProgramBuilderPage() {
   const [requiredInputValues, setRequiredInputValues] = useState<Record<string, number | string>>(
     {},
   );
+  const [progressionStyle, setProgressionStyle] = useState<ProgressionStyle>('consistent');
 
   const match = useMatchTemplates();
   const createDraft = useCreateDraft();
   const accept = useAcceptProgram(draft?.program_id ?? 0);
 
   const onPrefs = (values: FormMatchRequest) => {
-    // Adapt form output (4 fields) to MatchRequest (6 fields)
     const matchRequest: MatchRequest = {
-      ...values,
+      environment_id: values.environment_id,
+      days_per_week: values.days_per_week,
+      session_duration_min: values.session_duration_min,
+      weight_unit: values.weight_unit,
       fitness_focus: 'full_body',
       duration_weeks: 8,
     };
     setPrefs(matchRequest);
+    setProgressionStyle(values.progression_style);
     match.mutate(matchRequest, { onSuccess: () => setStep(1) });
   };
 
@@ -56,6 +61,7 @@ export default function ProgramBuilderPage() {
       ...prefs,
       template_id: m.template_id,
       required_inputs: requiredInputs,
+      progression_style: progressionStyle,
     });
     setDraft(program);
     setStep(3);
@@ -92,6 +98,7 @@ export default function ProgramBuilderPage() {
                   days_per_week: prefs.days_per_week,
                   session_duration_min: prefs.session_duration_min,
                   weight_unit: prefs.weight_unit as WeightUnit,
+                  progression_style: progressionStyle,
                 }
               : undefined
           }

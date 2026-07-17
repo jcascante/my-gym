@@ -1,3 +1,5 @@
+import type { ProgressionStyle } from '@/types/programCreation';
+
 export interface RequiredInput {
   key: string;
   label: string;
@@ -54,6 +56,7 @@ export interface MatchRequest {
 export interface DraftRequest extends MatchRequest {
   template_id: number;
   required_inputs: Record<string, number | string>;
+  progression_style: ProgressionStyle;
 }
 
 export type FeedbackAction =

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { FormField } from './FormField';
-import { WEIGHT_UNIT_OPTIONS } from '@/types/programCreation';
-import type { MatchRequest, WeightUnit } from '@/types/programCreation';
+import { WEIGHT_UNIT_OPTIONS, PROGRESSION_STYLE_OPTIONS } from '@/types/programCreation';
+import type { MatchRequest, WeightUnit, ProgressionStyle } from '@/types/programCreation';
 
 interface ProgramCreationFormProps {
   environmentId: number;
@@ -22,12 +22,16 @@ export function ProgramCreationForm({
     initialValues?.session_duration_min.toString() ?? '60',
   );
   const [weightUnit, setWeightUnit] = useState<WeightUnit>(initialValues?.weight_unit ?? 'kg');
+  const [progressionStyle, setProgressionStyle] = useState<ProgressionStyle>(
+    initialValues?.progression_style ?? 'consistent',
+  );
 
   useEffect(() => {
     if (initialValues) {
       setDaysPerWeek(initialValues.days_per_week.toString());
       setSessionDurationMin(initialValues.session_duration_min.toString());
       setWeightUnit(initialValues.weight_unit);
+      setProgressionStyle(initialValues.progression_style);
     }
   }, [initialValues]);
 
@@ -38,6 +42,7 @@ export function ProgramCreationForm({
       days_per_week: parseInt(daysPerWeek, 10),
       session_duration_min: parseInt(sessionDurationMin, 10),
       weight_unit: weightUnit,
+      progression_style: progressionStyle,
     });
   };
 
@@ -81,6 +86,24 @@ export function ProgramCreationForm({
             required
           >
             {WEIGHT_UNIT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="input-group">
+          <label htmlFor="progression_style" className="input-label">
+            Progression Style <span className="text-error-600">*</span>
+          </label>
+          <select
+            id="progression_style"
+            name="progression_style"
+            value={progressionStyle}
+            onChange={(e) => setProgressionStyle(e.target.value as ProgressionStyle)}
+            required
+          >
+            {PROGRESSION_STYLE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

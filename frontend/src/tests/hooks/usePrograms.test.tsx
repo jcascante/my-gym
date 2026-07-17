@@ -66,6 +66,7 @@ describe('usePrograms hooks', () => {
         duration_weeks: 8,
         template_id: 1,
         required_inputs: {},
+        progression_style: 'consistent',
       });
       await waitFor(() => expect(result.current.data?.program_id).toBe(1));
     });
