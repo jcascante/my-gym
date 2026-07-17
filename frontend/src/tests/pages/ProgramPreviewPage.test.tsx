@@ -30,6 +30,7 @@ vi.mock('@/hooks/usePrograms', () => ({
                 is_locked: false,
                 is_user_swapped: false,
                 effort_target: { method: 'rpe', value: 8 },
+                rotation_pool: [],
               },
               {
                 workout_exercise_id: 2,
@@ -43,6 +44,7 @@ vi.mock('@/hooks/usePrograms', () => ({
                 is_locked: true,
                 is_user_swapped: false,
                 effort_target: { method: 'percent_1rm', pct: 0.85 },
+                rotation_pool: [],
               },
             ],
           },

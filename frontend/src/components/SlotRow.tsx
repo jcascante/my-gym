@@ -39,6 +39,9 @@ export function SlotRow({
         </span>
         {effortLabel && <span className="text-xs text-neutral-500">{effortLabel}</span>}
         {slot.note && <span className="text-amber-600">{slot.note}</span>}
+        {slot.rotation_pool.length > 1 && (
+          <span className="text-xs text-blue-600">🔁 rotates weekly</span>
+        )}
         {!readOnly && onAction && onSwap && (
           <SlotFeedbackMenu slot={slot} onAction={onAction} onSwap={onSwap} />
         )}

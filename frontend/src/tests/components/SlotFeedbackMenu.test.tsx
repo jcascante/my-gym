@@ -15,6 +15,7 @@ const slot = {
   is_locked: false,
   is_user_swapped: false,
   effort_target: null,
+  rotation_pool: [],
 };
 
 it('emits lock action', async () => {

@@ -33,6 +33,7 @@ const program = {
             is_locked: true,
             is_user_swapped: false,
             effort_target: null,
+            rotation_pool: [],
           },
         ],
       },

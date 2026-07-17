@@ -35,6 +35,7 @@ export interface SlotPreview {
   is_locked: boolean;
   is_user_swapped: boolean;
   effort_target: EffortTarget | null;
+  rotation_pool: number[];
 }
 
 export interface WorkoutPreview {

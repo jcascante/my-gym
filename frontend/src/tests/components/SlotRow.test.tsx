@@ -15,6 +15,7 @@ const baseSlot: SlotPreview = {
   is_locked: false,
   is_user_swapped: false,
   effort_target: null,
+  rotation_pool: [],
 };
 
 describe('SlotRow', () => {
@@ -48,5 +49,17 @@ describe('SlotRow', () => {
     const slot = { ...baseSlot, effort_target: { method: 'borg' as const, value: 13 } };
     render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
     expect(screen.getByText(/BORG 13/i)).toBeInTheDocument();
+  });
+
+  it('shows rotation badge when rotation_pool has multiple exercises', () => {
+    const slot = { ...baseSlot, rotation_pool: [1, 2, 3] };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText(/🔁 rotates weekly/)).toBeInTheDocument();
+  });
+
+  it('does not show rotation badge when rotation_pool has one or fewer exercises', () => {
+    const slot = { ...baseSlot, rotation_pool: [1] };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.queryByText(/🔁 rotates weekly/)).not.toBeInTheDocument();
   });
 });
