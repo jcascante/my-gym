@@ -143,30 +143,29 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-neutral-900 dark:to-neutral-800 py-8 px-4">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <Card className="mb-8">
+        <Card className="card-elevated mb-8">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">
-              Welcome, {user?.first_name}!
-            </h1>
-            <p className="text-lg text-neutral-600 dark:text-neutral-400">
+            <h1 className="display-md mb-2">Welcome, {user?.first_name}! 🎉</h1>
+            <p className="body-lg text-neutral-600 dark:text-neutral-400">
               Let's set up your fitness profile to create your personalized workout program.
             </p>
           </div>
 
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+          {/* Progress Indicator */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <p className="label-sm text-neutral-600 dark:text-neutral-400">
                 Step {currentStep + 1} of {STEPS.length}
-              </span>
-              <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                {STEPS[currentStep].title}
-              </span>
+              </p>
+              <p className="label-sm text-neutral-600 dark:text-neutral-400">
+                {Math.round(((currentStep + 1) / STEPS.length) * 100)}%
+              </p>
             </div>
-            <div className="w-full h-2 rounded-full bg-neutral-200 dark:bg-neutral-700">
+            <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2 overflow-hidden">
               <div
-                className="h-2 rounded-full bg-primary-600 transition-all"
+                className="h-2 rounded-full bg-primary-600 dark:bg-primary-500 transition-all duration-500"
                 style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
               />
             </div>
@@ -182,9 +181,7 @@ export default function OnboardingPage() {
             {/* Personal Info */}
             {currentStep === 0 && (
               <div>
-                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
-                  Personal Information
-                </h2>
+                <h2 className="heading-md mb-6">Personal Information</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     label="Age"
@@ -241,9 +238,7 @@ export default function OnboardingPage() {
             {/* Fitness Level */}
             {currentStep === 1 && (
               <div>
-                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
-                  Fitness Level
-                </h2>
+                <h2 className="heading-md mb-6">Fitness Level</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="input-group">
                     <label htmlFor="experience" className="input-label">
@@ -287,9 +282,7 @@ export default function OnboardingPage() {
             {/* Workout Preferences */}
             {currentStep === 2 && (
               <div>
-                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
-                  Workout Preferences
-                </h2>
+                <h2 className="heading-md mb-6">Workout Preferences</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="input-group">
                     <label htmlFor="focus" className="input-label">
@@ -339,9 +332,7 @@ export default function OnboardingPage() {
             {/* Training Environments */}
             {currentStep === 3 && (
               <div>
-                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-                  Training Environments
-                </h2>
+                <h2 className="heading-md mb-4">Training Environments</h2>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
                   Tell us where you train (e.g., a commercial gym, your home setup, or
                   bodyweight-only). This step is optional — you can skip it and add environments
@@ -398,9 +389,7 @@ export default function OnboardingPage() {
             {/* Goals */}
             {currentStep === 4 && (
               <div>
-                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
-                  Your Goals
-                </h2>
+                <h2 className="heading-md mb-6">Your Goals</h2>
                 <div className="space-y-4">
                   <FormField
                     label="Short-term Goals"
@@ -423,9 +412,7 @@ export default function OnboardingPage() {
             {/* Additional Info */}
             {currentStep === 5 && (
               <div>
-                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
-                  Additional Information
-                </h2>
+                <h2 className="heading-md mb-6">Additional Information</h2>
                 <div className="input-group">
                   <label htmlFor="injuries" className="input-label">
                     Injuries or Limitations
@@ -443,12 +430,11 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-4 pt-2">
+            <div className="flex items-center justify-between gap-4 pt-6">
               {currentStep > 0 ? (
                 <Button
                   type="button"
-                  variant="secondary"
-                  size="lg"
+                  className="btn btn-outline"
                   onClick={handleBack}
                   disabled={showAddEnvironment}
                 >
@@ -459,14 +445,13 @@ export default function OnboardingPage() {
               )}
 
               {isLastStep ? (
-                <Button type="submit" variant="primary" size="lg" isLoading={loading}>
-                  Complete Onboarding
+                <Button type="submit" className="btn btn-success" disabled={loading}>
+                  {loading ? 'Completing...' : 'Complete Onboarding'}
                 </Button>
               ) : (
                 <Button
                   type="button"
-                  variant="primary"
-                  size="lg"
+                  className="btn btn-primary"
                   onClick={handleNext}
                   disabled={showAddEnvironment}
                 >
