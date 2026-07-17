@@ -55,6 +55,7 @@ def build_draft(
             "required_inputs": required_inputs,
             "progression_style": progression_style,
             "effort_method": effort_method,
+            "movement_preferences": ctx.movement_preferences,
         },
     )
     for session in definition.split.sessions:

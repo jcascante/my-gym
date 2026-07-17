@@ -175,3 +175,28 @@ async def test_build_draft_base_load_unaffected_when_effort_method_unset(sample_
     ]
     assert squat_exercises
     assert all(ex.base_load == 100.0 for ex in squat_exercises)  # unchanged, backward compatible
+
+
+@pytest.mark.asyncio
+async def test_build_draft_stores_movement_preferences_in_constraints(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(
+        equipment=["barbell", "bench", "squat_rack"],
+        experience="intermediate",
+        injuries=[],
+        used_movement_slugs=set(),
+        movement_preferences={"kettlebell": 1.5},
+    )
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+    )
+    assert program.constraints["movement_preferences"] == {"kettlebell": 1.5}

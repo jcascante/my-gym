@@ -34,13 +34,25 @@ from app.services.program.style_override import apply_progression_style
 router = APIRouter(prefix="/programs", tags=["programs"])
 
 
-async def _ctx_for(db: AsyncSession, user: User, environment: TrainingEnvironment) -> SelectionContext:
+async def _ctx_for(
+    db: AsyncSession,
+    user: User,
+    environment: TrainingEnvironment,
+    *,
+    movement_preferences: dict[str, float] | None = None,
+) -> SelectionContext:
     profile = user.profile
     injuries = []
     if profile and profile.injuries_limitations:
         injuries = [w.strip().lower() for w in profile.injuries_limitations.split(",") if w.strip()]
     experience = profile.experience_level.value if profile and profile.experience_level else "beginner"
-    return SelectionContext(list(environment.equipment_tags), experience, injuries, set())
+    return SelectionContext(
+        list(environment.equipment_tags),
+        experience,
+        injuries,
+        set(),
+        movement_preferences=movement_preferences or {},
+    )
 
 
 async def _preview_out(db: AsyncSession, program: WorkoutProgram, definition: TemplateDefinition) -> ProgramPreviewOut:
@@ -105,7 +117,7 @@ async def draft(
     if template is None or not template.is_active:
         raise ProgramTemplateNotFoundError()
     definition = TemplateDefinition.from_orm_template(template)
-    ctx = await _ctx_for(db, user, environment)
+    ctx = await _ctx_for(db, user, environment, movement_preferences=data.movement_preferences)
     exercises = await list_exercises(db)
     program = build_draft(
         template,
@@ -165,7 +177,12 @@ async def feedback(
     environment = await get_training_environment(db, user.id, program.environment_id)
     if environment is None:
         raise TrainingEnvironmentNotFoundError()
-    ctx = await _ctx_for(db, user, environment)
+    ctx = await _ctx_for(
+        db,
+        user,
+        environment,
+        movement_preferences=program.constraints.get("movement_preferences", {}),
+    )
     exercises = await list_exercises(db)
     apply_feedback(program, definition, FeedbackAction(**data.model_dump()), ctx, exercises)
     await save_program(db, program)
@@ -185,7 +202,12 @@ async def alternatives(
     environment = await get_training_environment(db, user.id, program.environment_id)
     if environment is None:
         raise TrainingEnvironmentNotFoundError()
-    ctx = await _ctx_for(db, user, environment)
+    ctx = await _ctx_for(
+        db,
+        user,
+        environment,
+        movement_preferences=program.constraints.get("movement_preferences", {}),
+    )
     exercises = await list_exercises(db)
     alts = alternatives_for_slot(program, definition, we_id, ctx, exercises)
     return [AlternativeOut.model_validate(a) for a in alts]
