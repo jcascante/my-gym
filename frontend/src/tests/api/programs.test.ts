@@ -1,53 +1,39 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createProgram } from '@/api/programs';
-import type { ProgramCreationPayload } from '@/types/programCreation';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { matchTemplates, submitFeedback } from '@/api/programs';
+import * as clientModule from '@/api/client';
 
-const mockAxiosInstance = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  patch: vi.fn(),
-  delete: vi.fn(),
-  defaults: { headers: { common: {} } },
-  interceptors: { response: { use: vi.fn() } },
-}));
+vi.mock('@/api/client');
 
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => mockAxiosInstance),
-  },
-}));
+describe('programs api', () => {
+  const mockPost = vi.fn();
+  const mockGet = vi.fn();
 
-const payload: ProgramCreationPayload = {
-  environment_id: 1,
-  days_per_week: 4,
-  preferred_days: ['monday', 'wednesday', 'friday', 'saturday'],
-  session_duration_min: 60,
-  start_date: '2026-08-01',
-  focus_areas: ['push', 'pull', 'legs'],
-  weight_unit: 'kg',
-  available_weight_increments: [1.25, 2.5, 5],
-  progression_style: 'consistent',
-};
-
-describe('Programs API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (clientModule.apiClient as any).post = mockPost;
+    (clientModule.apiClient as any).get = mockGet;
   });
 
-  it('should post the full preferences payload', async () => {
-    vi.mocked(mockAxiosInstance.post).mockResolvedValueOnce({ data: undefined });
-
-    await createProgram(payload);
-
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith('/programs', payload);
+  it('posts match request', async () => {
+    mockPost.mockResolvedValue({ data: [{ template_id: 1 }] });
+    const res = await matchTemplates({
+      environment_id: 1,
+      days_per_week: 3,
+      session_duration_min: 60,
+      fitness_focus: 'strength',
+      weight_unit: 'kg',
+      duration_weeks: 8,
+    });
+    expect(mockPost).toHaveBeenCalledWith('/programs/match', expect.any(Object));
+    expect(res[0].template_id).toBe(1);
   });
 
-  it('should surface a 501 response to the caller', async () => {
-    const error = {
-      response: { status: 501, data: { detail: 'Program generation is not yet implemented.' } },
-    };
-    vi.mocked(mockAxiosInstance.post).mockRejectedValueOnce(error);
-
-    await expect(createProgram(payload)).rejects.toBe(error);
+  it('posts feedback to program id', async () => {
+    mockPost.mockResolvedValue({ data: { program_id: 5 } });
+    await submitFeedback(5, { type: 'lock', workout_exercise_id: 9 });
+    expect(mockPost).toHaveBeenCalledWith('/programs/5/feedback', {
+      type: 'lock',
+      workout_exercise_id: 9,
+    });
   });
 });

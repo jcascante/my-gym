@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Button } from './Button';
 import { Card } from './Card';
 import { ENVIRONMENT_TYPE_OPTIONS, EQUIPMENT_OPTIONS } from '@/types/trainingEnvironment';
@@ -8,7 +9,6 @@ interface TrainingEnvironmentCardProps {
   readOnly?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
-  onGenerateProgram?: () => void;
 }
 
 export function TrainingEnvironmentCard({
@@ -16,7 +16,6 @@ export function TrainingEnvironmentCard({
   readOnly = false,
   onEdit,
   onDelete,
-  onGenerateProgram,
 }: TrainingEnvironmentCardProps) {
   const typeLabel =
     ENVIRONMENT_TYPE_OPTIONS.find((option) => option.value === environment.environment_type)
@@ -69,11 +68,12 @@ export function TrainingEnvironmentCard({
             Delete
           </Button>
         )}
-        {onGenerateProgram && (
-          <Button variant="primary" size="sm" onClick={onGenerateProgram}>
-            Generate Program
-          </Button>
-        )}
+        <Link
+          to={`/programs/new/${environment.id}`}
+          className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 px-3 py-1.5 text-sm bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800"
+        >
+          Generate Program
+        </Link>
       </div>
     </Card>
   );

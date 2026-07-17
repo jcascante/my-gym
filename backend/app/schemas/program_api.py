@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.program import EffortMethod, ProgressionStyle
+
 
 class MatchRequest(BaseModel):
     environment_id: int
@@ -22,6 +24,8 @@ class TemplateMatchOut(BaseModel):
 class DraftRequest(MatchRequest):
     template_id: int
     required_inputs: dict[str, float] = {}
+    progression_style: ProgressionStyle = ProgressionStyle.CONSISTENT
+    effort_method: EffortMethod | None = None
 
 
 class FeedbackRequest(BaseModel):
@@ -36,6 +40,7 @@ class SlotPreviewOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     workout_exercise_id: int
     exercise_id: int
+    exercise_name: str
     sets: int
     reps: int
     load: float | None
@@ -43,6 +48,7 @@ class SlotPreviewOut(BaseModel):
     note: str | None
     is_locked: bool
     is_user_swapped: bool
+    effort_target: dict[str, object] | None = None
 
 
 class WorkoutPreviewOut(BaseModel):

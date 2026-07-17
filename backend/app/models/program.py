@@ -107,6 +107,8 @@ class WorkoutExercise(Base):
     base_load: Mapped[float | None] = mapped_column(Float)
     rest_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
     scheme_key: Mapped[str] = mapped_column(String(50), nullable=False)
+    target_rpe: Mapped[float | None] = mapped_column(Float)
+    intensity_pct: Mapped[float | None] = mapped_column(Float)
     is_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_user_swapped: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 

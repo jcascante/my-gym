@@ -1,0 +1,42 @@
+# Dependencies (large, reconstructible from lockfiles)
+**/node_modules/
+**/.venv/
+**/venv/
+**/env/
+
+# Build/dist output
+**/dist/
+**/build/
+frontend/coverage/
+
+# Terraform provider binaries (huge, not source)
+terraform/.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Duplicate worktree checkouts (own .venv/node_modules copies)
+.worktrees/
+
+# Caches
+**/__pycache__/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.pytest_cache/
+**/htmlcov/
+**/*.tsbuildinfo
+
+# Compiled/binary artifacts
+**/*.so
+**/*.pyc
+**/*.whl
+**/*.egg-info/
+
+# Lock files (large, low signal for reasoning about code)
+frontend/package-lock.json
+
+# DB data volumes
+postgres_data/
+
+# VCS internals
+.git/

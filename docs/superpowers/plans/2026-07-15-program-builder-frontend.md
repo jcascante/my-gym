@@ -11,11 +11,40 @@
 ## Global Constraints
 
 - **Prerequisite:** Plan 1 backend endpoints are live (`/programs/match`, `/draft`, `/{id}/preview`, `/{id}/feedback`, `/{id}/slots/{we_id}/alternatives`, `/{id}/accept`, `/{id}`).
+- **Scope addition (decided before Task 1, 2026-07-16):** Plan 1 deleted the old bare `POST /programs` 501-stub endpoint when it replaced `app/api/v1/endpoints/programs.py` with the real engine router — so today's `ProgramCreationForm` (embedded in `EnvironmentsPage`, calling `createProgram()`) is already broken on this branch, not just superseded. This plan now also retires that legacy flow: `ProgramCreationForm` becomes the wizard's "Preferences" step (presentational, `onSubmit`-driven, no internal API call), and `EnvironmentsPage`'s "Generate Program" action navigates to the wizard instead of embedding the form. See the added steps in Task 2 and Task 7, and the amended CTA in Task 8.
+- **`fitness_focus` is a goal tag, not a body part:** the backend matches `inp.fitness_focus in template.goals` against seeded values `"general" | "strength" | "muscle_gain"` (`backend/app/db/seed/program_templates.py`). This is unrelated to the old `FocusArea` enum (push/pull/legs/...) that `ProgramCreationForm` used for its `focus_areas` multi-select — that field is being dropped, not converted. `preferred_days`, `start_date`, `available_weight_increments`, and `progression_style` are also dropped from the form: nothing in the new engine consumes them (confirmed via grep — only the now-orphaned `backend/app/schemas/program.py` still defines them).
 - All API calls go through `apiClient` (`src/api/client.ts`, `withCredentials`).
 - TDD: Vitest + RTL, user-centric queries (`getByRole`/`getByText`), per `react-component-testing`.
 - Follow the existing Tailwind design system (responsive, accessible, keyboard-navigable).
 - Components exported from `src/components/index.ts`; strict TypeScript.
 - Commit after every green test.
+
+---
+
+### Task 0: Retire legacy form stub (refactor ProgramCreationForm)
+
+**Files:**
+- Modify: `frontend/src/components/ProgramCreationForm.tsx`, `frontend/src/tests/components/ProgramCreationForm.test.tsx`
+- Modify: `frontend/src/pages/EnvironmentsPage.tsx`, `frontend/src/tests/pages/EnvironmentsPage.test.tsx`
+- Delete: `frontend/src/api/programs.ts` `createProgram()` export + its tests (`frontend/src/tests/api/programs.test.ts` covering it)
+
+**Why:** Plan 1 deleted the backend's `POST /programs` 501-stub endpoint when it replaced `app/api/v1/endpoints/programs.py` with the real engine. The old form (in `EnvironmentsPage`) called `createProgram()` which POSTed to that stub—it's now broken on this branch. Option 3: retire it cleanly: strip `createProgram()` from the API module (test removes its stub import), make `ProgramCreationForm` presentational-only (`onSubmit` callback required, no internal API call), and have `EnvironmentsPage`'s "Generate Program" button navigate to `/programs/new` (the wizard) instead of embedding the form.
+
+- [ ] **Step 1: Refactor `ProgramCreationForm.tsx`** — remove internal `createProgram()` call, drop unused fields (`preferred_days`, `start_date`, `focus_areas`, `available_weight_increments`, `progression_style`), keep only what the wizard needs (environment_id, days_per_week, session_duration_min, weight_unit). Add required `onSubmit: (values: MatchRequest) => void` prop. Remove result/error UI (let caller handle feedback).
+
+- [ ] **Step 2: Update `ProgramCreationForm.test.tsx`** — remove tests asserting the old 501-stub behavior and internal POST; test that `onSubmit` callback is invoked with collected values. Verify the form is now a pure controlled component.
+
+- [ ] **Step 3: Update `EnvironmentsPage.tsx`** — replace the `{ mode: 'generate' }` panel rendering a `<ProgramCreationForm />` with a `<Link to="/programs/new"><Button>Generate Program</Button></Link>` (or a direct button that navigates). Simplify `PanelState` to remove the `'generate'` mode.
+
+- [ ] **Step 4: Update `EnvironmentsPage.test.tsx`** — remove tests for the old embedded-form flow; add a test that clicking the button navigates to `/programs/new` (or asserts the link's href).
+
+- [ ] **Step 5: Remove `createProgram()` from `frontend/src/api/programs.ts`** — keep all other exports (`matchTemplates`, `createDraft`, etc., added in Task 2); delete the old stub POST.
+
+- [ ] **Step 6: Clean up test coverage** — if `frontend/src/tests/api/programs.test.ts` has tests for `createProgram()`, remove them. Task 2 will add tests for the real program API functions.
+
+- [ ] **Step 7: Run tests** — `docker-compose exec frontend npm run test` should pass with old stub coverage gone and refactored form tests in place.
+
+- [ ] **Step 8: Commit** — `git commit -m "feat(program-ui): retire legacy form stub, make ProgramCreationForm presentational"`
 
 ---
 
@@ -779,7 +808,11 @@ export default function ProgramBuilderPage() {
 ```
 > `ProgramCreationForm.onSubmit` must yield a `MatchRequest`-shaped object. Read `src/components/ProgramCreationForm.tsx` + `src/types/programCreation.ts`; add an adapter if its payload differs (map its fields → `MatchRequest`). Keep backward compatibility with its existing usage.
 
-- [ ] **Step 4: Add routes to `App.tsx`**
+- [ ] **Step 4: Check ProgramCreationForm integration**
+
+Before wiring the page: `ProgramCreationForm` is now refactored (Task 0) to require an `onSubmit` callback and to output `MatchRequest`-shaped values directly (environment_id, days_per_week, session_duration_min, weight_unit, duration_weeks). Verify its new prop signature and run `docker-compose exec frontend npm run test -- ProgramCreationForm.test.tsx` to confirm the form is ready.
+
+- [ ] **Step 5: Add routes to `App.tsx`**
 
 ```tsx
 // add imports
@@ -792,9 +825,9 @@ import ProgramsListPage from '@/pages/ProgramsListPage';       // Task 8
 <Route path="/programs/:id" element={<ProgramPreviewPage />} />
 ```
 
-- [ ] **Step 5: Run tests → PASS.** (Routes referencing Task 8 pages will compile once Task 8 lands; if executing strictly in order, stub the two imports as empty components first, then implement in Task 8.)
+- [ ] **Step 6: Run tests → PASS.** (Routes referencing Task 8 pages will compile once Task 8 lands; if executing strictly in order, stub the two imports as empty components first, then implement in Task 8.)
 
-- [ ] **Step 6: Commit** — `git commit -m "feat(program-ui): builder wizard page + routes"`
+- [ ] **Step 7: Commit** — `git commit -m "feat(program-ui): builder wizard page + routes"`
 
 ---
 
@@ -898,7 +931,7 @@ export default function ProgramsListPage() {
   );
 }
 ```
-> `ProgramsListPage` is intentionally minimal for MVP (no list endpoint in Plan 1). When a `GET /user/programs` endpoint exists, render `ProgramListCard`s from it. `ProgramListCard` can be created now as a presentational component and wired later.
+> `ProgramsListPage` is intentionally minimal for MVP (no list endpoint in Plan 1). When a `GET /user/programs` endpoint exists, render `ProgramListCard`s from it. `ProgramListCard` can be created now as a presentational component and wired later. Note: `EnvironmentsPage` also updated in Task 0 — its "Generate Program" action now navigates to `/programs/new` instead of embedding `ProgramCreationForm`.
 
 - [ ] **Step 4: Run tests → PASS.**
 

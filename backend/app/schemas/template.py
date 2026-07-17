@@ -8,6 +8,8 @@ class SchemeDef(BaseModel):
     reps_min: int
     reps_max: int
     rest_seconds: int
+    target_rpe: float | None = None
+    intensity_pct: float | None = None
 
 
 class SlotRule(BaseModel):

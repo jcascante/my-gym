@@ -1,6 +1,39 @@
 import { apiClient } from '@/api/client';
-import type { ProgramCreationPayload } from '@/types/programCreation';
+import type {
+  Alternative,
+  DraftRequest,
+  FeedbackAction,
+  MatchRequest,
+  ProgramPreview,
+  TemplateMatch,
+} from '@/types/program';
 
-export async function createProgram(payload: ProgramCreationPayload): Promise<void> {
-  await apiClient.post('/programs', payload);
+export async function matchTemplates(req: MatchRequest): Promise<TemplateMatch[]> {
+  const { data } = await apiClient.post<TemplateMatch[]>('/programs/match', req);
+  return data;
+}
+
+export async function createDraft(req: DraftRequest): Promise<ProgramPreview> {
+  const { data } = await apiClient.post<ProgramPreview>('/programs/draft', req);
+  return data;
+}
+
+export async function getProgramPreview(id: number): Promise<ProgramPreview> {
+  const { data } = await apiClient.get<ProgramPreview>(`/programs/${id}/preview`);
+  return data;
+}
+
+export async function submitFeedback(id: number, action: FeedbackAction): Promise<ProgramPreview> {
+  const { data } = await apiClient.post<ProgramPreview>(`/programs/${id}/feedback`, action);
+  return data;
+}
+
+export async function getSlotAlternatives(id: number, weId: number): Promise<Alternative[]> {
+  const { data } = await apiClient.get<Alternative[]>(`/programs/${id}/slots/${weId}/alternatives`);
+  return data;
+}
+
+export async function acceptProgram(id: number): Promise<ProgramPreview> {
+  const { data } = await apiClient.post<ProgramPreview>(`/programs/${id}/accept`);
+  return data;
 }

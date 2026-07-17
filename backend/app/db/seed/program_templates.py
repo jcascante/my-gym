@@ -21,8 +21,22 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         ],
         "split": {
             "schemes": {
-                "main": {"sets": 3, "reps_min": 5, "reps_max": 5, "rest_seconds": 120},
-                "accessory": {"sets": 3, "reps_min": 10, "reps_max": 12, "rest_seconds": 60},
+                "main": {
+                    "sets": 3,
+                    "reps_min": 5,
+                    "reps_max": 5,
+                    "rest_seconds": 120,
+                    "target_rpe": 8.0,
+                    "intensity_pct": 0.8,
+                },
+                "accessory": {
+                    "sets": 3,
+                    "reps_min": 10,
+                    "reps_max": 12,
+                    "rest_seconds": 60,
+                    "target_rpe": 7.0,
+                    "intensity_pct": 0.65,
+                },
             },
             "sessions": [
                 {
@@ -75,8 +89,22 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "required_inputs": [],
         "split": {
             "schemes": {
-                "main": {"sets": 3, "reps_min": 8, "reps_max": 15, "rest_seconds": 90},
-                "accessory": {"sets": 3, "reps_min": 8, "reps_max": 15, "rest_seconds": 60},
+                "main": {
+                    "sets": 3,
+                    "reps_min": 8,
+                    "reps_max": 15,
+                    "rest_seconds": 90,
+                    "target_rpe": 8.0,
+                    "intensity_pct": 0.8,
+                },
+                "accessory": {
+                    "sets": 3,
+                    "reps_min": 8,
+                    "reps_max": 15,
+                    "rest_seconds": 60,
+                    "target_rpe": 7.0,
+                    "intensity_pct": 0.65,
+                },
             },
             "sessions": [
                 {
@@ -137,8 +165,22 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         ],
         "split": {
             "schemes": {
-                "main": {"sets": 4, "reps_min": 6, "reps_max": 8, "rest_seconds": 120},
-                "accessory": {"sets": 3, "reps_min": 10, "reps_max": 12, "rest_seconds": 75},
+                "main": {
+                    "sets": 4,
+                    "reps_min": 6,
+                    "reps_max": 8,
+                    "rest_seconds": 120,
+                    "target_rpe": 8.0,
+                    "intensity_pct": 0.8,
+                },
+                "accessory": {
+                    "sets": 3,
+                    "reps_min": 10,
+                    "reps_max": 12,
+                    "rest_seconds": 75,
+                    "target_rpe": 7.0,
+                    "intensity_pct": 0.65,
+                },
             },
             "sessions": [
                 {
@@ -210,8 +252,22 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         ],
         "split": {
             "schemes": {
-                "main": {"sets": 4, "reps_min": 6, "reps_max": 10, "rest_seconds": 90},
-                "accessory": {"sets": 3, "reps_min": 10, "reps_max": 15, "rest_seconds": 60},
+                "main": {
+                    "sets": 4,
+                    "reps_min": 6,
+                    "reps_max": 10,
+                    "rest_seconds": 90,
+                    "target_rpe": 8.0,
+                    "intensity_pct": 0.8,
+                },
+                "accessory": {
+                    "sets": 3,
+                    "reps_min": 10,
+                    "reps_max": 15,
+                    "rest_seconds": 60,
+                    "target_rpe": 7.0,
+                    "intensity_pct": 0.65,
+                },
             },
             "sessions": [
                 {

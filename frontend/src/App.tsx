@@ -10,6 +10,9 @@ import OnboardingPage from '@/pages/OnboardingPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SettingsPage from '@/pages/SettingsPage';
 import EnvironmentsPage from '@/pages/EnvironmentsPage';
+import ProgramBuilderPage from '@/pages/ProgramBuilderPage';
+import ProgramPreviewPage from '@/pages/ProgramPreviewPage';
+import ProgramsListPage from '@/pages/ProgramsListPage';
 
 export default function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -51,6 +54,9 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/environments" element={<EnvironmentsPage />} />
+            <Route path="/programs" element={<ProgramsListPage />} />
+            <Route path="/programs/new/:environmentId?" element={<ProgramBuilderPage />} />
+            <Route path="/programs/:id" element={<ProgramPreviewPage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </>
         ) : (

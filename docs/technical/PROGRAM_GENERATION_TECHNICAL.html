@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Program Generation Engine - Technical Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        nav a {
+            color: #2a5298;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        nav a:hover {
+            background: white;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        h2 {
+            color: #1e3c72;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #2a5298;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2a5298;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        p, li {
+            margin-bottom: 0.75rem;
+            color: #374151;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+        }
+
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .diagram {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+            color: #1f2937;
+        }
+
+        .note {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            color: #1e3a8a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        table th, table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        table th {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #1e3c72;
+        }
+
+        table tr:hover {
+            background: #f9fafb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Program Generation Engine</h1>
+            <p>Technical Documentation</p>
+        </header>
+        <nav>
+            <a href="../index.html">Home</a>
+            <a href="index.html">Technical Docs</a>
+        </nav>
+        <div class="content">
+
+            <h2>1. Overview</h2>
+            <p>MyGym's program-generation engine is a <strong>pure rules-based system</strong> that takes a user's profile and preferences, then produces a structured workout program through a deterministic pipeline. The engine is:</p>
+            <ul>
+                <li><strong>Fast:</strong> Sub-100 ms generation, comfortably under the 2-second target</li>
+                <li><strong>Deterministic:</strong> No randomness; identical inputs always produce identical outputs</li>
+                <li><strong>Co-designed:</strong> Users refine programs through a match → draft → feedback → accept loop</li>
+                <li><strong>LLM-ready:</strong> A pluggable seam for natural-language feedback parsing without touching the core engine</li>
+            </ul>
+            <p><strong>Architecture:</strong> The engine stores the program's base week once (sets, reps, movement patterns), then derives each week's concrete loads and reps at read time by applying progression models to the base scheme and week number. This keeps re-adaptation fast and matches the "lightweight engine" philosophy.</p>
+
+            <h2>2. Layered Template Model</h2>
+            <p>A <code>ProgramTemplate</code> is composed of three independent, swappable layers:</p>
+            <ul>
+                <li><strong>Split:</strong> The weekly session structure (e.g., Upper/Lower ×4). Each session is an ordered list of slots.</li>
+                <li><strong>Slot rules:</strong> Each slot describes <em>what fills it</em> (movement pattern or body region, muscle emphasis, priority, set/rep scheme), not a specific exercise.</li>
+                <li><strong>Progression reference:</strong> A <code>{model_key, params}</code> pair pointing at a code-defined progression model.</li>
+            </ul>
+
+            <p><strong>Example (Upper/Lower ×4):</strong></p>
+            <div class="diagram">split:
+  sessions:
+    - key: upper_a
+      name: "Upper A"
+      order: 1
+      slots:
+        - { pattern: horizontal_push, priority: primary,   scheme: main }
+        - { pattern: horizontal_pull, priority: primary,   scheme: main }
+        - { pattern: vertical_push,   priority: secondary, scheme: accessory }
+        - { region:  core,            priority: accessory, scheme: accessory }
+progression:
+  model_key: linear_load
+  params: { increment_source: environment }</div>
+
+            <p><code>scheme</code> references named set/rep schemes (e.g., <code>main = 3×5</code>, <code>accessory = 3×10</code>) that the progression model consumes to produce concrete sets, reps, and load for each week.</p>
+
+            <h2>3. Data Model</h2>
+            <p>Four new database tables underpin the engine:</p>
+
+            <table>
+                <tr>
+                    <th>Table</th>
+                    <th>Purpose</th>
+                    <th>Key Fields</th>
+                </tr>
+                <tr>
+                    <td><code>program_templates</code></td>
+                    <td>The catalog of blueprints</td>
+                    <td><code>id, name, slug, goals[], experience_levels[], days_per_week_min/max, split (JSON), progression_ref (JSON), is_active</code></td>
+                </tr>
+                <tr>
+                    <td><code>workout_programs</code></td>
+                    <td>A generated program instance</td>
+                    <td><code>id, user_id, template_id, status, duration_weeks, start_date, constraints (JSON)</code></td>
+                </tr>
+                <tr>
+                    <td><code>workouts</code></td>
+                    <td>One row per session in the program's base week</td>
+                    <td><code>id, program_id, key, name, focus, order</code></td>
+                </tr>
+                <tr>
+                    <td><code>workout_exercises</code></td>
+                    <td>One row per slot in a session</td>
+                    <td><code>id, workout_id, exercise_id, sets, reps_min, reps_max, base_load, is_locked, is_user_swapped</code></td>
+                </tr>
+            </table>
+
+            <p><strong>Program status:</strong> <code>draft → active → archived</code></p>
+
+            <p><strong>Constraints JSON example:</strong></p>
+            <div class="code-block">{
+  "locked_slots": [12, 15],
+  "excluded_exercise_ids": [88],
+  "swaps": { "14": 42 },
+  "volume_adjustments": { "upper_a": -1, "program": 0 },
+  "required_inputs": { "bench_press_start": 60, "squat_start": 80 }
+}</div>
+
+            <p>The constraints overlay accumulates user edits and is the single source of truth for re-adaptation. When a user makes a change, the engine re-runs affected slots while preserving everything locked.</p>
+
+            <h2>4. Progression Models</h2>
+            <p>Progression models define how weight and reps evolve week-to-week. All four are implemented in code, referenced by a <code>model_key</code>:</p>
+
+            <table>
+                <tr>
+                    <th>Model</th>
+                    <th>Behavior</th>
+                </tr>
+                <tr>
+                    <td><code>linear_load</code></td>
+                    <td>Fixed increment added each week at fixed sets/reps. Increment sourced from the environment's <code>available_weight_increments</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>double_progression</code></td>
+                    <td>Work a rep range; add reps to the top across all sets, then add load and reset to the bottom.</td>
+                </tr>
+                <tr>
+                    <td><code>weekly_undulating</code></td>
+                    <td>Vary intensity/reps across the week (heavy/light/volume days) for the same lift.</td>
+                </tr>
+                <tr>
+                    <td><code>deload</code> (modifier)</td>
+                    <td>Wraps any base model; every Nth week cuts volume/intensity, then resumes the climb.</td>
+                </tr>
+            </table>
+
+            <p>Models implement a pluggable protocol and are registered in a keyed registry resolved from the template's <code>model_key</code>. Deload is a decorator that wraps a base model.</p>
+
+            <h2>5. Matching Algorithm</h2>
+            <p>The engine scores each template against the user's profile as a <strong>weighted sum</strong>:</p>
+
+            <table>
+                <tr>
+                    <th>Factor</th>
+                    <th>Weight</th>
+                    <th>Rule</th>
+                </tr>
+                <tr>
+                    <td>Goal match</td>
+                    <td>High</td>
+                    <td>Template <code>goals</code> contains profile <code>fitness_focus</code></td>
+                </tr>
+                <tr>
+                    <td>Experience match</td>
+                    <td>High</td>
+                    <td>Template <code>experience_levels</code> contains profile <code>experience_level</code></td>
+                </tr>
+                <tr>
+                    <td>Days/week fit</td>
+                    <td>Medium</td>
+                    <td>Requested <code>days_per_week</code> within template range; distance-penalized</td>
+                </tr>
+                <tr>
+                    <td>Session duration fit</td>
+                    <td>Medium</td>
+                    <td>Requested duration within template range; distance-penalized</td>
+                </tr>
+                <tr>
+                    <td>Equipment feasibility</td>
+                    <td>Gate</td>
+                    <td>A template whose required patterns cannot be filled by the environment is excluded</td>
+                </tr>
+            </table>
+
+            <p>Returns the ranked <strong>top 3</strong> templates with a fit % and per-factor breakdown. Deterministic, sub-millisecond.</p>
+
+            <h2>6. Exercise Selection</h2>
+            <p>For each slot, the engine selects an exercise by filtering and ranking:</p>
+
+            <h3>Filter Stage</h3>
+            <ul>
+                <li><strong>Candidate pool:</strong> Active exercises matching the slot's movement pattern or body region and muscle emphasis</li>
+                <li><strong>Equipment:</strong> <code>equipment_tags ⊆ environment.equipment_tags</code></li>
+                <li><strong>Difficulty:</strong> <code>difficulty_level ≤ user experience</code> (with +1 level tolerance)</li>
+                <li><strong>Contraindications:</strong> <code>contraindications ∩ user injuries = ∅</code></li>
+            </ul>
+
+            <h3>Ranking Stage</h3>
+            <p>After filtering, candidates are ranked by:</p>
+            <ul>
+                <li>Primary-muscle fit</li>
+                <li>Difficulty proximity to user level</li>
+                <li>Variety (avoid repeating a movement already used in the program)</li>
+                <li>Slot priority (primary vs. secondary)</li>
+                <li>Compound/isolation balance (prefer compounds for primary slots, isolations for secondary)</li>
+                <li>Unilateral/bilateral alternation (balance single-leg/single-arm work across the session)</li>
+            </ul>
+
+            <h3>Constraints & Fallback</h3>
+            <p>If a slot is locked or swapped, the forced exercise is selected. If a slot is excluded, that exercise is dropped. Otherwise, the top-ranked candidate wins. If the pool is empty after filters, the engine relaxes the least-critical filter (difficulty tolerance first) and flags the slot in the response.</p>
+
+            <h2>7. Feedback & Re-adaptation</h2>
+            <p>Re-adaptation is <strong>deterministic re-generation over the constraints overlay</strong>, never ad-hoc patching. Each user action mutates <code>constraints</code>, then selection re-runs <em>only for affected slots</em>, preserving everything locked.</p>
+
+            <table>
+                <tr>
+                    <th>Action</th>
+                    <th>Effect</th>
+                </tr>
+                <tr>
+                    <td><strong>Swap</strong></td>
+                    <td>Replace one slot's exercise with a chosen valid alternative. Records <code>is_user_swapped</code>.</td>
+                </tr>
+                <tr>
+                    <td><strong>Exclude / regenerate slot</strong></td>
+                    <td>Drop an exercise and let the engine pick the next best for that slot.</td>
+                </tr>
+                <tr>
+                    <td><strong>Adjust volume/intensity</strong></td>
+                    <td>Nudge sets/day or program volume within safe bounds; re-applies via <code>volume_adjustments</code>.</td>
+                </tr>
+                <tr>
+                    <td><strong>Lock</strong></td>
+                    <td>Pin a slot so re-adaptation never changes it.</td>
+                </tr>
+            </table>
+
+            <p>Actions are repeatable until the user accepts the program.</p>
+
+            <h2>8. API Endpoints</h2>
+            <table>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td><code>/programs/match</code></td>
+                    <td>POST</td>
+                    <td>Score templates, return ranked top 3 + required inputs</td>
+                </tr>
+                <tr>
+                    <td><code>/programs/draft</code></td>
+                    <td>POST</td>
+                    <td>Create a draft program from a chosen template</td>
+                </tr>
+                <tr>
+                    <td><code>/programs/{id}/preview</code></td>
+                    <td>GET</td>
+                    <td>Derive and return all weeks of a program</td>
+                </tr>
+                <tr>
+                    <td><code>/programs/{id}/feedback</code></td>
+                    <td>POST</td>
+                    <td>Apply user feedback (swap/exclude/adjust/lock) and return updated draft</td>
+                </tr>
+                <tr>
+                    <td><code>/programs/{id}/slots/{we_id}/alternatives</code></td>
+                    <td>GET</td>
+                    <td>List valid substitutes for a slot</td>
+                </tr>
+                <tr>
+                    <td><code>/programs/{id}/accept</code></td>
+                    <td>POST</td>
+                    <td>Finalize program: set status=active, optionally archive prior active program</td>
+                </tr>
+                <tr>
+                    <td><code>/programs/{id}</code></td>
+                    <td>GET</td>
+                    <td>Read-only program preview</td>
+                </tr>
+            </table>
+
+            <h2>9. Services Layout</h2>
+            <p>All engine logic lives in <code>backend/app/services/program/</code>:</p>
+            <div class="diagram">app/services/program/
+  matching.py          # score templates vs profile -> ranked shortlist
+  selection.py         # pick exercises per slot (filters, ranking, constraints)
+  progression/
+    __init__.py        # registry keyed by model_key
+    base.py            # ProgressionModel protocol, SetScheme
+    linear_load.py
+    double_progression.py
+    weekly_undulating.py
+    deload.py          # modifier/decorator
+  drafting.py          # template + selection -> persisted base-week draft
+  adaptation.py        # apply FeedbackAction -> mutate constraints -> re-run affected slots
+  preview.py           # derive concrete per-week schedule for display
+  feedback_parser.py   # FeedbackParser protocol (LLM-ready seam)</div>
+
+            <p><strong>LLM-ready seam:</strong> The <code>FeedbackParser</code> protocol allows MVP to handle structured actions from the UI, while a future LLM implementation can parse natural-language feedback into the same <code>FeedbackAction</code> type without touching the core.</p>
+
+            <h2>10. Testing & Performance</h2>
+            <h3>Performance</h3>
+            <p>Generation runs on in-memory computation over ~135 exercises and a handful of templates. One cacheable exercise-library read. Generation is well under 100 ms versus the <2 s target. Async SQLAlchemy throughout; exercise library is cacheable in memory.</p>
+
+            <h3>Testing (TDD, >80% coverage)</h3>
+            <ul>
+                <li><strong>Unit tests:</strong> Match scoring, selection filters (equipment / injury / difficulty), each progression model's math, adaptation preserves locks</li>
+                <li><strong>Integration tests:</strong> Full <code>match → draft → feedback → accept</code> flow</li>
+                <li><strong>Determinism:</strong> Golden-file program snapshots validate reproducibility</li>
+            </ul>
+
+            <h2>11. Template Authoring & Roadmap</h2>
+            <p><strong>MVP (now):</strong> A small curated catalog of templates seeded via script, mirroring the exercise seed pattern. No authoring UI yet.</p>
+
+            <p><strong>Initial examples (seeded):</strong></p>
+            <ul>
+                <li><strong>Full Body (3 days, beginner, general/strength):</strong> Linear load + deload</li>
+                <li><strong>Bodyweight Full Body (3 days, beginner, general):</strong> Double progression</li>
+                <li><strong>Upper/Lower (4 days, intermediate, strength/muscle_gain):</strong> Double progression + deload</li>
+                <li><strong>Push/Pull/Legs (6 days, intermediate–advanced, muscle_gain):</strong> Double progression + deload</li>
+            </ul>
+
+            <p><strong>Future (deferred, design forward-compatible):</strong></p>
+            <ul>
+                <li><strong>Form-based template builder:</strong> A guided UI where trainers compose templates with dropdowns (never edit raw JSON/YAML)</li>
+                <li><strong>LLM-assisted authoring:</strong> Describe a program in natural language; LLM emits a draft template that trainers refine</li>
+                <li><strong>Ownership & roles:</strong> The MVP catalog is global/admin-curated. Trainer-owned or org-scoped templates with role/permission model are a future concern</li>
+            </ul>
+
+            <div class="note">
+                <strong>Note:</strong> This engine is designed as a foundation. The three-layer template model (split + slot rules + progression reference) is forward-compatible with future features like form-based authoring and LLM-assisted design without reshaping the core architecture.
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

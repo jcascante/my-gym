@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.models.exercise import Exercise
 from app.schemas.template import SlotRule
@@ -12,6 +12,7 @@ class SelectionContext:
     experience: str
     injuries: list[str]
     used_movement_slugs: set[str]
+    used_unilateral_flags: list[bool] = field(default_factory=list)
 
 
 def _matches_rule(ex: Exercise, rule: SlotRule) -> bool:
@@ -34,11 +35,15 @@ def _passes_filters(ex: Exercise, ctx: SelectionContext, tolerance: int = 1) -> 
     return True
 
 
-def _score(ex: Exercise, rule: SlotRule, ctx: SelectionContext) -> tuple[int, int, int, int]:
+def _score(ex: Exercise, rule: SlotRule, ctx: SelectionContext) -> tuple[int, int, int, int, int]:
     muscle_fit = len(set(rule.muscles) & set(ex.primary_muscles))
     variety = 0 if ex.movement_slug in ctx.used_movement_slugs else 1
     diff_gap = -abs(EXPERIENCE_ORDER[ex.difficulty_level.value] - EXPERIENCE_ORDER[ctx.experience])
-    return (variety, muscle_fit, diff_gap, -ex.id)
+    priority_fit = 1 if (rule.priority == "primary") == ex.is_compound else 0
+    unilateral_balance = 0
+    if ctx.used_unilateral_flags and ctx.used_unilateral_flags[-1] == ex.is_unilateral:
+        unilateral_balance = -1
+    return (variety, priority_fit, muscle_fit, diff_gap, unilateral_balance)
 
 
 def select_for_slot(

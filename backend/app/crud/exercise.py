@@ -52,3 +52,9 @@ async def get_exercise(db: AsyncSession, exercise_id: int) -> Exercise | None:
         )
     )
     return result.scalar_one_or_none()
+
+
+async def get_exercises_by_ids(db: AsyncSession, exercise_ids: list[int]) -> dict[int, Exercise]:
+    result = await db.execute(select(Exercise).where(Exercise.id.in_(exercise_ids)))
+    exercises = result.scalars().all()
+    return {ex.id: ex for ex in exercises}
