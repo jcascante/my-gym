@@ -55,3 +55,46 @@ async def test_build_draft_links_required_input_via_applies_to(sample_template_o
     ]
     assert horizontal_push_exercises
     assert all(ex.base_load == 60.0 for ex in horizontal_push_exercises)
+
+
+@pytest.mark.asyncio
+async def test_build_draft_stores_progression_style_in_constraints(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(
+        equipment=["barbell", "bench", "squat_rack"], experience="intermediate", injuries=[], used_movement_slugs=set()
+    )
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        progression_style="variable",
+    )
+    assert program.constraints["progression_style"] == "variable"
+
+
+@pytest.mark.asyncio
+async def test_build_draft_defaults_progression_style_to_consistent(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(
+        equipment=["barbell", "bench", "squat_rack"], experience="intermediate", injuries=[], used_movement_slugs=set()
+    )
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+    )
+    assert program.constraints["progression_style"] == "consistent"

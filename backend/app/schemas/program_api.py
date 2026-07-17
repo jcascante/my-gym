@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.program import ProgressionStyle
+
 
 class MatchRequest(BaseModel):
     environment_id: int
@@ -22,6 +24,7 @@ class TemplateMatchOut(BaseModel):
 class DraftRequest(MatchRequest):
     template_id: int
     required_inputs: dict[str, float] = {}
+    progression_style: ProgressionStyle = ProgressionStyle.CONSISTENT
 
 
 class FeedbackRequest(BaseModel):

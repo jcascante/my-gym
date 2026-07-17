@@ -22,6 +22,7 @@ def build_draft(
     duration_weeks: int,
     weight_unit: str,
     required_inputs: dict[str, float],
+    progression_style: str = "consistent",
 ) -> WorkoutProgram:
     applies_to_values = {
         ri.applies_to: required_inputs[ri.key]
@@ -44,6 +45,7 @@ def build_draft(
             "swaps": {},
             "volume_adjustments": {},
             "required_inputs": required_inputs,
+            "progression_style": progression_style,
         },
     )
     for session in definition.split.sessions:
