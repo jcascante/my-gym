@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Your Program - MyGym</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
+        }
+
+        header {
+            background: #1a3a52;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        h2 {
+            color: #1a3a52;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #1a3a52;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2c5282;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        p, li {
+            margin-bottom: 0.75rem;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .step {
+            background: #1a3a52;
+            color: white;
+            border-left: none;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+        }
+
+        .step h3 {
+            color: white;
+            margin-top: 0;
+            border: none;
+        }
+
+        .step ol, .step ul {
+            margin-left: 1.5rem;
+            margin-bottom: 0;
+            color: white;
+        }
+
+        .step li {
+            margin-bottom: 0.75rem;
+            color: white;
+        }
+
+        .step p {
+            color: white;
+            margin-bottom: 0.75rem;
+        }
+
+        .tip {
+            background: #ecf0f1;
+            color: #1a3a52;
+            border-left: 4px solid #1a3a52;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .tip strong {
+            color: #1a3a52;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #1a3a52;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .icon {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Building Your Program</h1>
+            <p>A step-by-step guide to creating your personalized workout program</p>
+        </header>
+        <div class="content">
+
+            <h2>What the Program Builder Does</h2>
+            <p>The MyGym Program Builder asks you a few questions about your setup and goals, then suggests workout programs tailored just for you. You pick the one that fits best, fine-tune it if you'd like, and save it. From there, you can review your program anytime and adjust it as you get stronger or your needs change.</p>
+            <p><strong>The process takes just a few minutes and gives you a complete, week-by-week workout plan ready to follow.</strong></p>
+
+            <div class="step">
+                <h3>📝 Step 1: Your Preferences</h3>
+                <p>Start by telling the builder about your workout setup and goals:</p>
+                <ol>
+                    <li><strong>Environment:</strong> Where do you train? Home gym, full gym, or just your bodyweight?</li>
+                    <li><strong>Days per week:</strong> How many days can you commit to training? (e.g., 3, 4, or 6)</li>
+                    <li><strong>Session length:</strong> How long should each workout take? (e.g., 45 minutes, 60 minutes)</li>
+                    <li><strong>What's your focus?</strong> Strength, muscle gain, or general fitness?</li>
+                    <li><strong>Weight units:</strong> Choose kilograms or pounds</li>
+                </ol>
+                <p>You'll also set how long your program should run (e.g., 8 weeks, 12 weeks).</p>
+            </div>
+
+            <div class="step">
+                <h3>🎯 Step 2: Pick a Program</h3>
+                <p>The builder suggests the best programs for your setup. You'll see:</p>
+                <ol>
+                    <li><strong>Fit percentage:</strong> How well does this program match your preferences? (e.g., 92%)</li>
+                    <li><strong>Why it fits:</strong> A breakdown showing why the builder chose it (matches your goals, your experience level, your available time)</li>
+                    <li><strong>A quick look:</strong> See the program's structure and focus areas</li>
+                </ol>
+                <p>Pick the one that feels right for you. <strong>You can always adjust it in the next steps.</strong></p>
+            </div>
+
+            <div class="step">
+                <h3>⚙️ Step 3: A Couple of Details (if needed)</h3>
+                <p>Some programs ask for extra information to personalize them further:</p>
+                <ol>
+                    <li><strong>Starting weights:</strong> For programs that use progressive loading (like squats or bench press), enter your current working weight</li>
+                </ol>
+                <p>If the program doesn't ask for anything here, you'll skip straight to the next step.</p>
+            </div>
+
+            <div class="step">
+                <h3>🔍 Step 4: Review & Adjust</h3>
+                <p>Here's where you dive into the actual workout program. Browse through each week and see the exercises, sets, reps, and weights.</p>
+                <p><strong>Don't like an exercise?</strong> You have four ways to adjust:</p>
+                <ul>
+                    <li><strong>🔒 Lock:</strong> Love a particular exercise? Lock it so the builder never changes it, even if you make other adjustments</li>
+                    <li><strong>↔️ Swap:</strong> Don't have access to an exercise or prefer something else? Swap it for another exercise that fits the same role</li>
+                    <li><strong>✕ Exclude / Give me another:</strong> Want the builder to pick a different exercise for this slot? It'll find the next best option</li>
+                    <li><strong>📊 Adjust volume:</strong> Want more or fewer sets for a day or the whole program? Tweak the volume up or down</li>
+                </ul>
+                <p><strong>Make as many adjustments as you want—your changes repeat across all weeks automatically.</strong></p>
+            </div>
+
+            <div class="step">
+                <h3>✅ Step 5: Accept & Preview</h3>
+                <p>Happy with your program? Hit <strong>Accept</strong> and you're done. Your program is now saved and ready to use.</p>
+                <p>You can view it anytime from your Programs page. The builder shows you:</p>
+                <ul>
+                    <li>All weeks at a glance</li>
+                    <li>Every session and exercise</li>
+                    <li>Weight, sets, reps for each move</li>
+                </ul>
+            </div>
+
+            <h2>Understanding Your Program</h2>
+
+            <h3>What's a Deload Week?</h3>
+            <p>Some programs include deload weeks—usually every 4–6 weeks. These weeks have <strong>lighter weight and/or fewer sets</strong> to give your body a recovery week. Deload weeks help you avoid burnout and come back stronger. Don't skip them; they're part of the plan.</p>
+
+            <h3>Why Was That Exercise Chosen?</h3>
+            <p>The builder picks exercises based on several factors:</p>
+            <ul>
+                <li><strong>Your equipment:</strong> Only exercises you can actually do with what you have</li>
+                <li><strong>Your injuries or limitations:</strong> Avoids moves that could aggravate old injuries</li>
+                <li><strong>Your experience level:</strong> Beginner programs avoid complex moves; advanced programs can include them</li>
+                <li><strong>Variety:</strong> The builder mixes up which exercises you do so you're not bored and you hit muscles from different angles</li>
+                <li><strong>Movement balance:</strong> A good program balances pushing and pulling, single-leg and two-legged work</li>
+            </ul>
+
+            <div class="tip">
+                <strong>💡 Pro tip:</strong> If you're brand new to strength training, start with a "Full Body" program 3 days a week. It hits all your major muscles and is easy to recover from. As you get stronger, you can move to more advanced splits like Upper/Lower or Push/Pull/Legs.
+            </div>
+
+            <h2>Common Questions</h2>
+
+            <h3>Can I change my program later?</h3>
+            <p>Yes! Once you've accepted a program, you can view it anytime. You can't edit an accepted program directly, but you can always generate a new one with different settings when you're ready for a change.</p>
+
+            <h3>What if I don't have all the equipment a program needs?</h3>
+            <p>Tell the builder what equipment you have in Step 1. It'll only suggest programs and exercises you can actually do. If you pick a program and realize you're missing something, you can swap that exercise for one you <em>can</em> do.</p>
+
+            <h3>How often should I test my starting weights?</h3>
+            <p>When you create a program, enter a weight you can comfortably lift for the target rep range (e.g., 5 reps for a strength program, 8–10 for muscle gain). Don't guess—a weight that's too heavy early on leads to form issues and injury; too light and you won't make progress. Use your most recent session as a reference.</p>
+
+            <h3>Can I follow two programs at once?</h3>
+            <p>Nope. MyGym lets you keep one program active at a time. When you're ready for a new one, you can generate a fresh program, and your old one will be archived.</p>
+
+            <h3>What if I miss a workout?</h3>
+            <p>Just pick up where you left off when you're ready. Your program is set up to progress week by week—if you miss a day, do it the next time you're in the gym. You don't need to "redo" weeks.</p>
+
+            <div class="tip">
+                <strong>🎯 Getting the most out of your program:</strong> Consistency beats perfection. Follow the sets and reps as written, track how you're feeling, and trust the progression. If something doesn't feel right, swap it out. The builder did the hard work of structuring your training—your job is to show up and work hard.
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
