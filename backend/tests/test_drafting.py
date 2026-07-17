@@ -200,3 +200,53 @@ async def test_build_draft_stores_movement_preferences_in_constraints(sample_tem
         required_inputs={"squat_start": 80, "bench_start": 60},
     )
     assert program.constraints["movement_preferences"] == {"kettlebell": 1.5}
+
+
+@pytest.mark.asyncio
+async def test_build_draft_stores_complementary_focus_in_constraints(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(
+        equipment=["barbell", "bench", "squat_rack"],
+        experience="intermediate",
+        injuries=[],
+        used_movement_slugs=set(),
+        complementary_focus=False,
+    )
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+    )
+    assert program.constraints["complementary_focus"] is False
+
+
+@pytest.mark.asyncio
+async def test_build_draft_updates_muscle_coverage_after_each_pick(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(
+        equipment=["barbell", "bench", "squat_rack"],
+        experience="intermediate",
+        injuries=[],
+        used_movement_slugs=set(),
+    )
+    assert sum(ctx.muscle_coverage.values()) == 0
+    build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+    )
+    assert sum(ctx.muscle_coverage.values()) > 0  # at least one primary muscle was tallied

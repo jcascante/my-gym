@@ -40,6 +40,7 @@ async def _ctx_for(
     environment: TrainingEnvironment,
     *,
     movement_preferences: dict[str, float] | None = None,
+    complementary_focus: bool = True,
 ) -> SelectionContext:
     profile = user.profile
     injuries = []
@@ -52,6 +53,7 @@ async def _ctx_for(
         injuries,
         set(),
         movement_preferences=movement_preferences or {},
+        complementary_focus=complementary_focus,
     )
 
 
@@ -117,7 +119,13 @@ async def draft(
     if template is None or not template.is_active:
         raise ProgramTemplateNotFoundError()
     definition = TemplateDefinition.from_orm_template(template)
-    ctx = await _ctx_for(db, user, environment, movement_preferences=data.movement_preferences)
+    ctx = await _ctx_for(
+        db,
+        user,
+        environment,
+        movement_preferences=data.movement_preferences,
+        complementary_focus=data.complementary_focus,
+    )
     exercises = await list_exercises(db)
     program = build_draft(
         template,
@@ -182,6 +190,7 @@ async def feedback(
         user,
         environment,
         movement_preferences=program.constraints.get("movement_preferences", {}),
+        complementary_focus=program.constraints.get("complementary_focus", True),
     )
     exercises = await list_exercises(db)
     apply_feedback(program, definition, FeedbackAction(**data.model_dump()), ctx, exercises)
@@ -207,6 +216,7 @@ async def alternatives(
         user,
         environment,
         movement_preferences=program.constraints.get("movement_preferences", {}),
+        complementary_focus=program.constraints.get("complementary_focus", True),
     )
     exercises = await list_exercises(db)
     alts = alternatives_for_slot(program, definition, we_id, ctx, exercises)

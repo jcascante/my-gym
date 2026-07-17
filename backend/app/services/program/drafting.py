@@ -56,6 +56,7 @@ def build_draft(
             "progression_style": progression_style,
             "effort_method": effort_method,
             "movement_preferences": ctx.movement_preferences,
+            "complementary_focus": ctx.complementary_focus,
         },
     )
     for session in definition.split.sessions:
@@ -72,6 +73,8 @@ def build_draft(
                 continue
             ctx.used_movement_slugs.add(chosen.movement_slug)
             ctx.used_unilateral_flags.append(chosen.is_unilateral)
+            for muscle in chosen.primary_muscles:
+                ctx.muscle_coverage[muscle] += 1
             workout.exercises.append(
                 WorkoutExercise(
                     order=i,
