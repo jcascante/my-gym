@@ -111,5 +111,6 @@ class WorkoutExercise(Base):
     intensity_pct: Mapped[float | None] = mapped_column(Float)
     is_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_user_swapped: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    rotation_pool: Mapped[list[int]] = mapped_column(JSON, nullable=False, default=list)
 
     workout: Mapped["Workout"] = relationship(back_populates="exercises")
