@@ -37,7 +37,7 @@ export function Toast({
 
   return (
     <div
-      className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg ${variantClasses[variant]} flex items-center gap-2 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-300 z-50`}
+      className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg ${variantClasses[variant]} flex items-center gap-2 shadow-lg z-50 animate-slide-in-up`}
     >
       {icon && <span className="text-lg">{icon}</span>}
       <p className="body-sm font-medium">{message}</p>

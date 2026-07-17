@@ -12,7 +12,10 @@ const paddingStyles = {
 };
 
 export const Card: FC<CardProps> = ({ children, padding = 'md', className = '', ...props }) => (
-  <div className={`card ${paddingStyles[padding]} ${className}`} {...props}>
+  <div
+    className={`card ${paddingStyles[padding]} transition-smooth hover:shadow-md ${className}`}
+    {...props}
+  >
     {children}
   </div>
 );

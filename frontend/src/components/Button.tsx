@@ -31,7 +31,7 @@ export const Button: FC<ButtonProps> = ({
   ...props
 }) => (
   <button
-    className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:cursor-not-allowed ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+    className={`inline-flex items-center justify-center rounded-lg font-medium transition-smooth active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:cursor-not-allowed ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
     disabled={disabled || isLoading}
     {...props}
   >

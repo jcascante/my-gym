@@ -35,7 +35,7 @@ export function ProgramGridCard({
   return (
     <div
       onClick={() => onSelect(id)}
-      className={`card rounded-lg p-6 cursor-pointer transition-all hover:shadow-md ${borderClass} ${bgClass}`}
+      className={`card rounded-lg p-6 cursor-pointer transition-smooth hover:shadow-lg hover:scale-105 ${borderClass} ${bgClass}`}
     >
       {/* Header */}
       <div className="mb-4">
