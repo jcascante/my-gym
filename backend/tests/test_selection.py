@@ -88,3 +88,48 @@ def test_penalizes_repeating_unilateral_mode_back_to_back():
     # last pick in the session was already unilateral -> bilateral should win the tie
     chosen = select_for_slot([unilateral, bilateral], rule, _ctx([], used_unilateral_flags=[True]), None, set())
     assert chosen.id == 2
+
+
+def test_movement_preference_biases_selection_without_excluding_others():
+    from app.schemas.template import SlotRule
+    from app.services.program.selection import SelectionContext, select_for_slot
+
+    barbell_ex = _Ex(1, "bb-row", "row", "horizontal_pull", "upper_body", ["lats"], ["barbell"], "intermediate", [])
+    kb_ex = _Ex(2, "kb-row", "kb_row", "horizontal_pull", "upper_body", ["lats"], ["kettlebell"], "intermediate", [])
+    rule = SlotRule(pattern="horizontal_pull", priority="accessory", scheme="accessory")
+    ctx = SelectionContext(
+        ["barbell", "kettlebell"],
+        "intermediate",
+        [],
+        set(),
+        movement_preferences={"kettlebell": 2.0, "barbell": 0.2},
+    )
+    chosen = select_for_slot([barbell_ex, kb_ex], rule, ctx, None, set())
+    assert chosen.id == 2  # kettlebell strongly preferred
+
+
+def test_movement_preference_never_empties_a_slot():
+    from app.schemas.template import SlotRule
+    from app.services.program.selection import SelectionContext, select_for_slot
+
+    only_option = _Ex(1, "bb-row", "row", "horizontal_pull", "upper_body", ["lats"], ["barbell"], "intermediate", [])
+    rule = SlotRule(pattern="horizontal_pull", priority="accessory", scheme="accessory")
+    ctx = SelectionContext(["barbell"], "intermediate", [], set(), movement_preferences={"barbell": 0.0})
+    chosen = select_for_slot([only_option], rule, ctx, None, set())
+    assert chosen.id == 1
+
+
+def test_ranked_pool_for_slot_returns_descending_order():
+    from app.schemas.template import SlotRule
+    from app.services.program.selection import SelectionContext, ranked_pool_for_slot
+
+    preferred = _Ex(
+        1, "kb-row", "kb_row", "horizontal_pull", "upper_body", ["lats"], ["kettlebell"], "intermediate", []
+    )
+    other = _Ex(2, "bb-row", "row", "horizontal_pull", "upper_body", ["lats"], ["barbell"], "intermediate", [])
+    rule = SlotRule(pattern="horizontal_pull", priority="accessory", scheme="accessory")
+    ctx = SelectionContext(
+        ["barbell", "kettlebell"], "intermediate", [], set(), movement_preferences={"kettlebell": 2.0}
+    )
+    ranked = ranked_pool_for_slot([other, preferred], rule, ctx, set())
+    assert [ex.id for ex in ranked] == [1, 2]
