@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { getCurrentUser } from '@/api/auth';
 import { Layout, Spinner } from '@/components';
+import { useDarkMode } from '@/hooks/useDarkMode';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
 import DashboardPage from '@/pages/DashboardPage';
@@ -15,6 +16,7 @@ import ProgramPreviewPage from '@/pages/ProgramPreviewPage';
 import ProgramsListPage from '@/pages/ProgramsListPage';
 
 export default function App() {
+  useDarkMode();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isLoading = useAuthStore((state) => state.isLoading);
   const userProfile = useAuthStore((state) => state.userProfile);

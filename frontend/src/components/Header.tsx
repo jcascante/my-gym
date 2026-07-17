@@ -3,7 +3,17 @@ import { useAuthStore } from '@/store/auth';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '@/api/auth';
 import { getErrorMessage } from '@/api/errors';
-import { AlertCircle, ChevronDown, Dumbbell, LogOut, Settings, User } from 'lucide-react';
+import { useDarkMode } from '@/hooks/useDarkMode';
+import {
+  AlertCircle,
+  ChevronDown,
+  Dumbbell,
+  LogOut,
+  Settings,
+  User,
+  Moon,
+  Sun,
+} from 'lucide-react';
 
 export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -12,6 +22,7 @@ export default function Header() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { user, clearAuth } = useAuthStore();
+  const { isDark, toggleDarkMode } = useDarkMode();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -124,6 +135,15 @@ export default function Header() {
                   >
                     <Settings className="w-4 h-4" />
                     <span>Settings</span>
+                  </button>
+
+                  {/* Dark Mode Toggle */}
+                  <button
+                    onClick={toggleDarkMode}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                  >
+                    {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                    <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
                   </button>
 
                   {/* Divider */}
