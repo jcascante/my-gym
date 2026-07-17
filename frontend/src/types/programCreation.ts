@@ -24,6 +24,16 @@ export const PROGRESSION_STYLE_OPTIONS: { value: ProgressionStyle; label: string
   { value: 'variable', label: 'Variable — varies week to week' },
 ];
 
+export type EffortMethod = 'rpe' | 'rir' | 'borg' | 'percent_1rm';
+
+export const EFFORT_METHOD_OPTIONS: { value: EffortMethod | ''; label: string }[] = [
+  { value: '', label: 'Not sure yet / skip' },
+  { value: 'rpe', label: 'RPE — Rate of Perceived Exertion (1-10)' },
+  { value: 'rir', label: 'RIR — Reps in Reserve' },
+  { value: 'borg', label: 'Borg Scale (6-20)' },
+  { value: 'percent_1rm', label: '% of 1-Rep Max' },
+];
+
 export type DayOfWeek =
   'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
@@ -54,4 +64,6 @@ export interface MatchRequest {
   days_per_week: number;
   session_duration_min: number;
   weight_unit: WeightUnit;
+  progression_style: ProgressionStyle;
+  effort_method: EffortMethod | '';
 }

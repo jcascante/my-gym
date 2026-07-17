@@ -32,6 +32,7 @@ const program = {
             note: null,
             is_locked: true,
             is_user_swapped: false,
+            effort_target: null,
           },
         ],
       },

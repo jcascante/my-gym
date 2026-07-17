@@ -14,6 +14,7 @@ const slot = {
   note: null,
   is_locked: false,
   is_user_swapped: false,
+  effort_target: null,
 };
 
 it('emits lock action', async () => {

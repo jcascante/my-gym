@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models import BodyRegion, ExperienceLevel, MovementPattern
+from app.models import BodyRegion, Contraindication, Equipment, ExperienceLevel, MovementPattern, Muscle
 
 
 class ExerciseResponse(BaseModel):
@@ -14,13 +14,15 @@ class ExerciseResponse(BaseModel):
     movement_slug: str
     body_region: BodyRegion
     movement_pattern: MovementPattern
-    primary_muscles: list[str]
-    secondary_muscles: list[str]
-    equipment_tags: list[str]
+    primary_muscles: list[Muscle]
+    secondary_muscles: list[Muscle]
+    equipment_tags: list[Equipment]
     difficulty_level: ExperienceLevel
     instructions: str
     form_cues: list[str]
     safety_notes: str | None
-    contraindications: list[str]
+    contraindications: list[Contraindication]
+    is_unilateral: bool
+    is_compound: bool
     created_at: datetime
     updated_at: datetime

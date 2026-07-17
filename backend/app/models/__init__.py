@@ -1,6 +1,6 @@
 from app.core.database import Base
 
-from .exercise import BodyRegion, Exercise, MovementPattern
+from .exercise import BodyRegion, Contraindication, Equipment, Exercise, MovementPattern, Muscle
 from .program import (  # noqa: F401
     ProgramStatus,
     ProgramTemplate,
@@ -29,6 +29,9 @@ __all__ = [
     "Exercise",
     "BodyRegion",
     "MovementPattern",
+    "Equipment",
+    "Muscle",
+    "Contraindication",
     "ProgramStatus",
     "ProgramTemplate",
     "WorkoutProgram",

@@ -24,6 +24,13 @@ class ProgressionStyle(str, enum.Enum):
     VARIABLE = "variable"
 
 
+class EffortMethod(str, enum.Enum):
+    RPE = "rpe"
+    RIR = "rir"
+    BORG = "borg"
+    PERCENT_1RM = "percent_1rm"
+
+
 class DayOfWeek(str, enum.Enum):
     MONDAY = "monday"
     TUESDAY = "tuesday"

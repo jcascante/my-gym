@@ -29,6 +29,7 @@ from app.services.program.drafting import build_draft
 from app.services.program.matching import MatchInput, rank_templates
 from app.services.program.preview import derive_week
 from app.services.program.selection import SelectionContext, template_is_feasible
+from app.services.program.style_override import apply_progression_style
 
 router = APIRouter(prefix="/programs", tags=["programs"])
 
@@ -117,11 +118,14 @@ async def draft(
         duration_weeks=data.duration_weeks,
         weight_unit=data.weight_unit,
         required_inputs=data.required_inputs,
+        progression_style=data.progression_style.value,
+        effort_method=data.effort_method.value if data.effort_method else None,
     )
     await save_program(db, program)
     saved = await get_program(db, user.id, program.id)
     assert saved is not None
-    return await _preview_out(db, saved, definition)
+    preview_definition = apply_progression_style(definition, data.progression_style.value)
+    return await _preview_out(db, saved, preview_definition)
 
 
 async def _load(db: AsyncSession, user: User, program_id: int) -> tuple[WorkoutProgram, TemplateDefinition]:
@@ -129,7 +133,9 @@ async def _load(db: AsyncSession, user: User, program_id: int) -> tuple[WorkoutP
     if program is None:
         raise ProgramNotFoundError()
     template = await get_template(db, program.template_id)
-    return program, TemplateDefinition.from_orm_template(template)
+    definition = TemplateDefinition.from_orm_template(template)
+    style = program.constraints.get("progression_style", "consistent")
+    return program, apply_progression_style(definition, style)
 
 
 @router.get("/{program_id}", response_model=ProgramPreviewOut)

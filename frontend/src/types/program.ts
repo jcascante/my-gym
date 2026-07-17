@@ -1,3 +1,5 @@
+import type { ProgressionStyle, EffortMethod } from '@/types/programCreation';
+
 export interface RequiredInput {
   key: string;
   label: string;
@@ -14,6 +16,13 @@ export interface TemplateMatch {
   required_inputs: RequiredInput[];
 }
 
+export interface EffortTarget {
+  method: 'rpe' | 'rir' | 'borg' | 'percent_1rm';
+  value?: number;
+  pct?: number;
+  target_load?: number | null;
+}
+
 export interface SlotPreview {
   workout_exercise_id: number;
   exercise_id: number;
@@ -25,6 +34,7 @@ export interface SlotPreview {
   note: string | null;
   is_locked: boolean;
   is_user_swapped: boolean;
+  effort_target: EffortTarget | null;
 }
 
 export interface WorkoutPreview {
@@ -54,6 +64,8 @@ export interface MatchRequest {
 export interface DraftRequest extends MatchRequest {
   template_id: number;
   required_inputs: Record<string, number | string>;
+  progression_style: ProgressionStyle;
+  effort_method: EffortMethod | null;
 }
 
 export type FeedbackAction =
