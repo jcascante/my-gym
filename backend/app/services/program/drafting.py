@@ -1,13 +1,20 @@
 from app.models import Exercise, ProgramStatus, ProgramTemplate, Workout, WorkoutExercise, WorkoutProgram
-from app.schemas.template import SlotRule, TemplateDefinition
+from app.schemas.program import EffortMethod
+from app.schemas.template import SchemeDef, SlotRule, TemplateDefinition
 from app.services.program.selection import SelectionContext, select_for_slot
 
 
-def _base_load_for(rule: SlotRule, applies_to_values: dict[str, float]) -> float | None:
+def _base_load_for(
+    rule: SlotRule, scheme: SchemeDef, applies_to_values: dict[str, float], effort_method: str | None
+) -> float | None:
     value = applies_to_values.get(rule.pattern) if rule.pattern else None
     if value is None and rule.region:
         value = applies_to_values.get(rule.region)
-    return float(value) if value is not None else None
+    if value is None:
+        return None
+    if effort_method == EffortMethod.PERCENT_1RM.value and scheme.intensity_pct is not None:
+        return round(float(value) * scheme.intensity_pct, 2)
+    return float(value)
 
 
 def build_draft(
@@ -23,6 +30,7 @@ def build_draft(
     weight_unit: str,
     required_inputs: dict[str, float],
     progression_style: str = "consistent",
+    effort_method: str | None = None,
 ) -> WorkoutProgram:
     applies_to_values = {
         ri.applies_to: required_inputs[ri.key]
@@ -46,6 +54,7 @@ def build_draft(
             "volume_adjustments": {},
             "required_inputs": required_inputs,
             "progression_style": progression_style,
+            "effort_method": effort_method,
         },
     )
     for session in definition.split.sessions:
@@ -70,9 +79,11 @@ def build_draft(
                     sets=scheme.sets,
                     reps_min=scheme.reps_min,
                     reps_max=scheme.reps_max,
-                    base_load=_base_load_for(rule, applies_to_values),
+                    base_load=_base_load_for(rule, scheme, applies_to_values, effort_method),
                     rest_seconds=scheme.rest_seconds,
                     scheme_key=rule.scheme,
+                    target_rpe=scheme.target_rpe,
+                    intensity_pct=scheme.intensity_pct,
                     is_locked=False,
                     is_user_swapped=False,
                 )
