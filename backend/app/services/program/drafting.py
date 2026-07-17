@@ -1,7 +1,8 @@
 from app.models import Exercise, ProgramStatus, ProgramTemplate, Workout, WorkoutExercise, WorkoutProgram
 from app.schemas.program import EffortMethod
 from app.schemas.template import SchemeDef, SlotRule, TemplateDefinition
-from app.services.program.selection import SelectionContext, select_for_slot
+from app.services.program.selection import SelectionContext, ranked_pool_for_slot
+from app.services.program.variety import pool_size_for, rotation_pool_ids
 
 
 def _base_load_for(
@@ -31,6 +32,7 @@ def build_draft(
     required_inputs: dict[str, float],
     progression_style: str = "consistent",
     effort_method: str | None = None,
+    variety_preference: str = "low",
 ) -> WorkoutProgram:
     applies_to_values = {
         ri.applies_to: required_inputs[ri.key]
@@ -57,6 +59,7 @@ def build_draft(
             "effort_method": effort_method,
             "movement_preferences": ctx.movement_preferences,
             "complementary_focus": ctx.complementary_focus,
+            "variety_preference": variety_preference,
         },
     )
     for session in definition.split.sessions:
@@ -68,9 +71,11 @@ def build_draft(
         )
         for i, rule in enumerate(session.slots, start=1):
             scheme = definition.schemes[rule.scheme]
-            chosen = select_for_slot(exercises, rule, ctx, None, set())
+            ranked = ranked_pool_for_slot(exercises, rule, ctx, set())
+            chosen = ranked[0] if ranked else None
             if chosen is None:
                 continue
+            pool_size = 1 if rule.priority == "primary" else pool_size_for(variety_preference)
             ctx.used_movement_slugs.add(chosen.movement_slug)
             ctx.used_unilateral_flags.append(chosen.is_unilateral)
             for muscle in chosen.primary_muscles:
@@ -90,6 +95,7 @@ def build_draft(
                     intensity_pct=scheme.intensity_pct,
                     is_locked=False,
                     is_user_swapped=False,
+                    rotation_pool=rotation_pool_ids(ranked, pool_size),
                 )
             )
         program.workouts.append(workout)

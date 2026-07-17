@@ -250,3 +250,88 @@ async def test_build_draft_updates_muscle_coverage_after_each_pick(sample_templa
         required_inputs={"squat_start": 80, "bench_start": 60},
     )
     assert sum(ctx.muscle_coverage.values()) > 0  # at least one primary muscle was tallied
+
+
+@pytest.mark.asyncio
+async def test_build_draft_primary_slots_get_single_entry_rotation_pool(sample_template_orm, sample_exercises):
+    """Primary (scheme='main') slots never rotate, regardless of variety preference."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(
+        equipment=["barbell", "bench", "squat_rack", "none"],
+        experience="intermediate",
+        injuries=[],
+        used_movement_slugs=set(),
+    )
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        variety_preference="high",
+    )
+    main_exercises = [ex for w in program.workouts for ex in w.exercises if ex.scheme_key == "main"]
+    assert main_exercises
+    for ex in main_exercises:
+        assert ex.rotation_pool == [ex.exercise_id]
+
+
+@pytest.mark.asyncio
+async def test_build_draft_accessory_slots_sized_by_variety_preference(sample_template_orm, sample_exercises):
+    """Accessory slots rotate; pool size follows the variety preference (high -> up to 3)."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(
+        equipment=["barbell", "bench", "squat_rack", "none"],
+        experience="intermediate",
+        injuries=[],
+        used_movement_slugs=set(),
+    )
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        variety_preference="high",
+    )
+    accessory_exercises = [ex for w in program.workouts for ex in w.exercises if ex.scheme_key == "accessory"]
+    assert accessory_exercises
+    assert all(len(ex.rotation_pool) == 3 for ex in accessory_exercises)
+
+
+@pytest.mark.asyncio
+async def test_build_draft_defaults_variety_preference_to_low(sample_template_orm, sample_exercises):
+    """Without an explicit variety_preference, every slot (primary and accessory) gets pool size 1."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(
+        equipment=["barbell", "bench", "squat_rack", "none"],
+        experience="intermediate",
+        injuries=[],
+        used_movement_slugs=set(),
+    )
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+    )
+    assert program.constraints["variety_preference"] == "low"
+    all_exercises = [ex for w in program.workouts for ex in w.exercises]
+    assert all_exercises
+    assert all(len(ex.rotation_pool) == 1 for ex in all_exercises)

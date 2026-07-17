@@ -143,6 +143,7 @@ async def draft(
         required_inputs=data.required_inputs,
         progression_style=data.progression_style.value,
         effort_method=data.effort_method.value if data.effort_method else None,
+        variety_preference=data.variety_preference.value,
     )
     await save_program(db, program)
     saved = await get_program(db, user.id, program.id)
