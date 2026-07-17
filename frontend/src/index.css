@@ -64,19 +64,23 @@
 @layer components {
   /* Typography */
   .display-lg {
-    @apply font-display text-display-lg font-bold leading-tight;
+    @apply text-display-lg font-bold leading-tight;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   .display-md {
-    @apply font-display text-display-md font-semibold leading-tight;
+    @apply text-display-md font-semibold leading-tight;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   .heading-lg {
-    @apply font-display text-heading-lg font-semibold leading-snug;
+    @apply text-heading-lg font-semibold leading-snug;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   .heading-md {
-    @apply font-display text-heading-md font-semibold leading-snug;
+    @apply text-heading-md font-semibold leading-snug;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   .body-lg {
