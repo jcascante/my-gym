@@ -37,4 +37,16 @@ describe('SlotRow', () => {
     render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
     expect(screen.getByText(/80%/)).toBeInTheDocument();
   });
+
+  it('renders an RIR effort target', () => {
+    const slot = { ...baseSlot, effort_target: { method: 'rir' as const, value: 5 } };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText(/RIR 5/i)).toBeInTheDocument();
+  });
+
+  it('renders a Borg effort target', () => {
+    const slot = { ...baseSlot, effort_target: { method: 'borg' as const, value: 13 } };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText(/BORG 13/i)).toBeInTheDocument();
+  });
 });
