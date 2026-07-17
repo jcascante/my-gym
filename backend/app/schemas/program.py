@@ -31,6 +31,12 @@ class EffortMethod(str, enum.Enum):
     PERCENT_1RM = "percent_1rm"
 
 
+class VarietyPreference(str, enum.Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
 class DayOfWeek(str, enum.Enum):
     MONDAY = "monday"
     TUESDAY = "tuesday"
@@ -53,3 +59,6 @@ class ProgramCreationRequest(BaseModel):
     weight_unit: WeightUnit
     available_weight_increments: list[float] = []
     progression_style: ProgressionStyle
+    movement_preferences: dict[str, float] = {}
+    complementary_focus: bool = True
+    variety_preference: VarietyPreference = VarietyPreference.LOW

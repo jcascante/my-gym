@@ -1,6 +1,6 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
-from app.schemas.program import EffortMethod, ProgressionStyle
+from app.schemas.program import EffortMethod, ProgressionStyle, VarietyPreference
 
 
 class MatchRequest(BaseModel):
@@ -10,6 +10,18 @@ class MatchRequest(BaseModel):
     fitness_focus: str
     weight_unit: str = "kg"
     duration_weeks: int = 8
+    progression_style: ProgressionStyle = ProgressionStyle.CONSISTENT
+    movement_preferences: dict[str, float] = {}
+    complementary_focus: bool = True
+    variety_preference: VarietyPreference = VarietyPreference.LOW
+
+    @field_validator("movement_preferences")
+    @classmethod
+    def _validate_weight_range(cls, v: dict[str, float]) -> dict[str, float]:
+        for family, weight in v.items():
+            if not 0.0 <= weight <= 2.0:
+                raise ValueError(f"movement_preferences weight for '{family}' must be in [0.0, 2.0], got {weight}")
+        return v
 
 
 class TemplateMatchOut(BaseModel):
@@ -24,7 +36,6 @@ class TemplateMatchOut(BaseModel):
 class DraftRequest(MatchRequest):
     template_id: int
     required_inputs: dict[str, float] = {}
-    progression_style: ProgressionStyle = ProgressionStyle.CONSISTENT
     effort_method: EffortMethod | None = None
 
 
@@ -49,6 +60,7 @@ class SlotPreviewOut(BaseModel):
     is_locked: bool
     is_user_swapped: bool
     effort_target: dict[str, object] | None = None
+    rotation_pool: list[int] = []
 
 
 class WorkoutPreviewOut(BaseModel):
