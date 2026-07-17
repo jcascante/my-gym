@@ -6,13 +6,16 @@ import {
   RequiredInputsForm,
   DraftProgramView,
   Button,
+  ProgramWizard,
 } from '@/components';
-import { ProgramCreationForm } from '@/components/ProgramCreationForm';
 import { useAcceptProgram, useCreateDraft, useMatchTemplates } from '@/hooks/usePrograms';
 import { useAuthStore } from '@/store/auth';
-import type { MatchRequest, ProgramPreview, TemplateMatch } from '@/types/program';
-import type { MatchRequest as FormMatchRequest, WeightUnit } from '@/types/programCreation';
-import type { ProgressionStyle, EffortMethod } from '@/types/programCreation';
+import type {
+  MatchRequest as ApiMatchRequest,
+  ProgramPreview,
+  TemplateMatch,
+} from '@/types/program';
+import type { MatchRequest as FormMatchRequest } from '@/types/programCreation';
 
 const STEPS = ['Preferences', 'Select', 'Details', 'Review'];
 
@@ -21,36 +24,31 @@ export default function ProgramBuilderPage() {
   const { environmentId } = useParams<{ environmentId?: string }>();
   const { userProfile } = useAuthStore();
   const [step, setStep] = useState(0);
-  const [prefs, setPrefs] = useState<MatchRequest | null>(null);
+  const [formPrefs, setFormPrefs] = useState<FormMatchRequest | null>(null);
+  const [apiPrefs, setApiPrefs] = useState<ApiMatchRequest | null>(null);
   const [chosen, setChosen] = useState<TemplateMatch | null>(null);
   const [draft, setDraft] = useState<ProgramPreview | null>(null);
   const [requiredInputValues, setRequiredInputValues] = useState<Record<string, number | string>>(
     {},
   );
-  const [progressionStyle, setProgressionStyle] = useState<ProgressionStyle>('consistent');
-  const [effortMethod, setEffortMethod] = useState<EffortMethod | null>(null);
 
   const match = useMatchTemplates();
   const createDraft = useCreateDraft();
   const accept = useAcceptProgram(draft?.program_id ?? 0);
 
   const onPrefs = (values: FormMatchRequest) => {
+    setFormPrefs(values);
     const fitnessFocus = userProfile?.fitness_focus || 'general';
-    const matchRequest: MatchRequest = {
+    const apiRequest: ApiMatchRequest = {
       environment_id: values.environment_id,
       days_per_week: values.days_per_week,
       session_duration_min: values.session_duration_min,
       weight_unit: values.weight_unit,
       fitness_focus: fitnessFocus,
       duration_weeks: 8,
-      movement_preferences: values.movement_preferences,
-      complementary_focus: values.complementary_focus,
-      variety_preference: values.variety_preference,
     };
-    setPrefs(matchRequest);
-    setProgressionStyle(values.progression_style);
-    setEffortMethod(values.effort_method || null);
-    match.mutate(matchRequest, { onSuccess: () => setStep(1) });
+    setApiPrefs(apiRequest);
+    match.mutate(apiRequest, { onSuccess: () => setStep(1) });
   };
 
   const onPick = (m: TemplateMatch) => {
@@ -63,14 +61,14 @@ export default function ProgramBuilderPage() {
   };
 
   const makeDraft = async (m: TemplateMatch, requiredInputs: Record<string, number | string>) => {
-    if (!prefs) return;
+    if (!apiPrefs || !formPrefs) return;
     setRequiredInputValues(requiredInputs);
     const program = await createDraft.mutateAsync({
-      ...prefs,
+      ...apiPrefs,
       template_id: m.template_id,
       required_inputs: requiredInputs,
-      progression_style: progressionStyle,
-      effort_method: effortMethod,
+      progression_style: formPrefs.progression_style,
+      effort_method: formPrefs.effort_method || null,
     });
     setDraft(program);
     setStep(3);
@@ -96,22 +94,10 @@ export default function ProgramBuilderPage() {
     <div className="max-w-2xl mx-auto p-4">
       <Stepper steps={STEPS} current={step} />
       {step === 0 && (
-        <ProgramCreationForm
+        <ProgramWizard
           environmentId={parseInt(environmentId || '1', 10)}
-          onSubmit={onPrefs}
+          onComplete={onPrefs}
           onCancel={() => navigate(-1)}
-          initialValues={
-            prefs
-              ? {
-                  environment_id: prefs.environment_id,
-                  days_per_week: prefs.days_per_week,
-                  session_duration_min: prefs.session_duration_min,
-                  weight_unit: prefs.weight_unit as WeightUnit,
-                  progression_style: progressionStyle,
-                  effort_method: effortMethod ?? '',
-                }
-              : undefined
-          }
         />
       )}
       {step === 1 && (

@@ -34,3 +34,7 @@ export { PRList } from './PRList';
 export { StreakBadge } from './StreakBadge';
 export { LoadingOverlay } from './LoadingOverlay';
 export { SkeletonLoader } from './SkeletonLoader';
+export { ProgramWizard } from './ProgramWizard';
+export { ProgramWizardStep1 } from './ProgramWizardStep1';
+export { ExerciseSelection } from './ExerciseSelection';
+export { ExercisePreviewModal } from './ExercisePreviewModal';
