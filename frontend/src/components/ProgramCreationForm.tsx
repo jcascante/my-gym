@@ -5,12 +5,16 @@ import {
   WEIGHT_UNIT_OPTIONS,
   PROGRESSION_STYLE_OPTIONS,
   EFFORT_METHOD_OPTIONS,
+  EQUIPMENT_FAMILY_OPTIONS,
+  VARIETY_PREFERENCE_OPTIONS,
 } from '@/types/programCreation';
 import type {
   MatchRequest,
   WeightUnit,
   ProgressionStyle,
   EffortMethod,
+  EquipmentFamily,
+  VarietyPreference,
 } from '@/types/programCreation';
 
 interface ProgramCreationFormProps {
@@ -37,6 +41,22 @@ export function ProgramCreationForm({
   const [effortMethod, setEffortMethod] = useState<EffortMethod | ''>(
     initialValues?.effort_method ?? '',
   );
+  const [movementPreferences, setMovementPreferences] = useState<Record<EquipmentFamily, number>>(
+    initialValues?.movement_preferences ?? {
+      dumbbells: 50,
+      barbells: 50,
+      machines: 50,
+      bodyweight: 50,
+      cables: 50,
+      kettlebells: 50,
+    },
+  );
+  const [complementaryFocus, setComplementaryFocus] = useState<boolean>(
+    initialValues?.complementary_focus ?? true,
+  );
+  const [varietyPreference, setVarietyPreference] = useState<VarietyPreference>(
+    initialValues?.variety_preference ?? 'low',
+  );
 
   useEffect(() => {
     if (initialValues) {
@@ -45,6 +65,15 @@ export function ProgramCreationForm({
       setWeightUnit(initialValues.weight_unit);
       setProgressionStyle(initialValues.progression_style);
       setEffortMethod(initialValues.effort_method);
+      if (initialValues.movement_preferences) {
+        setMovementPreferences(initialValues.movement_preferences);
+      }
+      if (initialValues.complementary_focus !== undefined) {
+        setComplementaryFocus(initialValues.complementary_focus);
+      }
+      if (initialValues.variety_preference) {
+        setVarietyPreference(initialValues.variety_preference);
+      }
     }
   }, [initialValues]);
 
@@ -57,6 +86,9 @@ export function ProgramCreationForm({
       weight_unit: weightUnit,
       progression_style: progressionStyle,
       effort_method: effortMethod,
+      movement_preferences: movementPreferences,
+      complementary_focus: complementaryFocus,
+      variety_preference: varietyPreference,
     });
   };
 
@@ -135,6 +167,77 @@ export function ProgramCreationForm({
             onChange={(e) => setEffortMethod(e.target.value as EffortMethod | '')}
           >
             {EFFORT_METHOD_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-4">
+        <div>
+          <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-3">
+            Equipment Preferences
+          </h4>
+          <div className="space-y-3">
+            {EQUIPMENT_FAMILY_OPTIONS.map((option) => (
+              <div key={option.value} className="flex items-center gap-3">
+                <label
+                  htmlFor={`pref_${option.value}`}
+                  className="text-sm text-neutral-700 dark:text-neutral-300 w-24"
+                >
+                  {option.label}
+                </label>
+                <input
+                  id={`pref_${option.value}`}
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={movementPreferences[option.value]}
+                  onChange={(e) =>
+                    setMovementPreferences({
+                      ...movementPreferences,
+                      [option.value]: parseInt(e.target.value, 10),
+                    })
+                  }
+                  className="flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer"
+                />
+                <span className="text-sm text-neutral-600 dark:text-neutral-400 w-8 text-right">
+                  {movementPreferences[option.value]}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <input
+            id="complementary_focus"
+            type="checkbox"
+            checked={complementaryFocus}
+            onChange={(e) => setComplementaryFocus(e.target.checked)}
+            className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-primary-600 focus:ring-primary-500"
+          />
+          <label
+            htmlFor="complementary_focus"
+            className="text-sm text-neutral-900 dark:text-neutral-50"
+          >
+            Include complementary exercises (isolation work)
+          </label>
+        </div>
+
+        <div className="input-group">
+          <label htmlFor="variety_preference" className="input-label">
+            Exercise Variety
+          </label>
+          <select
+            id="variety_preference"
+            name="variety_preference"
+            value={varietyPreference}
+            onChange={(e) => setVarietyPreference(e.target.value as VarietyPreference)}
+          >
+            {VARIETY_PREFERENCE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

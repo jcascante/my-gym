@@ -184,4 +184,84 @@ describe('ProgramCreationForm', () => {
       expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ effort_method: 'rpe' }));
     });
   });
+
+  it('should include movement_preferences, complementary_focus, and variety_preference in submitted values', async () => {
+    const onSubmit = vi.fn();
+    const onCancel = vi.fn();
+
+    render(<ProgramCreationForm environmentId={1} onSubmit={onSubmit} onCancel={onCancel} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          movement_preferences: expect.any(Object),
+          complementary_focus: true,
+          variety_preference: 'low',
+        }),
+      );
+    });
+  });
+
+  it('should allow changing equipment preference sliders', async () => {
+    const onSubmit = vi.fn();
+    const onCancel = vi.fn();
+
+    render(<ProgramCreationForm environmentId={1} onSubmit={onSubmit} onCancel={onCancel} />);
+
+    const dumbbellSlider = screen.getByLabelText(/Dumbbells/i);
+    fireEvent.change(dumbbellSlider, { target: { value: '75' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          movement_preferences: expect.objectContaining({ dumbbells: 75 }),
+        }),
+      );
+    });
+  });
+
+  it('should allow toggling complementary_focus checkbox', async () => {
+    const onSubmit = vi.fn();
+    const onCancel = vi.fn();
+
+    render(<ProgramCreationForm environmentId={1} onSubmit={onSubmit} onCancel={onCancel} />);
+
+    const complementaryCheckbox = screen.getByLabelText(/Include complementary exercises/i);
+    fireEvent.click(complementaryCheckbox);
+
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          complementary_focus: false,
+        }),
+      );
+    });
+  });
+
+  it('should allow changing variety_preference dropdown', async () => {
+    const onSubmit = vi.fn();
+    const onCancel = vi.fn();
+
+    render(<ProgramCreationForm environmentId={1} onSubmit={onSubmit} onCancel={onCancel} />);
+
+    fireEvent.change(screen.getByLabelText(/Exercise Variety/i), {
+      target: { value: 'high' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variety_preference: 'high',
+        }),
+      );
+    });
+  });
 });

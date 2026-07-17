@@ -43,6 +43,9 @@ export default function ProgramBuilderPage() {
       weight_unit: values.weight_unit,
       fitness_focus: fitnessFocus,
       duration_weeks: 8,
+      movement_preferences: values.movement_preferences,
+      complementary_focus: values.complementary_focus,
+      variety_preference: values.variety_preference,
     };
     setPrefs(matchRequest);
     setProgressionStyle(values.progression_style);

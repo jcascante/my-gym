@@ -34,6 +34,26 @@ export const EFFORT_METHOD_OPTIONS: { value: EffortMethod | ''; label: string }[
   { value: 'percent_1rm', label: '% of 1-Rep Max' },
 ];
 
+export type EquipmentFamily =
+  'dumbbells' | 'barbells' | 'machines' | 'bodyweight' | 'cables' | 'kettlebells';
+
+export const EQUIPMENT_FAMILY_OPTIONS: { value: EquipmentFamily; label: string }[] = [
+  { value: 'dumbbells', label: 'Dumbbells' },
+  { value: 'barbells', label: 'Barbells' },
+  { value: 'machines', label: 'Machines' },
+  { value: 'bodyweight', label: 'Bodyweight' },
+  { value: 'cables', label: 'Cables' },
+  { value: 'kettlebells', label: 'Kettlebells' },
+];
+
+export type VarietyPreference = 'low' | 'medium' | 'high';
+
+export const VARIETY_PREFERENCE_OPTIONS: { value: VarietyPreference; label: string }[] = [
+  { value: 'low', label: 'Low — Stick with core exercises' },
+  { value: 'medium', label: 'Medium — Balanced variety' },
+  { value: 'high', label: 'High — Maximum variety' },
+];
+
 export type DayOfWeek =
   'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
@@ -66,4 +86,7 @@ export interface MatchRequest {
   weight_unit: WeightUnit;
   progression_style: ProgressionStyle;
   effort_method: EffortMethod | '';
+  movement_preferences?: Record<EquipmentFamily, number>;
+  complementary_focus?: boolean;
+  variety_preference?: VarietyPreference;
 }
