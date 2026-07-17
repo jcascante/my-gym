@@ -9,6 +9,7 @@ import {
 } from '@/components';
 import { ProgramCreationForm } from '@/components/ProgramCreationForm';
 import { useAcceptProgram, useCreateDraft, useMatchTemplates } from '@/hooks/usePrograms';
+import { useAuthStore } from '@/store/auth';
 import type { MatchRequest, ProgramPreview, TemplateMatch } from '@/types/program';
 import type { MatchRequest as FormMatchRequest, WeightUnit } from '@/types/programCreation';
 
@@ -17,6 +18,7 @@ const STEPS = ['Preferences', 'Select', 'Details', 'Review'];
 export default function ProgramBuilderPage() {
   const navigate = useNavigate();
   const { environmentId } = useParams<{ environmentId?: string }>();
+  const { userProfile } = useAuthStore();
   const [step, setStep] = useState(0);
   const [prefs, setPrefs] = useState<MatchRequest | null>(null);
   const [chosen, setChosen] = useState<TemplateMatch | null>(null);
@@ -33,7 +35,7 @@ export default function ProgramBuilderPage() {
     // Adapt form output (4 fields) to MatchRequest (6 fields)
     const matchRequest: MatchRequest = {
       ...values,
-      fitness_focus: 'full_body',
+      fitness_focus: userProfile?.fitness_focus || 'general',
       duration_weeks: 8,
     };
     setPrefs(matchRequest);
