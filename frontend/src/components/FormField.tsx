@@ -15,7 +15,7 @@ export const FormField: FC<FormFieldProps> = ({
   required,
   className = '',
   id,
-  type,
+  type = 'text',
   ...props
 }) => {
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
