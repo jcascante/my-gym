@@ -84,7 +84,7 @@ export default function ProgramsListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8 px-4">
+    <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900 py-8 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-12">

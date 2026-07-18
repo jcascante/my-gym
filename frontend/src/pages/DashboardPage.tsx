@@ -34,7 +34,7 @@ export default function DashboardPage() {
   const todayWorkout = getTodayWorkout();
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8 px-4">
+    <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
