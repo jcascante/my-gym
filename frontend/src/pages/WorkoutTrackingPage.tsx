@@ -30,6 +30,7 @@ const mockExercises: SlotPreview[] = [
     is_locked: false,
     is_user_swapped: false,
     effort_target: null,
+    rotation_pool: [1],
   },
   {
     workout_exercise_id: 2,
@@ -43,6 +44,7 @@ const mockExercises: SlotPreview[] = [
     is_locked: false,
     is_user_swapped: false,
     effort_target: null,
+    rotation_pool: [2],
   },
   {
     workout_exercise_id: 3,
@@ -56,6 +58,7 @@ const mockExercises: SlotPreview[] = [
     is_locked: false,
     is_user_swapped: false,
     effort_target: null,
+    rotation_pool: [3],
   },
 ];
 

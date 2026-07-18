@@ -47,9 +47,9 @@ export function ExercisePreviewModal({ exercise, onClose }: ExercisePreviewModal
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="divide-y divide-neutral-100 dark:divide-neutral-700">
           {/* Description */}
-          <div>
+          <div className="px-6 py-4">
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2 uppercase tracking-wide">
               Description
             </h3>
@@ -59,7 +59,7 @@ export function ExercisePreviewModal({ exercise, onClose }: ExercisePreviewModal
           </div>
 
           {/* Target Muscles */}
-          <div>
+          <div className="px-6 py-4">
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-3 uppercase tracking-wide">
               Target Muscles
             </h3>
@@ -76,18 +76,46 @@ export function ExercisePreviewModal({ exercise, onClose }: ExercisePreviewModal
           </div>
 
           {/* Equipment */}
-          <div>
+          <div className="px-6 py-4">
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-3 uppercase tracking-wide">
               Equipment
             </h3>
-            <div className="px-3 py-2 bg-neutral-100 dark:bg-neutral-700/50 rounded-lg text-neutral-700 dark:text-neutral-300 text-sm font-medium">
-              {exercise.equipment}
+            <div className="text-neutral-700 dark:text-neutral-300 text-sm font-medium">
+              {exercise.equipment.join(', ')}
             </div>
           </div>
+
+          {/* Form Cues */}
+          {exercise.formCues && exercise.formCues.length > 0 && (
+            <div className="px-6 py-4">
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2 uppercase tracking-wide">
+                Form Cues
+              </h3>
+              <ul className="space-y-2">
+                {exercise.formCues.map((cue: string, i: number) => (
+                  <li key={i} className="text-sm text-neutral-600 dark:text-neutral-300">
+                    • {cue}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Safety Notes */}
+          {exercise.safetyNotes && (
+            <div className="px-6 py-4">
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2 uppercase tracking-wide">
+                Safety Notes
+              </h3>
+              <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                {exercise.safetyNotes}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-neutral-200 dark:border-neutral-700">
+        <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700">
           <Button type="button" variant="primary" onClick={onClose} className="w-full">
             Close
           </Button>

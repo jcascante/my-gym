@@ -18,8 +18,8 @@ export function ExerciseAlternativesModal({
       aria-label="Swap exercise"
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-20"
     >
-      <div className="bg-white dark:bg-neutral-800 rounded-lg p-4 w-80 max-h-[70vh] overflow-y-auto shadow-lg">
-        <div className="flex justify-between mb-4">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg w-96 max-h-[70vh] overflow-hidden shadow-lg flex flex-col">
+        <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
           <h4 className="font-semibold text-neutral-900 dark:text-neutral-50">Swap exercise</h4>
           <button
             aria-label="close"
@@ -29,19 +29,27 @@ export function ExerciseAlternativesModal({
             ✕
           </button>
         </div>
-        {isLoading ? (
-          <p className="text-neutral-600 dark:text-neutral-400">Loading…</p>
-        ) : (
-          (data ?? []).map((a) => (
-            <button
-              key={a.id}
-              className="block w-full text-left px-3 py-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700/50 text-neutral-900 dark:text-neutral-50 transition-colors"
-              onClick={() => onPick(a.id)}
-            >
-              {a.name}
-            </button>
-          ))
-        )}
+        <div className="overflow-y-auto flex-1">
+          {isLoading ? (
+            <div className="px-6 py-4 text-neutral-600 dark:text-neutral-400">Loading…</div>
+          ) : (data ?? []).length > 0 ? (
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-700">
+              {(data ?? []).map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => onPick(a.id)}
+                  className="w-full px-6 py-4 text-left hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors text-neutral-900 dark:text-neutral-50 font-medium"
+                >
+                  {a.name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="px-6 py-4 text-neutral-600 dark:text-neutral-400">
+              No alternatives available
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

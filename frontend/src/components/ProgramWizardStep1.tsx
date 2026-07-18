@@ -110,7 +110,7 @@ export function ProgramWizardStep1({
       </div>
 
       <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-3 text-center text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-        Step 1 of 2
+        Preferences
       </div>
 
       <div className="space-y-4">
@@ -292,18 +292,13 @@ export function ProgramWizardStep1({
       </div>
 
       {/* Action Buttons */}
-      <div className="space-y-3 pt-6">
-        <Button type="submit" variant="primary" className="w-full">
+      <div className="flex gap-3 pt-6">
+        <Button type="button" variant="secondary" onClick={onCancel} className="flex-1">
+          Cancel
+        </Button>
+        <Button type="submit" variant="primary" className="flex-1">
           Next
         </Button>
-        <div className="grid grid-cols-2 gap-3">
-          <Button type="button" variant="secondary" onClick={onCancel} className="w-full">
-            Cancel
-          </Button>
-          <Button type="button" variant="secondary" onClick={onCancel} className="w-full">
-            Save Draft
-          </Button>
-        </div>
       </div>
     </form>
   );

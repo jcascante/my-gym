@@ -16,6 +16,7 @@ export { Stepper } from './Stepper';
 export { WeekTabs } from './WeekTabs';
 export { SessionCard } from './SessionCard';
 export { SlotRow } from './SlotRow';
+export { ExerciseSlotCard } from './ExerciseSlotCard';
 export { SlotFeedbackMenu } from './SlotFeedbackMenu';
 export { ExerciseAlternativesModal } from './ExerciseAlternativesModal';
 export { DraftProgramView } from './DraftProgramView';
