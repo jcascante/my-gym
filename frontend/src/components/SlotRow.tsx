@@ -26,21 +26,28 @@ export function SlotRow({
       <div className="flex items-center gap-2">
         {slot.is_locked && <span aria-label="locked">🔒</span>}
         {slot.is_user_swapped && (
-          <span aria-label="swapped" className="text-xs text-blue-600">
+          <span
+            aria-label="swapped"
+            className="text-xs text-primary-600 dark:text-primary-400 font-medium"
+          >
             swapped
           </span>
         )}
-        <span>{slot.exercise_name}</span>
+        <span className="text-neutral-900 dark:text-neutral-50">{slot.exercise_name}</span>
       </div>
-      <div className="flex items-center gap-3 text-sm text-gray-700">
+      <div className="flex items-center gap-3 text-sm text-neutral-700 dark:text-neutral-300">
         <span>
           {slot.sets} × {slot.reps}
           {slot.load != null ? ` @ ${slot.load}` : ''}
         </span>
-        {effortLabel && <span className="text-xs text-neutral-500">{effortLabel}</span>}
-        {slot.note && <span className="text-amber-600">{slot.note}</span>}
+        {effortLabel && (
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">{effortLabel}</span>
+        )}
+        {slot.note && <span className="text-amber-600 dark:text-amber-400">{slot.note}</span>}
         {slot.rotation_pool.length > 1 && (
-          <span className="text-xs text-blue-600">🔁 rotates weekly</span>
+          <span className="text-xs text-primary-600 dark:text-primary-400 font-medium">
+            🔁 rotates weekly
+          </span>
         )}
         {!readOnly && onAction && onSwap && (
           <SlotFeedbackMenu slot={slot} onAction={onAction} onSwap={onSwap} />
