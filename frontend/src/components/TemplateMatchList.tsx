@@ -11,7 +11,11 @@ export function TemplateMatchList({
   onSelect: (m: TemplateMatch) => void;
 }) {
   if (matches.length === 0)
-    return <p className="text-gray-500">No matching templates for your setup.</p>;
+    return (
+      <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">
+        No matching templates for your setup.
+      </p>
+    );
   return (
     <div className="space-y-3">
       {matches.map((m) => (

@@ -15,14 +15,18 @@ export function TemplateMatchCard({
       type="button"
       aria-pressed={selected}
       onClick={() => onSelect(match)}
-      className={`w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg ${selected ? 'ring-2 ring-blue-600' : ''}`}
+      className={`w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 rounded-lg transition-all ${
+        selected
+          ? 'ring-2 ring-primary-600 dark:ring-primary-500'
+          : 'hover:shadow-md dark:hover:shadow-lg'
+      }`}
     >
       <Card>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">{match.name}</h3>
-          <span className="text-blue-600 font-bold">{match.fit_pct}%</span>
+          <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">{match.name}</h3>
+          <span className="text-primary-600 dark:text-primary-400 font-bold">{match.fit_pct}%</span>
         </div>
-        <ul className="mt-2 text-sm text-gray-600">
+        <ul className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
           {Object.entries(match.factors).map(([k, v]) => (
             <li key={k}>
               {k}: {Math.round(v * 100)}%
