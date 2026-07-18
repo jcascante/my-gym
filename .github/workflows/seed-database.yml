@@ -1,4 +1,4 @@
-name: Seed Exercises
+name: Seed Database
 
 on:
   workflow_dispatch:
@@ -22,7 +22,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Seed exercise library
+      - name: Seed database
         run: |
           NETWORK_CONFIG=$(aws ecs describe-services \
             --cluster ${{ vars.ECS_CLUSTER_NAME }} \
@@ -36,12 +36,16 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --query 'services[0].taskDefinition' --output text)
 
+          # Exercises are seeded before program templates since templates reference
+          # exercise movement patterns.
+          SEED_CMD='uv run python -m app.db.seed.seed_exercises && uv run python -m app.db.seed.seed_program_templates'
+
           TASK_ARN=$(aws ecs run-task \
             --cluster ${{ vars.ECS_CLUSTER_NAME }} \
             --task-definition "$TASK_DEF" \
             --launch-type FARGATE \
             --network-configuration "{\"awsvpcConfiguration\": $NETWORK_CONFIG}" \
-            --overrides '{"containerOverrides":[{"name":"backend","command":["uv","run","python","-m","app.db.seed.seed_exercises"]}]}' \
+            --overrides "{\"containerOverrides\":[{\"name\":\"backend\",\"command\":[\"sh\",\"-c\",\"$SEED_CMD\"]}]}" \
             --region ${{ env.AWS_REGION }} \
             --query 'tasks[0].taskArn' --output text)
 
