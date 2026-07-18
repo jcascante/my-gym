@@ -52,7 +52,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 sticky top-0 z-40">
+    <header className="bg-white border-b border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 sticky top-0 z-40 pt-[env(safe-area-inset-top)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}

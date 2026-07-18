@@ -143,7 +143,7 @@ export default function WorkoutTrackingPage() {
   const progressPercentage = (completedExercises / totalExercises) * 100;
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col">
+    <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900 flex flex-col">
       {/* Header */}
       <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 p-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto">
