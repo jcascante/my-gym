@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "MyGym"
     API_V1_STR: str = "/api/v1"
+    GIT_COMMIT: str = "unknown"
 
     DATABASE_URL: str
     SQLALCHEMY_ECHO: bool = False
