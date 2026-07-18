@@ -18,4 +18,6 @@ RUN uv sync --frozen
 COPY . .
 
 FROM base AS runtime
+ARG GIT_COMMIT=unknown
+ENV GIT_COMMIT=$GIT_COMMIT
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
