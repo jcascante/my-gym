@@ -419,25 +419,48 @@ def test_rank_templates_assigns_tiers_relative_to_top():
 
 
 def test_rank_templates_tier_spans_all_tiers():
-    """Construct input that produces fit_pct differences spanning all three tiers."""
-    # Create templates that will have different fit_pct scores by varying their params
-    # Template with perfect match: 4 days, 60 min, strength
-    t1 = _T(1, "perfect", ["strength"], ["intermediate"], 4, 4, 45, 75)
-    # Template with good match but not perfect: e.g., 3 days instead of 4
-    t2 = _T(2, "good", ["strength"], ["intermediate"], 3, 4, 45, 75)
-    # Template with mediocre match: e.g., endurance instead of strength
-    t3 = _T(3, "weak", ["endurance"], ["intermediate"], 4, 4, 45, 75)
+    """Construct input that produces fit_pct differences spanning all three tiers.
+
+    Under the default HeuristicTemplateScorer (weights: goal=0.25, experience=0.20,
+    days=0.12, duration=0.08, movement_preference=0.15, focus_complement=0.12,
+    periodization=0.08), templates without a `TemplateDefinition` get fixed neutral
+    values for movement_preference/focus_complement/periodization (0.5/0.5/0.3),
+    contributing a constant 0.15*0.5 + 0.12*0.5 + 0.08*0.3 = 0.159 to every score.
+
+    days_per_week_min == days_per_week_max == 1 with an input of 4 days drives
+    `_range_fit` to exactly 0 (distance=3 > max(low, 1)=1 -> fit is clamped to 0),
+    which is used below to knock out the days factor entirely.
+
+    - top: goal=1.0, experience=1.0, days=1.0 (4 in [4,4]), duration=1.0 (60 in [45,75])
+      -> score = 0.25 + 0.20 + 0.12 + 0.08 + 0.159 = 0.809 -> fit_pct = 81
+    - mid: goal=1.0, experience=1.0, days=0.0 (range [1,1]), duration=1.0
+      -> score = 0.25 + 0.20 + 0 + 0.08 + 0.159 = 0.689 -> fit_pct = 69
+      -> gap from top = 81 - 69 = 12 -> "strong" (6 < gap <= 15)
+    - low: goal=0.0 (endurance goal, strength vector), experience=0.3 (beginner-only,
+      input is intermediate), days=0.0 (range [1,1]), duration=1.0
+      -> score = 0 + 0.06 + 0 + 0.08 + 0.159 = 0.299 -> fit_pct = 30
+      -> gap from top = 81 - 30 = 51 -> "possible" (gap > 15)
+    """
+    t1 = _T(1, "top", ["strength"], ["intermediate"], 4, 4, 45, 75)
+    t2 = _T(2, "mid", ["strength"], ["intermediate"], 1, 1, 45, 75)
+    t3 = _T(3, "low", ["endurance"], ["beginner"], 1, 1, 45, 75)
 
     templates = [t1, t2, t3]
     inp = MatchInput("strength", "intermediate", 4, 60, ["barbell"])
     ranked = rank_templates(templates, inp, feasibility={1: True, 2: True, 3: True})
 
-    # Expect top match is always "best"
+    by_id = {m.template_id: m for m in ranked}
+    assert by_id[1].fit_pct == 81
+    assert by_id[2].fit_pct == 69
+    assert by_id[3].fit_pct == 30
+
+    assert ranked[0].template_id == 1
     assert ranked[0].tier == "best"
-    # With enough difference in fits, we should see multiple tier levels
-    # (the exact tier assignment depends on the actual fit_pct values produced)
+
     tiers = [m.tier for m in ranked]
-    assert "best" in tiers
+    assert set(tiers) == {"best", "strong", "possible"}
+    assert by_id[2].tier == "strong"
+    assert by_id[3].tier == "possible"
 
 
 def test_rank_templates_all_infeasible_path_also_gets_tiers():
