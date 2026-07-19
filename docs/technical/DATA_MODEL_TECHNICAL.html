@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Model & Field Usage Reference - Technical Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        nav a {
+            color: #2a5298;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        nav a:hover {
+            background: white;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        h2 {
+            color: #1e3c72;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #2a5298;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #2a5298;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        p, li {
+            margin-bottom: 0.75rem;
+            color: #374151;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+        }
+
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .diagram {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+            color: #1f2937;
+        }
+
+        .note {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            color: #1e3a8a;
+        }
+
+        .warning {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            color: #78350f;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+
+        table th, table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.6rem 0.75rem;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        table th {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #1e3c72;
+        }
+
+        table tr:hover {
+            background: #f9fafb;
+        }
+
+        .status {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-used { color: #15803d; }
+        .status-partial { color: #b45309; }
+        .status-unused { color: #b91c1c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Data Model & Field Usage Reference</h1>
+            <p>Technical Documentation</p>
+        </header>
+        <nav>
+            <a href="../index.html">Home</a>
+            <a href="index.html">Technical Docs</a>
+            <a href="PROGRAM_GENERATION_TECHNICAL.html">Program Generation</a>
+            <a href="ONBOARDING_FLOW_TECHNICAL.html">Onboarding Flow</a>
+        </nav>
+        <div class="content">
+
+            <h2 id="overview">1. Overview</h2>
+            <p>This reference audits every field across MyGym's backend models and states, as of the current codebase, whether it is actually read by the program-matching or program-generation engine — not just whether it is collected and stored. It exists because onboarding, profile editing, and program creation collect data from three separate places (<code>UserProfile</code>, <code>TrainingEnvironment</code>, and per-request payloads), and not everything collected is consumed downstream.</p>
+            <p>This is a <strong>current-state audit</strong>, not a proposal. Fields marked unused or partially used are documented as-is; no schema or behavior changes are implied by this page.</p>
+
+            <h3>Legend</h3>
+            <table>
+                <tr><th>Status</th><th>Meaning</th></tr>
+                <tr><td class="status status-used">✅ Used</td><td>Read by the matching engine (<code>services/program/matching.py</code>) and/or the selection/drafting engine (<code>services/program/selection.py</code>, <code>drafting.py</code>)</td></tr>
+                <tr><td class="status status-partial">⚠️ Partial</td><td>Read by some part of the pipeline but not all of it, or duplicated/shadowed by a separate per-request field</td></tr>
+                <tr><td class="status status-unused">❌ Unused</td><td>Collected and persisted, but no backend service reads it</td></tr>
+            </table>
+
+            <h2 id="user">2. <code>User</code></h2>
+            <p>Account identity. None of these fields are generation inputs.</p>
+            <table>
+                <tr><th>Field</th><th>Status</th><th>Used by</th><th>Purpose</th></tr>
+                <tr><td><code>email</code></td><td class="status status-used">✅ Used</td><td>Auth (login/session lookup)</td><td>Login identity, not a generation input</td></tr>
+                <tr><td><code>password_hash</code></td><td class="status status-used">✅ Used</td><td>Auth</td><td>Credential verification</td></tr>
+                <tr><td><code>first_name</code> / <code>last_name</code></td><td class="status status-used">✅ Used</td><td>Frontend display</td><td>Greeting text (e.g. onboarding header), not read by matching/generation</td></tr>
+            </table>
+
+            <h2 id="userprofile">3. <code>UserProfile</code></h2>
+            <p>Collected across the onboarding wizard's 6 steps (<code>frontend/src/pages/OnboardingPage.tsx</code>). This is the table with the largest gap between what's collected and what's consumed.</p>
+            <table>
+                <tr><th>Field</th><th>Status</th><th>Used by</th><th>Purpose / how it's used</th></tr>
+                <tr>
+                    <td><code>age</code></td>
+                    <td class="status status-unused">❌ Unused</td>
+                    <td>—</td>
+                    <td>Collected in onboarding step 1. No service reads it — not in <code>matching.py</code>, <code>selection.py</code>, or <code>drafting.py</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>gender</code></td>
+                    <td class="status status-unused">❌ Unused</td>
+                    <td>—</td>
+                    <td>Same as above — free-text/select value, never read downstream.</td>
+                </tr>
+                <tr>
+                    <td><code>weight_kg</code></td>
+                    <td class="status status-unused">❌ Unused</td>
+                    <td>—</td>
+                    <td>Collected but not used for load estimation, BMI, or anything else. No consumer.</td>
+                </tr>
+                <tr>
+                    <td><code>height_cm</code></td>
+                    <td class="status status-unused">❌ Unused</td>
+                    <td>—</td>
+                    <td>Same — no consumer.</td>
+                </tr>
+                <tr>
+                    <td><code>activity_level</code></td>
+                    <td class="status status-unused">❌ Unused</td>
+                    <td>—</td>
+                    <td>Collected in onboarding step 2, alongside <code>experience_level</code>. Unlike <code>experience_level</code>, it is never read by any service.</td>
+                </tr>
+                <tr>
+                    <td><code>fitness_focus</code></td>
+                    <td class="status status-used">✅ Used</td>
+                    <td>Matching (<code>goal</code> factor)</td>
+                    <td><code>ProgramBuilderPage.tsx</code> reads <code>userProfile.fitness_focus</code> (fallback <code>"general"</code>) to build <code>MatchRequest.fitness_focus</code>, which feeds the <code>goal</code> factor in <code>rank_templates()</code> — currently 25% of the match score.</td>
+                </tr>
+                <tr>
+                    <td><code>experience_level</code></td>
+                    <td class="status status-used">✅ Used</td>
+                    <td>Matching (<code>experience</code> factor) + Selection (difficulty filter/ranking)</td>
+                    <td>Read directly from <code>user.profile.experience_level</code> in the <code>/programs/match</code> endpoint and in <code>_ctx_for()</code>. Feeds template scoring and gates/ranks exercise candidates by <code>difficulty_level</code> in <code>selection.py</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>days_per_week</code></td>
+                    <td class="status status-partial">⚠️ Partial</td>
+                    <td>Matching (<code>days</code> factor) — but only via a re-entered value</td>
+                    <td>Stored on the profile, but the program-creation wizard (<code>ProgramCreationForm.tsx</code>) does not read it — it always defaults to <code>3</code> and asks the user again. The value that actually reaches <code>MatchInput.days_per_week</code> is whatever the user re-enters in the wizard, not the profile field.</td>
+                </tr>
+                <tr>
+                    <td><code>workout_duration_min</code></td>
+                    <td class="status status-partial">⚠️ Partial</td>
+                    <td>Matching (<code>duration</code> factor) — same caveat</td>
+                    <td>Same issue as <code>days_per_week</code>: the wizard defaults <code>session_duration_min</code> to <code>60</code> and ignores the stored profile value.</td>
+                </tr>
+                <tr>
+                    <td><code>injuries_limitations</code></td>
+                    <td class="status status-partial">⚠️ Partial</td>
+                    <td>Selection/drafting only (contraindication filter)</td>
+                    <td>Free text, split on commas and lowercased in <code>_ctx_for()</code> (<code>api/v1/endpoints/programs.py</code>), then matched literally against each exercise's <code>contraindications</code> tags (<code>knee</code>, <code>shoulder</code>, <code>lower_back</code>, <code>wrist</code>, <code>elbow</code>, <code>hip</code>, <code>neck</code>, <code>ankle</code>). Only built for <code>/draft</code>, <code>/feedback</code>, and <code>/alternatives</code> — the <code>/match</code> endpoint never builds a <code>SelectionContext</code>, so injuries have <strong>no effect on template ranking</strong>, only on which exercise is picked once a template is already chosen. Matching is also fragile: phrasing like "bad knee" doesn't split into a token that matches "knee".</td>
+                </tr>
+                <tr>
+                    <td><code>short_term_goals</code></td>
+                    <td class="status status-unused">❌ Unused</td>
+                    <td>—</td>
+                    <td>Free text collected in onboarding step 5. Not read by any backend service, and not displayed anywhere in the frontend after submission.</td>
+                </tr>
+                <tr>
+                    <td><code>medium_term_goals</code></td>
+                    <td class="status status-unused">❌ Unused</td>
+                    <td>—</td>
+                    <td>Same as <code>short_term_goals</code> — write-only.</td>
+                </tr>
+            </table>
+
+            <h2 id="trainingenvironment">4. <code>TrainingEnvironment</code></h2>
+            <p>Collected via the "Training Environments" onboarding step and the standalone environment CRUD (<code>TrainingEnvironmentForm</code>). One user may have several; each program is generated against one chosen environment.</p>
+            <table>
+                <tr><th>Field</th><th>Status</th><th>Used by</th><th>Purpose / how it's used</th></tr>
+                <tr>
+                    <td><code>name</code></td>
+                    <td class="status status-used">✅ Used</td><td>Frontend display</td>
+                    <td>Label shown in environment pickers; not read by matching/selection.</td>
+                </tr>
+                <tr>
+                    <td><code>environment_type</code></td>
+                    <td class="status status-unused">❌ Unused</td>
+                    <td>—</td>
+                    <td>Categorization (<code>commercial_gym</code>, <code>home</code>, <code>bodyweight</code>, …) shown in the UI, but no backend service branches on it — only <code>equipment_tags</code> drives feasibility/filtering.</td>
+                </tr>
+                <tr>
+                    <td><code>equipment_tags</code></td>
+                    <td class="status status-used">✅ Used</td>
+                    <td>Matching (template feasibility gate) + Selection (equipment filter)</td>
+                    <td>Passed as <code>MatchInput.environment_equipment</code> and <code>SelectionContext.equipment</code>. A template is only feasible if every required slot can be filled by an exercise whose <code>equipment_tags</code> are a subset of this list (<code>template_is_feasible()</code> in <code>selection.py</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>is_default</code></td>
+                    <td class="status status-partial">⚠️ Partial</td>
+                    <td>Frontend only</td>
+                    <td>Used client-side to pre-select an environment in the UI; not read by any backend generation logic.</td>
+                </tr>
+            </table>
+
+            <h2 id="creation-only">5. Program-Creation-Only Inputs (not on <code>UserProfile</code>)</h2>
+            <p>These fields exist only in <code>MatchRequest</code>/<code>DraftRequest</code> (<code>schemas/program_api.py</code>) — re-entered every time a program is created, then persisted into <code>WorkoutProgram.constraints</code> once accepted. They have no profile-level counterpart, so there's no duplication concern for them.</p>
+            <table>
+                <tr><th>Field</th><th>Status</th><th>Used by</th><th>Purpose</th></tr>
+                <tr><td><code>movement_preferences</code></td><td class="status status-used">✅ Used</td><td>Matching (<code>movement_preference</code> factor, 15%) + Selection (exercise ranking)</td><td>Per-equipment-family weight slider (0–2.0); biases which candidate exercise wins a slot.</td></tr>
+                <tr><td><code>complementary_focus</code></td><td class="status status-used">✅ Used</td><td>Matching (<code>focus_complement</code> factor, 12%) + Selection</td><td>Whether accessory/isolation slots favor muscle-coverage diversity.</td></tr>
+                <tr><td><code>progression_style</code></td><td class="status status-used">✅ Used</td><td>Matching (<code>periodization</code> factor, 8%) + drafting</td><td><code>consistent</code> vs <code>variable</code> weekly load progression; scores templates whose progression model matches the requested style.</td></tr>
+                <tr><td><code>effort_method</code></td><td class="status status-used">✅ Used</td><td>Drafting/preview</td><td>How intensity is displayed/computed (<code>rpe</code>, <code>rir</code>, <code>borg</code>, <code>percent_1rm</code>); <code>percent_1rm</code> multiplies a manually-entered required input by the scheme's <code>intensity_pct</code>.</td></tr>
+                <tr><td><code>variety_preference</code></td><td class="status status-used">✅ Used</td><td>Drafting (rotation pool size)</td><td>Controls how many alternates are kept per slot for weekly rotation.</td></tr>
+                <tr><td><code>weight_unit</code>, <code>duration_weeks</code></td><td class="status status-used">✅ Used</td><td>Drafting</td><td>Display unit and program length; not scoring inputs.</td></tr>
+                <tr><td><code>required_inputs</code></td><td class="status status-used">✅ Used</td><td>Drafting (<code>_base_load_for</code>)</td><td>Per-template, per-movement-pattern starting load, manually entered by the user via <code>RequiredInputsForm</code> — the only place a numeric starting weight enters the system today (<code>weight_kg</code> is not used for this).</td></tr>
+            </table>
+
+            <h2 id="programtemplate">6. <code>ProgramTemplate</code></h2>
+            <p>Not user input — this is the catalog data that user input is matched <em>against</em>. Listed here for completeness since it's the other half of every matching comparison.</p>
+            <table>
+                <tr><th>Field</th><th>Compared against</th></tr>
+                <tr><td><code>goals[]</code></td><td><code>UserProfile.fitness_focus</code> (via request)</td></tr>
+                <tr><td><code>experience_levels[]</code></td><td><code>UserProfile.experience_level</code></td></tr>
+                <tr><td><code>days_per_week_min/max</code></td><td>Request <code>days_per_week</code></td></tr>
+                <tr><td><code>session_duration_min/max</code></td><td>Request <code>session_duration_min</code></td></tr>
+                <tr><td><code>split</code> (sessions/slots JSON)</td><td><code>TrainingEnvironment.equipment_tags</code> (feasibility), request <code>movement_preferences</code>/<code>complementary_focus</code></td></tr>
+                <tr><td><code>progression_ref.model_key</code></td><td>Request <code>progression_style</code></td></tr>
+                <tr><td><code>required_inputs</code></td><td>Surfaced to the frontend after matching; filled manually via <code>RequiredInputsForm</code></td></tr>
+            </table>
+
+            <h2 id="output">7. <code>WorkoutProgram</code> / <code>Workout</code> / <code>WorkoutExercise</code> / <code>Exercise</code></h2>
+            <p>These are the engine's <strong>output</strong>, not input — included here only to close the loop. <code>WorkoutProgram.constraints</code> (JSON) is where every per-request, creation-time-only field from Section 5 ends up persisted once a program exists, since <code>UserProfile</code> never stores them. <code>Exercise</code> is catalog data (equipment tags, contraindications, muscles, difficulty) that every profile/environment field above is ultimately filtered or scored against — see <a href="EXERCISE_LIBRARY_TECHNICAL.html">Exercise Library Technical Reference</a> for its full field list.</p>
+
+            <h2 id="gaps">8. Summary of Gaps</h2>
+            <table>
+                <tr><th>#</th><th>Gap</th><th>Fields involved</th></tr>
+                <tr><td>1</td><td>Collected twice, profile value ignored — wizard hardcodes its own defaults instead of reading the stored profile value</td><td><code>days_per_week</code>, <code>workout_duration_min</code></td></tr>
+                <tr><td>2</td><td>Free-text field parsed with fragile comma-split/lowercase matching against a fixed vocabulary</td><td><code>injuries_limitations</code></td></tr>
+                <tr><td>3</td><td>Only enforced after a template is already chosen, never scored during matching itself</td><td><code>injuries_limitations</code></td></tr>
+                <tr><td>4</td><td>Captured biometrics with zero downstream consumers</td><td><code>age</code>, <code>gender</code>, <code>weight_kg</code>, <code>height_cm</code>, <code>activity_level</code></td></tr>
+                <tr><td>5</td><td>Write-only free text — stored, never read or displayed</td><td><code>short_term_goals</code>, <code>medium_term_goals</code></td></tr>
+            </table>
+
+            <div class="warning">
+                <strong>Documentation drift note:</strong> <a href="PROGRAM_GENERATION_TECHNICAL.html#matching">Section 5 of the Program Generation Engine doc</a> lists match weights as Goal 25% / Experience 25% / Days 20% / Duration 15% / Equipment 15%. The current code (<code>MatchWeights</code> in <code>services/program/matching.py</code>) is Goal 25% / Experience 20% / Days 12% / Duration 8% / Movement preference 15% / Focus complement 12% / Periodization 8% — three factors (<code>movement_preference</code>, <code>focus_complement</code>, <code>periodization</code>) exist in code but aren't reflected in that doc's weight table. This page uses the current code's weights.
+            </div>
+
+            <div class="note">
+                <strong>Scope:</strong> This page documents current behavior only. A redesign addressing the gaps above (wiring biometrics into load/recovery estimation, structuring injuries, prefilling the creation wizard from the profile, scoring injuries during matching) is being scoped separately and will land as its own spec.
+            </div>
+
+            <h2 id="references">9. References</h2>
+            <ul>
+                <li><code>backend/app/models/user.py</code> — <code>User</code>, <code>UserProfile</code></li>
+                <li><code>backend/app/models/training_environment.py</code> — <code>TrainingEnvironment</code></li>
+                <li><code>backend/app/models/program.py</code> — <code>ProgramTemplate</code>, <code>WorkoutProgram</code>, <code>Workout</code>, <code>WorkoutExercise</code></li>
+                <li><code>backend/app/models/exercise.py</code> — <code>Exercise</code></li>
+                <li><code>backend/app/services/program/matching.py</code>, <code>selection.py</code>, <code>drafting.py</code> — consumers</li>
+                <li><code>backend/app/api/v1/endpoints/programs.py</code> — where profile fields are read (or not) per endpoint</li>
+                <li><a href="PROGRAM_GENERATION_TECHNICAL.html">Program Generation Engine Technical Reference</a></li>
+                <li><a href="ONBOARDING_FLOW_TECHNICAL.html">Conditional Onboarding Flow Technical Reference</a></li>
+            </ul>
+
+        </div>
+    </div>
+</body>
+</html>
