@@ -14,6 +14,8 @@ export interface TemplateMatch {
   fit_pct: number;
   factors: Record<string, number>;
   required_inputs: RequiredInput[];
+  tier: 'best' | 'strong' | 'possible';
+  all_infeasible: boolean;
 }
 
 export interface EffortTarget {

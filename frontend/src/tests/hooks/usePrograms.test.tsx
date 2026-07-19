@@ -31,6 +31,8 @@ describe('usePrograms hooks', () => {
           fit_pct: 90,
           factors: {},
           required_inputs: [],
+          tier: 'best',
+          all_infeasible: false,
         },
       ]);
       const { result } = renderHook(() => useMatchTemplates(), { wrapper });

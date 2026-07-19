@@ -1,3 +1,4 @@
+import { Alert } from './Alert';
 import { TemplateMatchCard } from './TemplateMatchCard';
 import type { TemplateMatch } from '@/types/program';
 
@@ -18,6 +19,11 @@ export function TemplateMatchList({
     );
   return (
     <div className="space-y-3">
+      {matches.length > 0 && matches[0].all_infeasible && (
+        <Alert type="warning" title="No perfect match found">
+          None of your available templates fully match your setup. Here are the closest options.
+        </Alert>
+      )}
       {matches.map((m) => (
         <TemplateMatchCard
           key={m.template_id}
