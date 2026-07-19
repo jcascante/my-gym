@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,6 +31,7 @@ from app.services.program.matching import MatchInput, rank_templates
 from app.services.program.preview import derive_week
 from app.services.program.selection import SelectionContext, template_is_feasible
 from app.services.program.style_override import apply_progression_style
+from app.services.program.telemetry import record_event
 
 router = APIRouter(prefix="/programs", tags=["programs"])
 
@@ -76,7 +77,10 @@ async def _preview_out(db: AsyncSession, program: WorkoutProgram, definition: Te
 
 @router.post("/match", response_model=list[TemplateMatchOut])
 async def match(
-    data: MatchRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    data: MatchRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    engine_config: EngineConfig = Depends(get_engine_config),
 ) -> list[TemplateMatchOut]:
     environment = await get_training_environment(db, user.id, data.environment_id)
     if environment is None:
@@ -103,6 +107,21 @@ async def match(
         progression_style=data.progression_style.value,
     )
     ranked = rank_templates(templates, inp, feasibility, definitions=definitions, all_exercises=exercises)
+    for m in ranked:
+        await record_event(
+            db,
+            user=user,
+            event_type="match_score",
+            payload={
+                "template_id": m.template_id,
+                "slug": m.slug,
+                "fit_pct": m.fit_pct,
+                "tier": m.tier,
+                "factors": m.factors,
+                "all_infeasible": m.all_infeasible,
+            },
+            config_version=engine_config.config_version,
+        )
     return [
         TemplateMatchOut(
             **m.__dict__,
@@ -134,6 +153,7 @@ async def draft(
         complementary_focus=data.complementary_focus,
     )
     exercises = await list_exercises(db)
+    telemetry_sink: list[dict[str, Any]] = []
     program = build_draft(
         template,
         definition,
@@ -149,8 +169,17 @@ async def draft(
         effort_method=data.effort_method.value if data.effort_method else None,
         variety_preference=data.variety_preference.value,
         engine_config_version=engine_config.config_version,
+        telemetry_sink=telemetry_sink,
     )
     await save_program(db, program)
+    for entry in telemetry_sink:
+        await record_event(
+            db,
+            user=user,
+            event_type="slot_selection",
+            payload=entry,
+            config_version=engine_config.config_version,
+        )
     saved = await get_program(db, user.id, program.id)
     assert saved is not None
     preview_definition = apply_progression_style(definition, data.progression_style.value)
@@ -189,6 +218,7 @@ async def feedback(
     data: FeedbackRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    engine_config: EngineConfig = Depends(get_engine_config),
 ) -> ProgramPreviewOut:
     program, definition = await _load(db, user, program_id)
     environment = await get_training_environment(db, user.id, program.environment_id)
@@ -203,7 +233,22 @@ async def feedback(
     )
     exercises = await list_exercises(db)
     apply_feedback(program, definition, FeedbackAction(**data.model_dump()), ctx, exercises)
+    resulting_exercise_id = next(
+        (ex.exercise_id for w in program.workouts for ex in w.exercises if ex.id == data.workout_exercise_id),
+        None,
+    )
     await save_program(db, program)
+    await record_event(
+        db,
+        user=user,
+        event_type="feedback_action",
+        payload={
+            "action": data.model_dump(),
+            "workout_exercise_id": data.workout_exercise_id,
+            "resulting_exercise_id": resulting_exercise_id,
+        },
+        config_version=engine_config.config_version,
+    )
     saved = await get_program(db, user.id, program.id)
     assert saved is not None
     return await _preview_out(db, saved, definition)

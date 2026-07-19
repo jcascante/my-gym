@@ -1,9 +1,11 @@
+from typing import Any
+
 from app.models import Exercise, ProgramStatus, ProgramTemplate, Workout, WorkoutExercise, WorkoutProgram
 from app.schemas.program import EffortMethod
 from app.schemas.template import SchemeDef, SlotRule, TemplateDefinition
 from app.services.program.assembly import SlotAssignment, assemble_session
 from app.services.program.engine_config import EngineConfig
-from app.services.program.selection import SelectionContext, ranked_pool_for_slot
+from app.services.program.selection import SelectionContext, _extract_features, ranked_pool_for_slot
 from app.services.program.variety import pool_size_for, rotation_pool_ids
 
 
@@ -72,6 +74,7 @@ def build_draft(
     variety_preference: str = "low",
     engine_config_version: str = "unversioned",
     config: EngineConfig | None = None,
+    telemetry_sink: list[dict[str, Any]] | None = None,
 ) -> WorkoutProgram:
     applies_to_values = {
         ri.applies_to: required_inputs[ri.key]
@@ -118,6 +121,15 @@ def build_draft(
             for a in assignments:
                 scheme = definition.schemes[a.rule.scheme]
                 pool_size = 1 if a.rule.priority == "primary" else pool_size_for(variety_preference)
+                if telemetry_sink is not None:
+                    telemetry_sink.append(
+                        {
+                            "workout_key": session.key,
+                            "order": a.order,
+                            "exercise_id": a.exercise.id,
+                            "features": _extract_features(a.exercise, a.rule, ctx),
+                        }
+                    )
                 # Apply the winning beam's picks to the shared ctx in slot order, so the next
                 # session continues from the correct accumulated variety/coverage state.
                 _apply_pick_to_ctx(ctx, a.exercise)
@@ -141,6 +153,15 @@ def build_draft(
                 if chosen is None:
                     continue
                 pool_size = 1 if rule.priority == "primary" else pool_size_for(variety_preference)
+                if telemetry_sink is not None:
+                    telemetry_sink.append(
+                        {
+                            "workout_key": session.key,
+                            "order": i,
+                            "exercise_id": chosen.id,
+                            "features": _extract_features(chosen, rule, ctx),
+                        }
+                    )
                 _apply_pick_to_ctx(ctx, chosen)
                 workout.exercises.append(
                     _make_workout_exercise(i, chosen, rule, scheme, ranked, pool_size, applies_to_values, effort_method)

@@ -2,7 +2,7 @@ import enum
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -76,6 +76,7 @@ class UserProfile(Base):
     injuries_limitations: Mapped[str | None] = mapped_column(Text)
     short_term_goals: Mapped[str | None] = mapped_column(Text)
     medium_term_goals: Mapped[str | None] = mapped_column(Text)
+    telemetry_consent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="profile")

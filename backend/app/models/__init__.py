@@ -8,6 +8,7 @@ from .program import (  # noqa: F401
     WorkoutExercise,
     WorkoutProgram,
 )
+from .telemetry import EngineEvent
 from .training_environment import EnvironmentType, TrainingEnvironment
 from .user import (
     ActivityLevel,
@@ -37,4 +38,5 @@ __all__ = [
     "WorkoutProgram",
     "Workout",
     "WorkoutExercise",
+    "EngineEvent",
 ]

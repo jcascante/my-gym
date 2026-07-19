@@ -5,6 +5,16 @@ from app.services.program.drafting import build_draft
 from app.services.program.engine_config import AssemblyConfig, EngineConfig, EngineFlags
 from app.services.program.selection import SelectionContext
 
+FEATURE_KEYS = {
+    "variety",
+    "priority_fit",
+    "muscle_fit",
+    "difficulty",
+    "unilateral_balance",
+    "movement_preference",
+    "complementary_coverage",
+}
+
 
 def _ctx():
     return SelectionContext(
@@ -435,3 +445,111 @@ async def test_build_draft_defaults_variety_preference_to_low(sample_template_or
     all_exercises = [ex for w in program.workouts for ex in w.exercises]
     assert all_exercises
     assert all(len(ex.rotation_pool) == 1 for ex in all_exercises)
+
+
+@pytest.mark.asyncio
+async def test_build_draft_telemetry_sink_none_is_noop(sample_template_orm, sample_exercises):
+    """Default telemetry_sink=None (every existing call site) must not change behavior."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    with_default = _build(_ctx(), sample_template_orm, definition, sample_exercises)
+    explicit_none = build_draft(
+        sample_template_orm,
+        definition,
+        _ctx(),
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        variety_preference="high",
+        telemetry_sink=None,
+    )
+    assert _fingerprint(with_default) == _fingerprint(explicit_none)
+
+
+@pytest.mark.asyncio
+async def test_build_draft_greedy_telemetry_sink_records_one_entry_per_slot(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = _ctx()
+    sink: list[dict] = []
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        variety_preference="high",
+        telemetry_sink=sink,
+    )
+    all_picked = [(w.key, ex.order, ex.exercise_id) for w in program.workouts for ex in w.exercises]
+    assert len(sink) == len(all_picked)
+    for entry, (workout_key, order, exercise_id) in zip(sink, all_picked):
+        assert entry["workout_key"] == workout_key
+        assert entry["order"] == order
+        assert entry["exercise_id"] == exercise_id
+        assert set(entry["features"].keys()) == FEATURE_KEYS
+
+
+@pytest.mark.asyncio
+async def test_build_draft_beam_telemetry_sink_records_one_entry_per_slot(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = _ctx()
+    sink: list[dict] = []
+    config = EngineConfig(
+        config_version="test",
+        assembly=AssemblyConfig(beam_width=1),
+        flags=EngineFlags(use_beam_search=True),
+    )
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        variety_preference="high",
+        config=config,
+        telemetry_sink=sink,
+    )
+    all_picked = [(w.key, ex.order, ex.exercise_id) for w in program.workouts for ex in w.exercises]
+    assert len(sink) == len(all_picked)
+    for entry, (workout_key, order, exercise_id) in zip(sink, all_picked):
+        assert entry["workout_key"] == workout_key
+        assert entry["order"] == order
+        assert entry["exercise_id"] == exercise_id
+        assert set(entry["features"].keys()) == FEATURE_KEYS
+
+
+@pytest.mark.asyncio
+async def test_build_draft_telemetry_sink_does_not_affect_program_output(sample_template_orm, sample_exercises):
+    """Passing a sink must not change the resulting program vs. telemetry_sink=None."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    without_sink = _build(_ctx(), sample_template_orm, definition, sample_exercises)
+    sink: list[dict] = []
+    with_sink = build_draft(
+        sample_template_orm,
+        definition,
+        _ctx(),
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        variety_preference="high",
+        telemetry_sink=sink,
+    )
+    assert _fingerprint(without_sink) == _fingerprint(with_sink)
+    assert sink  # sanity: something was recorded
