@@ -149,3 +149,23 @@ def test_empty_pool_slot_is_skipped():
     r2 = SlotRule(pattern="vertical_pull", priority="accessory", scheme="accessory", muscles=["z"])
     result = assemble_session([r1, r2], [a], _ctx(), width=2)
     assert [x.exercise.id for x in result] == [1]  # slot 2 contributed nothing
+
+
+def test_beam_prune_tie_break_prefers_lower_latest_exercise_id():
+    # Slot 1: A and B tie exactly (same muscles, both fresh slugs), so width=2 carries
+    # both forward as separate beams, beam-A processed before beam-B.
+    # Slot 2: C shares A's slug and D shares B's slug, so variety flips which one each
+    # beam prefers -- D is beam-A's best continuation, C is beam-B's best continuation --
+    # and both continuations tie exactly (mf 1.0 + variety 1.0, on top of the equal
+    # slot-1 score). C gets the lower id (5), D the higher id (100), and beam-A's (A, D)
+    # is appended to next_beams *before* beam-B's (B, C). A stable sort on objective
+    # alone would therefore keep (A, D) as the winner; only the explicit
+    # `latest_exercise_id` ascending tie-break correctly promotes (B, C).
+    a = _Ex(1, "sA", "push1", ["a"])
+    b = _Ex(2, "sB", "push1", ["a"])
+    c = _Ex(5, "sA", "pull1", ["m1"])
+    d = _Ex(100, "sB", "pull1", ["m1"])
+    r1 = SlotRule(pattern="push1", priority="accessory", scheme="accessory", muscles=["a"])
+    r2 = SlotRule(pattern="pull1", priority="accessory", scheme="accessory", muscles=["m1"])
+    result = assemble_session([r1, r2], [a, b, c, d], _ctx(), width=2)
+    assert [x.exercise.id for x in result] == [2, 5]  # B then C -- lower latest id wins the tie
