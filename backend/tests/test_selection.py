@@ -119,6 +119,20 @@ def test_movement_preference_never_empties_a_slot():
     assert chosen.id == 1
 
 
+def test_ranked_pool_breaks_score_ties_on_exercise_id_ascending():
+    from app.schemas.template import SlotRule
+    from app.services.program.selection import SelectionContext, ranked_pool_for_slot
+
+    # Two exercises that score identically; the lower id must win the tie regardless
+    # of input order (previously relied on Python's stable sort preserving input order).
+    hi = _Ex(5, "row-a", "row", "horizontal_pull", "upper_body", ["lats"], [], "intermediate", [])
+    lo = _Ex(3, "row-b", "row", "horizontal_pull", "upper_body", ["lats"], [], "intermediate", [])
+    rule = SlotRule(pattern="horizontal_pull", priority="accessory", scheme="accessory")
+    ctx = SelectionContext(["barbell"], "intermediate", [], set())
+    ranked = ranked_pool_for_slot([hi, lo], rule, ctx, set())
+    assert [ex.id for ex in ranked] == [3, 5]
+
+
 def test_ranked_pool_for_slot_returns_descending_order():
     from app.schemas.template import SlotRule
     from app.services.program.selection import SelectionContext, ranked_pool_for_slot

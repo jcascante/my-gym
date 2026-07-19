@@ -114,7 +114,8 @@ def _ranked_pool(
     if not pool:
         return []
     scorer = HeuristicExerciseScorer(ctx.weights)
-    return sorted(pool, key=lambda ex: scorer.score(_extract_features(ex, rule, ctx)), reverse=True)
+    # score descending, exercise id ascending on ties (deterministic, no reliance on input order).
+    return sorted(pool, key=lambda ex: (-scorer.score(_extract_features(ex, rule, ctx)), ex.id))
 
 
 def ranked_pool_for_slot(

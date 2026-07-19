@@ -2,7 +2,64 @@ import pytest
 
 from app.schemas.template import TemplateDefinition
 from app.services.program.drafting import build_draft
+from app.services.program.engine_config import AssemblyConfig, EngineConfig, EngineFlags
 from app.services.program.selection import SelectionContext
+
+
+def _ctx():
+    return SelectionContext(
+        equipment=["barbell", "bench", "squat_rack", "none"],
+        experience="intermediate",
+        injuries=[],
+        used_movement_slugs=set(),
+    )
+
+
+def _build(ctx, template, definition, exercises, config=None):
+    return build_draft(
+        template,
+        definition,
+        ctx,
+        exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        variety_preference="high",
+        config=config,
+    )
+
+
+def _fingerprint(program):
+    return [
+        [(ex.order, ex.exercise_id, ex.scheme_key, ex.base_load, tuple(ex.rotation_pool)) for ex in w.exercises]
+        for w in program.workouts
+    ]
+
+
+@pytest.mark.asyncio
+async def test_beam_width_1_reproduces_greedy_output_exactly(sample_template_orm, sample_exercises):
+    """width=1 beam search must yield a byte-identical program to the greedy path."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    greedy = _build(_ctx(), sample_template_orm, definition, sample_exercises, config=None)
+    config = EngineConfig(
+        config_version="test",
+        assembly=AssemblyConfig(beam_width=1),
+        flags=EngineFlags(use_beam_search=True),
+    )
+    beam = _build(_ctx(), sample_template_orm, definition, sample_exercises, config=config)
+    assert _fingerprint(beam) == _fingerprint(greedy)
+
+
+@pytest.mark.asyncio
+async def test_config_with_flag_off_matches_config_none(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    greedy = _build(_ctx(), sample_template_orm, definition, sample_exercises, config=None)
+    config = EngineConfig(config_version="test", flags=EngineFlags(use_beam_search=False))
+    off = _build(_ctx(), sample_template_orm, definition, sample_exercises, config=config)
+    assert _fingerprint(off) == _fingerprint(greedy)
 
 
 @pytest.mark.asyncio

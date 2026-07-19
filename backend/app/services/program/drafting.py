@@ -1,6 +1,8 @@
 from app.models import Exercise, ProgramStatus, ProgramTemplate, Workout, WorkoutExercise, WorkoutProgram
 from app.schemas.program import EffortMethod
 from app.schemas.template import SchemeDef, SlotRule, TemplateDefinition
+from app.services.program.assembly import SlotAssignment, assemble_session
+from app.services.program.engine_config import EngineConfig
 from app.services.program.selection import SelectionContext, ranked_pool_for_slot
 from app.services.program.variety import pool_size_for, rotation_pool_ids
 
@@ -16,6 +18,41 @@ def _base_load_for(
     if effort_method == EffortMethod.PERCENT_1RM.value and scheme.intensity_pct is not None:
         return round(float(value) * scheme.intensity_pct, 2)
     return float(value)
+
+
+def _make_workout_exercise(
+    order: int,
+    chosen: Exercise,
+    rule: SlotRule,
+    scheme: SchemeDef,
+    ranked: list[Exercise],
+    pool_size: int,
+    applies_to_values: dict[str, float],
+    effort_method: str | None,
+) -> WorkoutExercise:
+    return WorkoutExercise(
+        order=order,
+        exercise_id=chosen.id,
+        fills_rule=rule.model_dump(),
+        sets=scheme.sets,
+        reps_min=scheme.reps_min,
+        reps_max=scheme.reps_max,
+        base_load=_base_load_for(rule, scheme, applies_to_values, effort_method),
+        rest_seconds=scheme.rest_seconds,
+        scheme_key=rule.scheme,
+        target_rpe=scheme.target_rpe,
+        intensity_pct=scheme.intensity_pct,
+        is_locked=False,
+        is_user_swapped=False,
+        rotation_pool=rotation_pool_ids(ranked, pool_size),
+    )
+
+
+def _apply_pick_to_ctx(ctx: SelectionContext, chosen: Exercise) -> None:
+    ctx.used_movement_slugs.add(chosen.movement_slug)
+    ctx.used_unilateral_flags.append(chosen.is_unilateral)
+    for muscle in chosen.primary_muscles:
+        ctx.muscle_coverage[muscle] += 1
 
 
 def build_draft(
@@ -34,6 +71,7 @@ def build_draft(
     effort_method: str | None = None,
     variety_preference: str = "low",
     engine_config_version: str = "unversioned",
+    config: EngineConfig | None = None,
 ) -> WorkoutProgram:
     applies_to_values = {
         ri.applies_to: required_inputs[ri.key]
@@ -64,6 +102,7 @@ def build_draft(
             "engine_config_version": engine_config_version,
         },
     )
+    use_beam = config is not None and config.flags.use_beam_search
     for session in definition.split.sessions:
         workout = Workout(
             key=session.key,
@@ -71,34 +110,40 @@ def build_draft(
             focus=",".join(filter(None, [s.pattern or s.region for s in session.slots])),
             order=session.order,
         )
-        for i, rule in enumerate(session.slots, start=1):
-            scheme = definition.schemes[rule.scheme]
-            ranked = ranked_pool_for_slot(exercises, rule, ctx, set())
-            chosen = ranked[0] if ranked else None
-            if chosen is None:
-                continue
-            pool_size = 1 if rule.priority == "primary" else pool_size_for(variety_preference)
-            ctx.used_movement_slugs.add(chosen.movement_slug)
-            ctx.used_unilateral_flags.append(chosen.is_unilateral)
-            for muscle in chosen.primary_muscles:
-                ctx.muscle_coverage[muscle] += 1
-            workout.exercises.append(
-                WorkoutExercise(
-                    order=i,
-                    exercise_id=chosen.id,
-                    fills_rule=rule.model_dump(),
-                    sets=scheme.sets,
-                    reps_min=scheme.reps_min,
-                    reps_max=scheme.reps_max,
-                    base_load=_base_load_for(rule, scheme, applies_to_values, effort_method),
-                    rest_seconds=scheme.rest_seconds,
-                    scheme_key=rule.scheme,
-                    target_rpe=scheme.target_rpe,
-                    intensity_pct=scheme.intensity_pct,
-                    is_locked=False,
-                    is_user_swapped=False,
-                    rotation_pool=rotation_pool_ids(ranked, pool_size),
-                )
+        if use_beam:
+            assert config is not None  # narrowed by use_beam
+            assignments: list[SlotAssignment] = assemble_session(
+                session.slots, exercises, ctx, config.assembly.beam_width
             )
+            for a in assignments:
+                scheme = definition.schemes[a.rule.scheme]
+                pool_size = 1 if a.rule.priority == "primary" else pool_size_for(variety_preference)
+                # Apply the winning beam's picks to the shared ctx in slot order, so the next
+                # session continues from the correct accumulated variety/coverage state.
+                _apply_pick_to_ctx(ctx, a.exercise)
+                workout.exercises.append(
+                    _make_workout_exercise(
+                        a.order,
+                        a.exercise,
+                        a.rule,
+                        scheme,
+                        a.ranked_candidates,
+                        pool_size,
+                        applies_to_values,
+                        effort_method,
+                    )
+                )
+        else:
+            for i, rule in enumerate(session.slots, start=1):
+                scheme = definition.schemes[rule.scheme]
+                ranked = ranked_pool_for_slot(exercises, rule, ctx, set())
+                chosen = ranked[0] if ranked else None
+                if chosen is None:
+                    continue
+                pool_size = 1 if rule.priority == "primary" else pool_size_for(variety_preference)
+                _apply_pick_to_ctx(ctx, chosen)
+                workout.exercises.append(
+                    _make_workout_exercise(i, chosen, rule, scheme, ranked, pool_size, applies_to_values, effort_method)
+                )
         program.workouts.append(workout)
     return program
