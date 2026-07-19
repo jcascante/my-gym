@@ -1,7 +1,14 @@
 import math
 
 from app.schemas.template import TemplateDefinition
-from app.services.program.matching import MatchInput, _gaussian_range_fit, rank_templates
+from app.services.program.engine_config import EngineConfig, EngineFlags, MatchConfig
+from app.services.program.matching import (
+    ConstraintTemplateScorer,
+    MatchInput,
+    _gaussian_range_fit,
+    _goal_factor,
+    rank_templates,
+)
 
 
 class _T:
@@ -195,3 +202,157 @@ def test_gaussian_range_fit_handles_zero_sigma():
     # Same for negative sigma
     result_outside_neg = _gaussian_range_fit(30, 40, 60, sigma=-1.0)
     assert result_outside_neg == 0.0
+
+
+# _goal_factor tests
+def test_goal_factor_single_matching_goal_default_vector():
+    """A template whose goal is in the vector sums that goal's weight."""
+    assert _goal_factor(["strength"], {"strength": 1.0}) == 1.0
+
+
+def test_goal_factor_unmatched_goal_is_zero():
+    assert _goal_factor(["endurance"], {"strength": 1.0}) == 0.0
+
+
+def test_goal_factor_multi_goal_vector_sums_matches():
+    """Template with two goals sums the vector weights of both."""
+    assert abs(_goal_factor(["strength", "hypertrophy"], {"strength": 0.6, "hypertrophy": 0.3}) - 0.9) < 1e-12
+
+
+def test_goal_factor_ignores_goals_absent_from_vector():
+    assert _goal_factor(["strength", "mobility"], {"strength": 0.7}) == 0.7
+
+
+# ConstraintTemplateScorer tests
+def _all_ones_factors() -> dict[str, float]:
+    return {
+        "goal": 1.0,
+        "experience": 1.0,
+        "days": 1.0,
+        "duration": 1.0,
+        "movement_preference": 1.0,
+        "focus_complement": 1.0,
+        "periodization": 1.0,
+    }
+
+
+def test_constraint_scorer_all_ones_returns_one():
+    """soft is a weighted average of factors all equal to 1.0, so soft=1.0;
+    fit = 1^1 * 1^1 * 1.0 = 1.0."""
+    scorer = ConstraintTemplateScorer(MatchConfig())
+    assert abs(scorer.score(_all_ones_factors()) - 1.0) < 1e-12
+
+
+def test_constraint_scorer_soft_renormalization_math():
+    """soft = Σ wᵢ·fᵢ / Σw over the 5 soft keys only."""
+    c = MatchConfig()
+    factors = _all_ones_factors()
+    factors["duration"] = 0.0
+    factors["movement_preference"] = 0.0
+    factors["focus_complement"] = 0.0
+    factors["periodization"] = 0.0
+    # only days contributes: soft = (days*1.0)/(days+duration+mp+fc+per)
+    weight_sum = c.days + c.duration + c.movement_preference + c.focus_complement + c.periodization
+    expected_soft = (c.days * 1.0) / weight_sum
+    # goal=experience=1.0 -> fit = soft
+    assert abs(ConstraintTemplateScorer(c).score(factors) - expected_soft) < 1e-12
+
+
+def test_constraint_scorer_fit_formula_with_partial_goal_experience():
+    c = MatchConfig()
+    factors = _all_ones_factors()
+    factors["goal"] = 0.5
+    factors["experience"] = 0.3
+    # soft = 1.0 (all soft factors 1.0)
+    expected = (max(0.5, c.epsilon) ** c.alpha) * (max(0.3, c.epsilon) ** c.beta) * 1.0
+    assert abs(ConstraintTemplateScorer(c).score(factors) - expected) < 1e-12
+
+
+def test_constraint_scorer_epsilon_floor_when_goal_and_experience_zero():
+    """When goal and experience are 0, epsilon floor keeps fit positive."""
+    c = MatchConfig()
+    factors = _all_ones_factors()
+    factors["goal"] = 0.0
+    factors["experience"] = 0.0
+    # soft = 1.0; fit = eps^alpha * eps^beta * 1.0
+    expected = (c.epsilon**c.alpha) * (c.epsilon**c.beta)
+    assert abs(ConstraintTemplateScorer(c).score(factors) - expected) < 1e-12
+    assert ConstraintTemplateScorer(c).score(factors) > 0.0
+
+
+def test_constraint_scorer_alpha_beta_exponents_applied():
+    c = MatchConfig(alpha=2.0, beta=3.0)
+    factors = _all_ones_factors()
+    factors["goal"] = 0.5
+    factors["experience"] = 0.4
+    expected = (max(0.5, c.epsilon) ** 2.0) * (max(0.4, c.epsilon) ** 3.0) * 1.0
+    assert abs(ConstraintTemplateScorer(c).score(factors) - expected) < 1e-12
+
+
+# rank_templates config/flag combinations
+def _match_input() -> MatchInput:
+    return MatchInput("strength", "intermediate", 4, 60, ["barbell"])
+
+
+def test_config_none_is_legacy_default_path():
+    """config=None reproduces the legacy HeuristicTemplateScorer result exactly."""
+    templates = [_T(1, "ul", ["strength"], ["intermediate"], 4, 4, 45, 75)]
+    inp = _match_input()
+    legacy = rank_templates(templates, inp, feasibility={1: True})
+    with_none = rank_templates(templates, inp, feasibility={1: True}, config=None)
+    assert legacy[0].fit_pct == with_none[0].fit_pct
+
+
+def test_config_flag_off_matches_legacy_path():
+    """A config with use_constraint_scorer=False behaves like config=None."""
+    templates = [_T(1, "ul", ["strength"], ["intermediate"], 4, 4, 45, 75)]
+    inp = _match_input()
+    legacy = rank_templates(templates, inp, feasibility={1: True})
+    cfg = EngineConfig(config_version="t", flags=EngineFlags(use_constraint_scorer=False))
+    flag_off = rank_templates(templates, inp, feasibility={1: True}, config=cfg)
+    assert legacy[0].fit_pct == flag_off[0].fit_pct
+
+
+def test_config_flag_on_produces_different_fit_pct():
+    """Flag on selects the constraint scorer AND the Gaussian kernel, producing a
+    genuinely different fit_pct than the legacy path for an out-of-range case."""
+    # days out of range (2 vs min 4) so _range_fit and _gaussian_range_fit diverge.
+    templates = [_T(1, "ul", ["strength"], ["intermediate"], 4, 4, 45, 75)]
+    inp = MatchInput("strength", "intermediate", 2, 60, ["barbell"])
+    legacy = rank_templates(templates, inp, feasibility={1: True})
+    cfg = EngineConfig(config_version="t", flags=EngineFlags(use_constraint_scorer=True))
+    new = rank_templates(templates, inp, feasibility={1: True}, config=cfg)
+    assert new[0].fit_pct != legacy[0].fit_pct
+
+
+def test_config_flag_on_uses_gaussian_kernel_for_days():
+    """With the flag on, the days factor is computed by the Gaussian kernel."""
+    templates = [_T(1, "ul", ["strength"], ["intermediate"], 2, 2, 45, 75)]
+    inp = MatchInput("strength", "intermediate", 4, 60, ["barbell"])
+    cfg = EngineConfig(config_version="t", flags=EngineFlags(use_constraint_scorer=True))
+    new = rank_templates(templates, inp, feasibility={1: True}, config=cfg)
+    expected_days = _gaussian_range_fit(4, 2, 2, sigma=cfg.match.sigma_days)
+    assert abs(new[0].factors["days"] - expected_days) < 1e-12
+
+
+def test_explicit_scorer_wins_over_config_default():
+    """An explicitly-passed scorer overrides the config-driven default scorer."""
+    templates = [_T(1, "ul", ["strength"], ["intermediate"], 4, 4, 45, 75)]
+    inp = _match_input()
+    cfg = EngineConfig(config_version="t", flags=EngineFlags(use_constraint_scorer=True))
+    # Force the legacy scorer even with the flag on.
+    from app.services.program.matching import HeuristicTemplateScorer
+
+    forced = rank_templates(templates, inp, feasibility={1: True}, scorer=HeuristicTemplateScorer(), config=cfg)
+    legacy = rank_templates(templates, inp, feasibility={1: True})
+    # Same scorer, but note the kernel still switches under flag-on; use in-range days
+    # so _range_fit and _gaussian_range_fit both yield 1.0, isolating the scorer choice.
+    assert forced[0].fit_pct == legacy[0].fit_pct
+
+
+def test_goal_vector_generalizes_goal_factor_in_rank():
+    """A multi-goal vector feeds through to the goal factor."""
+    templates = [_T(1, "ul", ["strength", "hypertrophy"], ["intermediate"], 4, 4, 45, 75)]
+    inp = MatchInput("strength", "intermediate", 4, 60, ["barbell"], goal_vector={"strength": 0.5, "hypertrophy": 0.5})
+    ranked = rank_templates(templates, inp, feasibility={1: True})
+    assert ranked[0].factors["goal"] == 1.0

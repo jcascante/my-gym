@@ -4,6 +4,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Protocol
 
 from app.schemas.template import SlotRule, TemplateDefinition
+from app.services.program.engine_config import EngineConfig, MatchConfig
 from app.services.program.preferences import movement_preference_weight
 from app.services.program.selection import _matches_rule
 
@@ -62,6 +63,32 @@ class HeuristicTemplateScorer:
 
 
 @dataclass(frozen=True)
+class ConstraintTemplateScorer:
+    """Constraint-tiered scorer (plan §1.3).
+
+    `fit = max(goal, ε)^α · max(experience, ε)^β · soft`, where `soft` is the
+    renormalized weighted average of the 5 soft factors. Goal/experience act as
+    multiplicative gates (floored at ε) rather than additive terms.
+    """
+
+    config: MatchConfig = field(default_factory=MatchConfig)
+
+    def score(self, features: dict[str, float]) -> float:
+        c = self.config
+        weight_sum = c.days + c.duration + c.movement_preference + c.focus_complement + c.periodization
+        soft = (
+            c.days * features["days"]
+            + c.duration * features["duration"]
+            + c.movement_preference * features["movement_preference"]
+            + c.focus_complement * features["focus_complement"]
+            + c.periodization * features["periodization"]
+        ) / weight_sum
+        goal = max(features["goal"], c.epsilon) ** c.alpha
+        experience = max(features["experience"], c.epsilon) ** c.beta
+        return float(goal * experience * soft)
+
+
+@dataclass(frozen=True)
 class MatchInput:
     fitness_focus: str
     experience_level: str
@@ -71,6 +98,7 @@ class MatchInput:
     movement_preferences: dict[str, float] = field(default_factory=dict)
     complementary_focus: bool = True
     progression_style: str = "consistent"
+    goal_vector: dict[str, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -83,6 +111,10 @@ class TemplateMatch:
     # True only when returned via the all-infeasible best-effort fallback.
     # Phase 2 (plan §2.5) will fold this into the general Advisory list.
     all_infeasible: bool = False
+
+
+def _goal_factor(t_goals: list[str], goal_vector: dict[str, float]) -> float:
+    return sum(goal_vector.get(g, 0.0) for g in t_goals)
 
 
 def _range_fit(value: int, low: int, high: int) -> float:
@@ -159,6 +191,7 @@ def rank_templates(
     all_exercises: list[Any] | None = None,
     scorer: TemplateScorer | None = None,
     safety_feasible: Callable[[Any], bool] | None = None,
+    config: EngineConfig | None = None,
 ) -> list[TemplateMatch]:
     """Score and rank templates, excluding infeasible ones.
 
@@ -166,8 +199,18 @@ def rank_templates(
     safety-driven infeasibility on top of equipment/pool-based feasibility.
     It is a no-op until then: when omitted, no template is excluded on its
     account.
+
+    `config` opts into the constraint-tiered scorer (plan §1.3/§1.4): when
+    supplied with `flags.use_constraint_scorer` on, the default scorer becomes
+    `ConstraintTemplateScorer` and days/duration use the Gaussian kernel. An
+    explicitly-passed `scorer` always wins over the config-driven default.
     """
-    scorer = scorer or HeuristicTemplateScorer()
+    use_constraint = config is not None and config.flags.use_constraint_scorer
+    if scorer is None:
+        if config is not None and use_constraint:
+            scorer = ConstraintTemplateScorer(config.match)
+        else:
+            scorer = HeuristicTemplateScorer()
     definitions = definitions or {}
     exercises = all_exercises or []
     logger.info(
@@ -191,11 +234,22 @@ def rank_templates(
             movement_preference = 0.5
             focus_complement = 0.5
             periodization = 0.3
+        goal_vector = inp.goal_vector or {inp.fitness_focus: 1.0}
+        if config is not None and use_constraint:
+            days = _gaussian_range_fit(
+                inp.days_per_week, t.days_per_week_min, t.days_per_week_max, config.match.sigma_days
+            )
+            duration = _gaussian_range_fit(
+                inp.session_duration_min, t.session_duration_min, t.session_duration_max, config.match.sigma_duration
+            )
+        else:
+            days = _range_fit(inp.days_per_week, t.days_per_week_min, t.days_per_week_max)
+            duration = _range_fit(inp.session_duration_min, t.session_duration_min, t.session_duration_max)
         factors = {
-            "goal": 1.0 if inp.fitness_focus in t.goals else 0.0,
+            "goal": _goal_factor(t.goals, goal_vector),
             "experience": 1.0 if inp.experience_level in t.experience_levels else 0.3,
-            "days": _range_fit(inp.days_per_week, t.days_per_week_min, t.days_per_week_max),
-            "duration": _range_fit(inp.session_duration_min, t.session_duration_min, t.session_duration_max),
+            "days": days,
+            "duration": duration,
             "movement_preference": movement_preference,
             "focus_complement": focus_complement,
             "periodization": periodization,
