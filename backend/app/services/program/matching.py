@@ -1,7 +1,7 @@
 import logging
 import math
 from dataclasses import dataclass, field, replace
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Literal, Protocol
 
 from app.schemas.template import SlotRule, TemplateDefinition
 from app.services.program.engine_config import EngineConfig, MatchConfig
@@ -9,6 +9,9 @@ from app.services.program.preferences import movement_preference_weight
 from app.services.program.selection import _matches_rule
 
 logger = logging.getLogger(__name__)
+
+_TIER_BEST_MAX_GAP = 5
+_TIER_STRONG_MAX_GAP = 15
 
 _PATTERN_REGION: dict[str, str] = {
     "squat": "lower_body",
@@ -25,6 +28,25 @@ _PATTERN_REGION: dict[str, str] = {
     "locomotion": "full_body",
     "mobility": "full_body",
 }
+
+
+def _tier_for(fit_pct: int, top_fit_pct: int) -> Literal["best", "strong", "possible"]:
+    """Derive presentation tier from fit percentage relative to top match.
+
+    Args:
+        fit_pct: The match's fit percentage score.
+        top_fit_pct: The maximum fit percentage in the returned list.
+
+    Returns:
+        One of "best", "strong", or "possible" based on the gap from top.
+    """
+    gap = top_fit_pct - fit_pct
+    if gap <= _TIER_BEST_MAX_GAP:
+        return "best"
+    if gap <= _TIER_STRONG_MAX_GAP:
+        return "strong"
+    return "possible"
+
 
 _PERIODIZATION_CONSISTENT_MODELS = {"linear_load", "double_progression"}
 _PERIODIZATION_VARIABLE_MODELS = {"weekly_undulating"}
@@ -108,6 +130,7 @@ class TemplateMatch:
     name: str
     fit_pct: int
     factors: dict[str, float]
+    tier: Literal["best", "strong", "possible"]
     # True only when returned via the all-infeasible best-effort fallback.
     # Phase 2 (plan §2.5) will fold this into the general Advisory list.
     all_infeasible: bool = False
@@ -255,7 +278,7 @@ def rank_templates(
             "periodization": periodization,
         }
         score = scorer.score(factors)
-        match = TemplateMatch(t.id, t.slug, t.name, round(score * 100), factors)
+        match = TemplateMatch(t.id, t.slug, t.name, round(score * 100), factors, tier="possible")
         matches.append(match)
         if is_feasible:
             feasible_matches.append(match)
@@ -265,6 +288,12 @@ def rank_templates(
     candidates = matches if all_infeasible else feasible_matches
     candidates = sorted(candidates, key=lambda m: m.fit_pct, reverse=True)
     top_3 = candidates[:3]
+
+    # Compute tiers for the returned list
+    if top_3:
+        top_fit_pct = top_3[0].fit_pct
+        top_3 = [replace(m, tier=_tier_for(m.fit_pct, top_fit_pct)) for m in top_3]
+
     if all_infeasible:
         top_3 = [replace(m, all_infeasible=True) for m in top_3]
         logger.warning(f"All templates infeasible; returning best-effort matches: {[m.slug for m in top_3]}")

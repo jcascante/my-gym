@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.schemas.program import EffortMethod, ProgressionStyle, VarietyPreference
@@ -30,6 +32,7 @@ class TemplateMatchOut(BaseModel):
     name: str
     fit_pct: int
     factors: dict[str, float]
+    tier: Literal["best", "strong", "possible"]
     required_inputs: list[dict[str, object]]
     # True only when returned via the all-infeasible best-effort fallback.
     # Phase 2 (plan §2.5) will fold this into the general Advisory list rather
