@@ -1,5 +1,7 @@
+import math
+
 from app.schemas.template import TemplateDefinition
-from app.services.program.matching import MatchInput, rank_templates
+from app.services.program.matching import MatchInput, _gaussian_range_fit, rank_templates
 
 
 class _T:
@@ -122,3 +124,74 @@ def test_periodization_rewards_matching_progression_style():
     by_id = {m.template_id: m for m in ranked}
     assert by_id[1].factors["periodization"] == 1.0
     assert by_id[2].factors["periodization"] == 0.3
+
+
+# Gaussian range kernel tests
+def test_gaussian_range_fit_value_inside_range_returns_one():
+    """When value is inside [low, high], distance is 0, so exp(0) = 1.0."""
+    result = _gaussian_range_fit(50, 40, 60, sigma=1.0)
+    assert result == 1.0
+
+
+def test_gaussian_range_fit_value_below_range():
+    """When value is below low, distance = low - value."""
+    # value=30, low=40, high=60: d = 40-30 = 10
+    # exp(-(10/1.0)^2) = exp(-100) ≈ 0
+    result = _gaussian_range_fit(30, 40, 60, sigma=1.0)
+    assert result > 0  # Should be very small but positive
+    assert result < 0.001  # exp(-100) is tiny
+
+
+def test_gaussian_range_fit_value_above_range():
+    """When value is above high, distance = value - high."""
+    # value=70, low=40, high=60: d = 70-60 = 10
+    # exp(-(10/1.0)^2) = exp(-100) ≈ 0
+    result = _gaussian_range_fit(70, 40, 60, sigma=1.0)
+    assert result > 0  # Should be very small but positive
+    assert result < 0.001  # exp(-100) is tiny
+
+
+def test_gaussian_range_fit_never_negative():
+    """Result should never be negative; exp is always positive."""
+    result = _gaussian_range_fit(0, 40, 60, sigma=1.0)
+    assert result >= 0
+
+
+def test_gaussian_range_fit_larger_sigma_more_tolerant():
+    """Larger sigma means the score falls off more slowly."""
+    # With sigma=1.0, distance of 5 gives exp(-(5/1)^2) = exp(-25) ≈ 0
+    # With sigma=10.0, distance of 5 gives exp(-(5/10)^2) = exp(-0.25) ≈ 0.778
+    result_small_sigma = _gaussian_range_fit(35, 40, 60, sigma=1.0)  # d=5
+    result_large_sigma = _gaussian_range_fit(35, 40, 60, sigma=10.0)  # d=5
+    assert result_large_sigma > result_small_sigma
+
+
+def test_gaussian_range_fit_smaller_sigma_stricter():
+    """Smaller sigma means the score falls off more quickly."""
+    # With sigma=5.0, distance of 10 gives exp(-(10/5)^2) = exp(-4) ≈ 0.0183
+    # With sigma=10.0, distance of 10 gives exp(-(10/10)^2) = exp(-1) ≈ 0.368
+    result_small_sigma = _gaussian_range_fit(30, 40, 60, sigma=5.0)  # d=10
+    result_large_sigma = _gaussian_range_fit(30, 40, 60, sigma=10.0)  # d=10
+    assert result_small_sigma < result_large_sigma
+
+
+def test_gaussian_range_fit_concrete_numeric_example():
+    """Verify specific numeric behavior."""
+    # value=35, low=40, high=60, sigma=2.0: d = 5
+    # exp(-(5/2.0)^2) = exp(-6.25) ≈ 0.00193
+    result = _gaussian_range_fit(35, 40, 60, sigma=2.0)
+    expected = math.exp(-((5 / 2.0) ** 2))
+    assert abs(result - expected) < 1e-10
+
+
+def test_gaussian_range_fit_handles_zero_sigma():
+    """When sigma is 0 or negative and d > 0, return 0; when d == 0, return 1.0."""
+    # Inside range: d=0, should return 1.0
+    result_inside = _gaussian_range_fit(50, 40, 60, sigma=0.0)
+    assert result_inside == 1.0
+    # Outside range: d>0 with sigma=0, should return 0.0
+    result_outside = _gaussian_range_fit(30, 40, 60, sigma=0.0)
+    assert result_outside == 0.0
+    # Same for negative sigma
+    result_outside_neg = _gaussian_range_fit(30, 40, 60, sigma=-1.0)
+    assert result_outside_neg == 0.0

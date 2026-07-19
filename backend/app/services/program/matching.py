@@ -1,4 +1,5 @@
 import logging
+import math
 from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Protocol
 
@@ -89,6 +90,25 @@ def _range_fit(value: int, low: int, high: int) -> float:
         return 1.0
     distance = low - value if value < low else value - high
     return max(0.0, 1.0 - distance / max(low, 1))
+
+
+def _gaussian_range_fit(value: int, low: int, high: int, sigma: float) -> float:
+    """Gaussian kernel for range fitting.
+
+    Returns exp(-(d/sigma)^2) where d = max(0, low - value, value - high).
+    When d == 0 (value in range), returns 1.0.
+    Handles sigma <= 0: returns 1.0 if d == 0, else 0.0.
+    """
+    if low <= value <= high:
+        distance = 0
+    elif value < low:
+        distance = low - value
+    else:
+        distance = value - high
+
+    if sigma <= 0:
+        return 1.0 if distance == 0 else 0.0
+    return math.exp(-((distance / sigma) ** 2))
 
 
 def _slot_region(slot: SlotRule) -> str:
