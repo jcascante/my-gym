@@ -1,0 +1,41 @@
+# Program engine config surface (plan §1.1). Reviewed via PR, deployable without code change.
+#
+# Defaults below mirror today's hardcoded scoring behavior exactly:
+#   match.*      <- app/services/program/matching.py MatchWeights
+#   selection.*  <- app/services/program/selection.py SelectionWeights
+# match.epsilon/alpha/beta/sigma_days/sigma_duration and assembly.* are placeholders for
+# later phases (plan §1.3/§1.4/§1.5) and are inert until flags.* below are turned on.
+config_version: "1"
+
+match:
+  goal: 0.25
+  experience: 0.20
+  days: 0.12
+  duration: 0.08
+  movement_preference: 0.15
+  focus_complement: 0.12
+  periodization: 0.08
+  epsilon: 0.10
+  alpha: 1.0
+  beta: 1.0
+  sigma_days: 1.0
+  sigma_duration: 15.0
+
+selection:
+  variety: 1.0
+  priority_fit: 1.5
+  muscle_fit: 1.0
+  difficulty: 0.75
+  unilateral_balance: 0.5
+  movement_preference: 1.25
+  complementary_coverage: 1.25
+  provenance: heuristic
+
+assembly:
+  beam_width: 1
+  lambda_v: 0.0
+  lambda_f: 0.0
+
+flags:
+  use_constraint_scorer: false
+  use_beam_search: false

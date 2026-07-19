@@ -253,6 +253,49 @@ async def test_build_draft_updates_muscle_coverage_after_each_pick(sample_templa
 
 
 @pytest.mark.asyncio
+async def test_build_draft_stores_engine_config_version_in_constraints(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(
+        equipment=["barbell", "bench", "squat_rack"], experience="intermediate", injuries=[], used_movement_slugs=set()
+    )
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        engine_config_version="1",
+    )
+    assert program.constraints["engine_config_version"] == "1"
+
+
+@pytest.mark.asyncio
+async def test_build_draft_defaults_engine_config_version_when_unspecified(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(
+        equipment=["barbell", "bench", "squat_rack"], experience="intermediate", injuries=[], used_movement_slugs=set()
+    )
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+    )
+    assert program.constraints["engine_config_version"] == "unversioned"
+
+
+@pytest.mark.asyncio
 async def test_build_draft_primary_slots_get_single_entry_rotation_pool(sample_template_orm, sample_exercises):
     """Primary (scheme='main') slots never rotate, regardless of variety preference."""
     definition = TemplateDefinition.from_orm_template(sample_template_orm)

@@ -1,8 +1,10 @@
 import pytest
 
 from app.core import hash_password
+from app.crud.program import get_program
 from app.crud.training_environment import create_training_environment
 from app.models import User
+from app.services.program.engine_config import get_engine_config
 
 
 @pytest.mark.asyncio
@@ -41,6 +43,31 @@ async def test_full_flow(client, auth_headers, seeded_templates, seeded_exercise
     # 4. accept
     r = await client.post(f"/api/v1/programs/{pid}/accept", headers=auth_headers)
     assert r.status_code == 200 and r.json()["status"] == "active"
+
+
+@pytest.mark.asyncio
+async def test_draft_stores_engine_config_version_in_constraints(
+    client, auth_headers, seeded_templates, seeded_exercises, user_environment, test_user, db_session
+):
+    body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+    }
+    r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
+    template_id = r.json()[0]["template_id"]
+
+    draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80}}
+    r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
+    assert r.status_code == 201
+    program_id = r.json()["program_id"]
+
+    saved = await get_program(db_session, test_user.id, program_id)
+    assert saved is not None
+    assert saved.constraints["engine_config_version"] == get_engine_config().config_version
 
 
 @pytest.mark.asyncio

@@ -33,6 +33,7 @@ def build_draft(
     progression_style: str = "consistent",
     effort_method: str | None = None,
     variety_preference: str = "low",
+    engine_config_version: str = "unversioned",
 ) -> WorkoutProgram:
     applies_to_values = {
         ri.applies_to: required_inputs[ri.key]
@@ -60,6 +61,7 @@ def build_draft(
             "movement_preferences": ctx.movement_preferences,
             "complementary_focus": ctx.complementary_focus,
             "variety_preference": variety_preference,
+            "engine_config_version": engine_config_version,
         },
     )
     for session in definition.split.sessions:

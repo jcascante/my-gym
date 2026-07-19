@@ -26,6 +26,7 @@ from app.schemas.program_api import (
 from app.schemas.template import TemplateDefinition
 from app.services.program.adaptation import FeedbackAction, alternatives_for_slot, apply_feedback
 from app.services.program.drafting import build_draft
+from app.services.program.engine_config import EngineConfig, get_engine_config
 from app.services.program.matching import MatchInput, rank_templates
 from app.services.program.preview import derive_week
 from app.services.program.selection import SelectionContext, template_is_feasible
@@ -113,7 +114,10 @@ async def match(
 
 @router.post("/draft", response_model=ProgramPreviewOut, status_code=status.HTTP_201_CREATED)
 async def draft(
-    data: DraftRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    data: DraftRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    engine_config: EngineConfig = Depends(get_engine_config),
 ) -> ProgramPreviewOut:
     environment = await get_training_environment(db, user.id, data.environment_id)
     if environment is None:
@@ -144,6 +148,7 @@ async def draft(
         progression_style=data.progression_style.value,
         effort_method=data.effort_method.value if data.effort_method else None,
         variety_preference=data.variety_preference.value,
+        engine_config_version=engine_config.config_version,
     )
     await save_program(db, program)
     saved = await get_program(db, user.id, program.id)
