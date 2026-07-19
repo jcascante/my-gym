@@ -19,7 +19,7 @@ export function TemplateMatchList({
     );
   return (
     <div className="space-y-3">
-      {matches.length > 0 && matches[0].all_infeasible && (
+      {matches[0].all_infeasible && (
         <Alert type="warning" title="No perfect match found">
           None of your available templates fully match your setup. Here are the closest options.
         </Alert>

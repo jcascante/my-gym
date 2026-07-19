@@ -40,7 +40,7 @@ export function TemplateMatchCard({
               {k}: {Math.round(v * 100)}%
             </li>
           ))}
-          <li className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
+          <li className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
             Fit: {match.fit_pct}%
           </li>
         </ul>

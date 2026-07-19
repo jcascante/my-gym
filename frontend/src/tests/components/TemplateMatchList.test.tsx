@@ -51,6 +51,12 @@ describe('TemplateMatchList', () => {
     expect(screen.getByText('Strong fit')).toBeInTheDocument();
   });
 
+  it('renders tier badge with correct copy for "possible"', () => {
+    const onSelect = vi.fn();
+    render(<TemplateMatchList matches={matchesInfeasible} selectedId={null} onSelect={onSelect} />);
+    expect(screen.getByText('Possible fit')).toBeInTheDocument();
+  });
+
   it('renders fit % for power users (demoted)', () => {
     const onSelect = vi.fn();
     render(<TemplateMatchList matches={matches} selectedId={null} onSelect={onSelect} />);
