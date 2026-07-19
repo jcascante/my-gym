@@ -21,12 +21,37 @@ def test_goal_and_experience_rank_highest():
     assert ranked[0].fit_pct > ranked[1].fit_pct
 
 
-def test_infeasible_template_still_ranked():
+def test_infeasible_template_excluded():
+    templates = [
+        _T(1, "ul", ["strength"], ["intermediate"], 4, 4, 45, 75),
+        _T(2, "fb", ["strength"], ["intermediate"], 4, 4, 45, 75),
+    ]
+    inp = MatchInput("strength", "intermediate", 4, 60, [])
+    ranked = rank_templates(templates, inp, feasibility={1: True, 2: False})
+    template_ids = [m.template_id for m in ranked]
+    assert 1 in template_ids
+    assert 2 not in template_ids
+    assert all(m.all_infeasible is False for m in ranked)
+
+
+def test_all_infeasible_returns_best_effort_with_advisory():
     templates = [_T(1, "ul", ["strength"], ["intermediate"], 4, 4, 45, 75)]
     inp = MatchInput("strength", "intermediate", 4, 60, [])
     ranked = rank_templates(templates, inp, feasibility={1: False})
     assert len(ranked) == 1
     assert ranked[0].template_id == 1
+    assert ranked[0].all_infeasible is True
+
+
+def test_multiple_all_infeasible_returns_best_effort_with_advisory():
+    templates = [
+        _T(1, "ul", ["strength"], ["intermediate"], 4, 4, 45, 75),
+        _T(2, "fb", ["endurance"], ["beginner"], 3, 3, 30, 45),
+    ]
+    inp = MatchInput("strength", "intermediate", 4, 60, [])
+    ranked = rank_templates(templates, inp, feasibility={1: False, 2: False})
+    assert len(ranked) == 2
+    assert all(m.all_infeasible is True for m in ranked)
 
 
 class _TWithSplit(_T):

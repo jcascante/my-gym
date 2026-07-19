@@ -1,6 +1,6 @@
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Protocol
+from dataclasses import dataclass, field, replace
+from typing import Any, Callable, Protocol
 
 from app.schemas.template import SlotRule, TemplateDefinition
 from app.services.program.preferences import movement_preference_weight
@@ -79,6 +79,9 @@ class TemplateMatch:
     name: str
     fit_pct: int
     factors: dict[str, float]
+    # True only when returned via the all-infeasible best-effort fallback.
+    # Phase 2 (plan §2.5) will fold this into the general Advisory list.
+    all_infeasible: bool = False
 
 
 def _range_fit(value: int, low: int, high: int) -> float:
@@ -135,7 +138,15 @@ def rank_templates(
     definitions: dict[int, TemplateDefinition] | None = None,
     all_exercises: list[Any] | None = None,
     scorer: TemplateScorer | None = None,
+    safety_feasible: Callable[[Any], bool] | None = None,
 ) -> list[TemplateMatch]:
+    """Score and rank templates, excluding infeasible ones.
+
+    `safety_feasible` is a hook point for Phase 3 (plan §3.3) to layer
+    safety-driven infeasibility on top of equipment/pool-based feasibility.
+    It is a no-op until then: when omitted, no template is excluded on its
+    account.
+    """
     scorer = scorer or HeuristicTemplateScorer()
     definitions = definitions or {}
     exercises = all_exercises or []
@@ -145,8 +156,9 @@ def rank_templates(
         f"equipment={inp.environment_equipment}"
     )
     matches: list[TemplateMatch] = []
+    feasible_matches: list[TemplateMatch] = []
     for t in templates:
-        is_feasible = feasibility.get(t.id, False)
+        is_feasible = feasibility.get(t.id, False) and (safety_feasible is None or safety_feasible(t))
         definition = definitions.get(t.id)
         if definition is not None:
             sessions = definition.split.sessions
@@ -169,9 +181,18 @@ def rank_templates(
             "periodization": periodization,
         }
         score = scorer.score(factors)
-        matches.append(TemplateMatch(t.id, t.slug, t.name, round(score * 100), factors))
+        match = TemplateMatch(t.id, t.slug, t.name, round(score * 100), factors)
+        matches.append(match)
+        if is_feasible:
+            feasible_matches.append(match)
         logger.debug(f"Template {t.slug}: score={round(score * 100)}, feasible={is_feasible}, factors={factors}")
-    matches.sort(key=lambda m: m.fit_pct, reverse=True)
-    top_3 = matches[:3]
+
+    all_infeasible = bool(matches) and not feasible_matches
+    candidates = matches if all_infeasible else feasible_matches
+    candidates = sorted(candidates, key=lambda m: m.fit_pct, reverse=True)
+    top_3 = candidates[:3]
+    if all_infeasible:
+        top_3 = [replace(m, all_infeasible=True) for m in top_3]
+        logger.warning(f"All templates infeasible; returning best-effort matches: {[m.slug for m in top_3]}")
     logger.info(f"Top 3 matches: {[(m.slug, m.fit_pct) for m in top_3]}")
     return top_3

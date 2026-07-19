@@ -31,6 +31,10 @@ class TemplateMatchOut(BaseModel):
     fit_pct: int
     factors: dict[str, float]
     required_inputs: list[dict[str, object]]
+    # True only when returned via the all-infeasible best-effort fallback.
+    # Phase 2 (plan §2.5) will fold this into the general Advisory list rather
+    # than keep it as a standalone boolean.
+    all_infeasible: bool = False
 
 
 class DraftRequest(MatchRequest):
