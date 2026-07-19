@@ -158,6 +158,43 @@ Sketch only; detailed planning deferred: form-based template builder; LLM-assist
 
 ---
 
+## Frontend changes required per phase
+
+Grounded in the existing `frontend/src/` structure (React 19 + TS, TanStack Query hooks in `hooks/usePrograms.ts`, API clients in `api/programs.ts`, types in `types/program.ts` / `types/programCreation.ts`).
+
+### Phase 1 — tiers instead of raw fit %
+- `types/program.ts`: add `tier: 'best' | 'strong' | 'possible'` alongside the existing `fit_pct` on the match type; add optional `advisories: Advisory[]` (shared `Advisory` type introduced here, reused every later phase).
+- `components/TemplateMatchList.tsx`: render tier badge ("Best match" / "Strong fit" / "Possible fit") as the primary label; demote or drop the `fit_pct` number. Render the all-infeasible advisory banner (feasibility gate fallback) via the existing `Alert.tsx`.
+- No other Phase 1 change is user-visible (config, telemetry, beam search are backend-internal).
+
+### Phase 2 — advisories, complete prescriptions, goal vector
+- **Advisories**: `DraftProgramView.tsx` + `ProgramPreviewPage.tsx` render `Advisory[]` from the preview payload (severity-styled via `Alert.tsx`); slot-level advisories inline on `SlotRow.tsx`.
+- **Prescriptions**: extend the slot preview type with `rest_seconds`, `tempo`, `warmup_sets`; show rest/tempo on `SlotRow.tsx` / `ExercisePreviewModal.tsx`; feed `rest_seconds` into the existing `RestTimer.tsx` (currently gets a hardcoded/derived value) during tracking; render warm-up sets as pre-filled rows in `SetLogger.tsx`.
+- **Goal vector**: optional split-slider (e.g. strength/hypertrophy/endurance/weight-loss weights) in `OnboardingPage.tsx` and `ProfilePage.tsx`, defaulted from the existing single `fitness_focus`; new field on the profile payload in `types/programCreation.ts`.
+- **Volume view (optional)**: `VolumeChart.tsx` gains MEV/MRV band overlays per muscle group from the ledger payload.
+
+### Phase 3 — injury intake, check-ins, explanations
+- **Structured injury intake**: replace the free-text `injuries_limitations` input in `OnboardingPage.tsx`/`ProfilePage.tsx` with: text box → "Analyze" → proposed `InjuryRecord` cards → explicit per-record Confirm/Discard (calls the confirm endpoint; unconfirmed records are never sent to generation). New API module `api/injuries.ts` + `hooks/useInjuries.ts` + `types/injury.ts`.
+- **Traffic-light check-in**: 2-tap post-session flow appended to workout completion in `WorkoutTrackingPage.tsx` (region chip → green/amber/red, optional note). Red outcome shows the consult message and the draft-acute-record confirmation.
+- **Substitution transparency**: `SlotRow.tsx` shows a "swapped for safety" marker when a slot was graph-substituted; tapping opens the rationale.
+- **Explanations**: "Why this program?" on `ProgramPreviewPage.tsx` and "Why this exercise?" per slot (fed by the explain endpoints); natural place is extending `ExercisePreviewModal.tsx` and `ExerciseAlternativesModal.tsx` so alternatives are shown *with* the reasons the current pick won.
+
+### Phase 4 — sensor layer UI
+- `SetLogger.tsx`: per-set actual-RPE input (respecting the user's `effort_method` — RPE/RIR/Borg scales already typed in `types/programCreation.ts`).
+- `WorkoutTrackingPage.tsx`: one-tap readiness prompt (1–5) at session start; banner when the controller adjusted today's loads or a reactive deload fired, with a one-line reason ("recent sessions ran harder than planned — load reduced 5%").
+- `ProgressPage.tsx`: readiness/RPE trend alongside existing progress charts (reuses `VolumeChart` patterns).
+
+### Phase 5 — calibrated fit
+- `TemplateMatchList.tsx`: swap tier badge back to calibrated completion-probability copy ("87% of similar users finished this program") once the calibration job ships.
+
+### Frontend cross-cutting
+- All new server state through TanStack Query hooks (`hooks/`), matching `usePrograms.ts` conventions; no new Zustand state except transient check-in/intake UI state.
+- Every new payload field lands in `types/` first, mirrored from the Pydantic schema — no `any`.
+- Vitest coverage for each new component/flow per `react-component-testing` skill; existing tests in `src/tests/` show the pattern.
+- Advisory rendering, tier badges, and safety markers must degrade gracefully when fields are absent (older programs generated pre-refactor won't have them).
+
+---
+
 ## Cross-cutting conventions
 
 - TDD throughout (tests first, >80% coverage); strict mypy; all new I/O async; Alembic up/down tested for every migration (Phases 1.7, 2.7, 3.1, 3.4, 4.1, 4.5).
@@ -171,6 +208,11 @@ docker-compose exec backend pytest                      # full suite + harness p
 docker-compose exec backend pytest tests/harness -m ab  # A/B comparison report
 docker-compose exec backend mypy app/ && docker-compose exec backend ruff check .
 docker-compose exec backend alembic upgrade head && alembic downgrade -1 && alembic upgrade head
+```
+
+```bash
+docker-compose exec frontend npm run type-check && docker-compose exec frontend npm run lint
+docker-compose exec frontend npm run test
 ```
 
 End-to-end: `docker-compose up`, run match→draft→feedback→accept via Swagger (`localhost:8000/docs`) with a seeded user; confirm determinism by drafting twice with identical inputs; confirm preview shows rest/tempo/warm-up (Phase 2+), advisories render (Phase 2+), and check-in flow works from the frontend (Phase 3+).
