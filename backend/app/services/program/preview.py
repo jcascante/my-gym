@@ -5,6 +5,26 @@ from app.schemas.template import TemplateDefinition
 from app.services.program.progression.base import SetScheme, SlotBase, get_model
 from app.services.program.progression.deload import apply_deload
 
+_STRENGTH_REST_SECONDS = 195
+_HYPERTROPHY_REST_SECONDS = 120
+_ENDURANCE_REST_SECONDS = 68
+
+_WARMUP_RAMP: list[tuple[float, int]] = [(0.4, 5), (0.6, 3), (0.8, 1)]
+
+
+def _rest_seconds_for_intent(reps: int, intensity_pct: float | None) -> int:
+    if reps <= 6 or (intensity_pct is not None and intensity_pct >= 0.85):
+        return _STRENGTH_REST_SECONDS
+    if reps <= 12:
+        return _HYPERTROPHY_REST_SECONDS
+    return _ENDURANCE_REST_SECONDS
+
+
+def _warmup_sets(load: float | None) -> list[dict[str, object]]:
+    if load is None:
+        return []
+    return [{"pct": pct, "reps": reps, "load": round(pct * load, 1)} for pct, reps in _WARMUP_RAMP]
+
 
 def _effort_target(
     scheme: SetScheme, target_rpe: float | None, intensity_pct: float | None, effort_method: str | None
@@ -40,6 +60,7 @@ def derive_week(
     days: list[dict[str, Any]] = []
     for workout in program.workouts:
         slots = []
+        first_primary_assigned = False
         for ex in workout.exercises:
             base = SlotBase(
                 sets=ex.sets,
@@ -52,6 +73,18 @@ def derive_week(
             resolved_exercise_id = _resolved_exercise_id(ex, week)
             exercise = exercise_map.get(resolved_exercise_id)
             exercise_name = exercise.name if exercise else f"Exercise #{resolved_exercise_id}"
+            rest_seconds = _rest_seconds_for_intent(scheme.reps, ex.intensity_pct)
+            is_first_primary = not first_primary_assigned and ex.fills_rule.get("priority") == "primary"
+            if is_first_primary:
+                first_primary_assigned = True
+            warmup_sets = (
+                [
+                    {"pct": pct, "reps": reps, "load": round(pct * scheme.load, 1) if scheme.load is not None else None}
+                    for pct, reps in _WARMUP_RAMP
+                ]
+                if is_first_primary and scheme.load is not None
+                else []
+            )
             slots.append(
                 {
                     "workout_exercise_id": ex.id,
@@ -60,12 +93,14 @@ def derive_week(
                     "sets": scheme.sets,
                     "reps": scheme.reps,
                     "load": scheme.load,
-                    "rest_seconds": scheme.rest_seconds,
+                    "rest_seconds": rest_seconds,
                     "note": scheme.note,
                     "is_locked": ex.is_locked,
                     "is_user_swapped": ex.is_user_swapped,
                     "effort_target": _effort_target(scheme, ex.target_rpe, ex.intensity_pct, effort_method),
                     "rotation_pool": ex.rotation_pool,
+                    "tempo": "controlled",
+                    "warmup_sets": warmup_sets,
                 }
             )
         days.append({"workout_id": workout.id, "key": workout.key, "name": workout.name, "slots": slots})

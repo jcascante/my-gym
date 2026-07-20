@@ -40,6 +40,12 @@ class Advisory(BaseModel):
     subject: str | None = None
 
 
+class WarmupSetOut(BaseModel):
+    pct: float
+    reps: int
+    load: float | None
+
+
 class TemplateMatchOut(BaseModel):
     template_id: int
     slug: str
@@ -83,6 +89,8 @@ class SlotPreviewOut(BaseModel):
     is_user_swapped: bool
     effort_target: dict[str, object] | None = None
     rotation_pool: list[int] = []
+    tempo: str
+    warmup_sets: list[WarmupSetOut] = []
 
 
 class WorkoutPreviewOut(BaseModel):
