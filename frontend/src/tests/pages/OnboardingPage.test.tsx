@@ -306,4 +306,140 @@ describe('OnboardingPage', () => {
       expect(screen.getByText(errorMessage)).toBeInTheDocument();
     });
   });
+
+  describe('goal-mix sliders', () => {
+    async function goToWorkoutPreferencesStep() {
+      renderOnboardingPage();
+      await fillPersonalInfoStep();
+      await fillFitnessLevelStep();
+      await waitFor(() =>
+        expect(screen.getByRole('heading', { name: /Workout Preferences/ })).toBeInTheDocument(),
+      );
+    }
+
+    it('should keep the goal-mix section collapsed by default', async () => {
+      await goToWorkoutPreferencesStep();
+
+      expect(
+        screen.getByRole('button', { name: /Fine-tune your goal mix \(optional\)/i }),
+      ).toBeInTheDocument();
+      expect(screen.queryByLabelText('Strength')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Weight Loss')).not.toBeInTheDocument();
+    });
+
+    it('should reveal all 6 sliders with the correct labels when the toggle is clicked', async () => {
+      await goToWorkoutPreferencesStep();
+
+      fireEvent.click(
+        screen.getByRole('button', { name: /Fine-tune your goal mix \(optional\)/i }),
+      );
+
+      expect(screen.getByRole('button', { name: /^Hide$/i })).toBeInTheDocument();
+      for (const label of [
+        'Strength',
+        'Endurance',
+        'Weight Loss',
+        'Muscle Gain',
+        'Flexibility',
+        'General Fitness',
+      ]) {
+        const slider = screen.getByLabelText(label);
+        expect(slider).toBeInTheDocument();
+        expect(slider).toHaveAttribute('type', 'range');
+      }
+    });
+
+    it('should submit only the non-zero goal weights, scaled to [0.0, 1.0]', async () => {
+      const setUserProfileMock = vi.fn();
+      const mockResponse = {
+        id: 1,
+        email: 'test@example.com',
+        first_name: 'John',
+        last_name: 'Doe',
+        profile: { id: 1, age: 30, gender: 'male' },
+      };
+      vi.mocked(authApi.saveUserProfile).mockResolvedValue(mockResponse);
+
+      renderOnboardingPage(setUserProfileMock);
+
+      await fillPersonalInfoStep();
+      await fillFitnessLevelStep();
+
+      fireEvent.click(
+        screen.getByRole('button', { name: /Fine-tune your goal mix \(optional\)/i }),
+      );
+      fireEvent.change(screen.getByLabelText('Weight Loss'), { target: { value: '70' } });
+
+      await fillWorkoutPreferencesStep();
+      await skipTrainingEnvironmentsStep();
+      await advanceThroughGoalsAndAdditionalInfoSteps();
+
+      fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
+
+      await waitFor(() => {
+        expect(authApi.saveUserProfile).toHaveBeenCalledWith(
+          expect.objectContaining({
+            goal_weights: { weight_loss: 0.7 },
+          }),
+        );
+      });
+    });
+
+    it('should submit goal_weights as undefined when the goal-mix section is never opened', async () => {
+      const setUserProfileMock = vi.fn();
+      const mockResponse = {
+        id: 1,
+        email: 'test@example.com',
+        first_name: 'John',
+        last_name: 'Doe',
+        profile: { id: 1, age: 30, gender: 'male' },
+      };
+      vi.mocked(authApi.saveUserProfile).mockResolvedValue(mockResponse);
+
+      renderOnboardingPage(setUserProfileMock);
+
+      await completeOnboardingSkippingEnvironments();
+
+      fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
+
+      await waitFor(() => {
+        expect(authApi.saveUserProfile).toHaveBeenCalled();
+      });
+      const payload = vi.mocked(authApi.saveUserProfile).mock.calls[0][0];
+      expect(payload.goal_weights).toBeUndefined();
+    });
+
+    it('should submit goal_weights as undefined when the section is opened but no slider is moved', async () => {
+      const setUserProfileMock = vi.fn();
+      const mockResponse = {
+        id: 1,
+        email: 'test@example.com',
+        first_name: 'John',
+        last_name: 'Doe',
+        profile: { id: 1, age: 30, gender: 'male' },
+      };
+      vi.mocked(authApi.saveUserProfile).mockResolvedValue(mockResponse);
+
+      renderOnboardingPage(setUserProfileMock);
+
+      await fillPersonalInfoStep();
+      await fillFitnessLevelStep();
+
+      fireEvent.click(
+        screen.getByRole('button', { name: /Fine-tune your goal mix \(optional\)/i }),
+      );
+
+      await fillWorkoutPreferencesStep();
+      await skipTrainingEnvironmentsStep();
+      await advanceThroughGoalsAndAdditionalInfoSteps();
+
+      fireEvent.click(screen.getByRole('button', { name: /Complete Onboarding/i }));
+
+      await waitFor(() => {
+        expect(authApi.saveUserProfile).toHaveBeenCalled();
+      });
+      const payload = vi.mocked(authApi.saveUserProfile).mock.calls[0][0];
+      expect(payload.goal_weights).toBeUndefined();
+    });
+  });
 });

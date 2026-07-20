@@ -29,6 +29,15 @@ type OnboardingFormData = {
   medium_term_goals: string;
 };
 
+const GOAL_LABELS: Record<string, string> = {
+  strength: 'Strength',
+  endurance: 'Endurance',
+  weight_loss: 'Weight Loss',
+  muscle_gain: 'Muscle Gain',
+  flexibility: 'Flexibility',
+  general: 'General Fitness',
+};
+
 const STEPS: { title: string; requiredFields: (keyof OnboardingFormData)[] }[] = [
   { title: 'Personal Information', requiredFields: ['age', 'gender', 'weight_kg', 'height_cm'] },
   { title: 'Fitness Level', requiredFields: ['experience_level', 'activity_level'] },
@@ -65,6 +74,8 @@ export default function OnboardingPage() {
   const [environments, setEnvironments] = useState<TrainingEnvironment[]>([]);
   const [showAddEnvironment, setShowAddEnvironment] = useState(false);
   const [environmentError, setEnvironmentError] = useState<string | null>(null);
+  const [goalWeights, setGoalWeights] = useState<Record<string, number>>({});
+  const [showGoalWeights, setShowGoalWeights] = useState(false);
 
   const isLastStep = currentStep === STEPS.length - 1;
 
@@ -90,6 +101,10 @@ export default function OnboardingPage() {
   const handleBack = () => {
     setError(null);
     setCurrentStep((step) => step - 1);
+  };
+
+  const handleGoalWeightChange = (goal: string, value: number) => {
+    setGoalWeights((prev) => ({ ...prev, [goal]: value / 100 }));
   };
 
   const handleAddEnvironment = async (payload: TrainingEnvironmentPayload) => {
@@ -127,6 +142,9 @@ export default function OnboardingPage() {
         injuries_limitations: formData.injuries_limitations || undefined,
         short_term_goals: formData.short_term_goals || undefined,
         medium_term_goals: formData.medium_term_goals || undefined,
+        goal_weights: Object.values(goalWeights).some((v) => v > 0)
+          ? Object.fromEntries(Object.entries(goalWeights).filter(([, v]) => v > 0))
+          : undefined,
       };
 
       const response = await saveUserProfile(profileData);
@@ -325,6 +343,43 @@ export default function OnboardingPage() {
                     max="300"
                     step="15"
                   />
+                </div>
+
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowGoalWeights((v) => !v)}
+                    className="text-sm text-primary-600 dark:text-primary-400 font-medium hover:underline"
+                  >
+                    {showGoalWeights ? 'Hide' : 'Fine-tune your goal mix (optional)'}
+                  </button>
+                  {showGoalWeights && (
+                    <div className="mt-3 space-y-3">
+                      {Object.entries(GOAL_LABELS).map(([goal, label]) => (
+                        <div key={goal} className="flex items-center gap-3">
+                          <label
+                            htmlFor={`goal-weight-${goal}`}
+                            className="text-sm text-neutral-700 dark:text-neutral-300 w-32 flex-shrink-0"
+                          >
+                            {label}
+                          </label>
+                          <input
+                            id={`goal-weight-${goal}`}
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="5"
+                            value={Math.round((goalWeights[goal] ?? 0) * 100)}
+                            onChange={(e) => handleGoalWeightChange(goal, Number(e.target.value))}
+                            className="flex-1"
+                          />
+                          <span className="text-sm text-neutral-500 dark:text-neutral-400 w-10 text-right flex-shrink-0">
+                            {Math.round((goalWeights[goal] ?? 0) * 100)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
