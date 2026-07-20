@@ -10,10 +10,10 @@ until those tasks land.
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 _CONFIG_PATH = Path(__file__).parent / "config" / "engine.yaml"
 
@@ -93,34 +93,17 @@ class VolumeBandRow(BaseModel):
     mrv_guard: int
     citation: str
 
-    @field_validator("target_max")
-    @classmethod
-    def _target_max_at_least_min(cls, v: int, info: ValidationInfo) -> int:
-        if info.data.get("target_min") is not None and v < info.data["target_min"]:
-            raise ValueError(f"target_max ({v}) must be >= target_min ({info.data['target_min']})")
-        if info.data.get("mrv_guard") is not None and v > info.data["mrv_guard"]:
-            raise ValueError(f"target_max ({v}) must be <= mrv_guard ({info.data['mrv_guard']})")
-        if info.data.get("mev") is not None and v < info.data["mev"]:
-            raise ValueError(f"target_max ({v}) must be >= mev ({info.data['mev']})")
-        return v
-
-    @field_validator("target_min")
-    @classmethod
-    def _target_min_ordering(cls, v: int, info: ValidationInfo) -> int:
-        if info.data.get("mev") is not None and v < info.data["mev"]:
-            raise ValueError(f"target_min ({v}) must be >= mev ({info.data['mev']})")
-        if info.data.get("mrv_guard") is not None and v > info.data["mrv_guard"]:
-            raise ValueError(f"target_min ({v}) must be <= mrv_guard ({info.data['mrv_guard']})")
-        return v
-
-    @field_validator("mrv_guard")
-    @classmethod
-    def _mrv_guard_at_least_target_max(cls, v: int, info: ValidationInfo) -> int:
-        if info.data.get("target_max") is not None and v < info.data["target_max"]:
-            raise ValueError(f"mrv_guard ({v}) must be >= target_max ({info.data['target_max']})")
-        if info.data.get("mev") is not None and v < info.data["mev"]:
-            raise ValueError(f"mrv_guard ({v}) must be >= mev ({info.data['mev']})")
-        return v
+    @model_validator(mode="after")
+    def _ordering(self) -> Self:
+        # All four fields are present by the time an "after" validator runs, unlike
+        # per-field validators (which only see earlier-declared fields) — that
+        # distinction previously left some cross-field checks unreachable dead code.
+        if not (self.mev <= self.target_min <= self.target_max <= self.mrv_guard):
+            raise ValueError(
+                f"volume band ordering violated: mev ({self.mev}) <= target_min ({self.target_min}) "
+                f"<= target_max ({self.target_max}) <= mrv_guard ({self.mrv_guard}) must hold"
+            )
+        return self
 
 
 class VolumeModifiers(BaseModel):
