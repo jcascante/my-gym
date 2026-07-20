@@ -62,7 +62,10 @@ class SelectionConfig(BaseModel):
 
 
 class AssemblyConfig(BaseModel):
-    """Beam-search assembly placeholders (plan §1.5/§2.5) — inert until `flags.use_beam_search`."""
+    """Beam-search assembly-objective scoring weights (plan §1.5/§2.5) — inert until
+    `flags.use_beam_search`. `lambda_v`/`lambda_f` only affect beam-search candidate
+    scoring; they do not gate the post-draft volume validator (a separate mechanism,
+    gated by its own `flags.use_volume_validator`)."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -76,6 +79,7 @@ class EngineFlags(BaseModel):
 
     use_constraint_scorer: bool = False
     use_beam_search: bool = False
+    use_volume_validator: bool = False
 
 
 class VolumeBandRow(BaseModel):

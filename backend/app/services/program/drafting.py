@@ -185,20 +185,22 @@ def build_draft(
                 )
         program.workouts.append(workout)
 
-    # The post-draft volume validator is gated on the ledger term actually being active
-    # (lambda_v/lambda_f nonzero), not merely `config is not None`. This is a deliberate
-    # deviation from the plan's literal "if config is not None" gating: the sample
-    # exercise catalog + templates leave most muscle groups genuinely below MEV for a
-    # typical short split (there's no dedicated "enable the volume validator" flag in
-    # `EngineFlags` to key off instead, and lambda=0 is this task's own definition of
-    # "the ledger/volume feature is off"), so gating on bare `config is not None` would
-    # make the validator fire -- and mutate the draft via `_reselect` -- for existing
-    # regression tests that pass a config with default (zero) lambdas expecting
-    # byte-identical output vs. `config=None` (`test_config_with_flag_off_matches_config_none`,
+    # The post-draft volume validator is gated on its own dedicated flag,
+    # `flags.use_volume_validator` -- not on `lambda_v`/`lambda_f`, and not merely
+    # `config is not None`. Those lambdas are beam-search assembly-objective scoring
+    # weights (see `AssemblyConfig`'s docstring); the validator is a separate, mutating
+    # mechanism (post-draft `_reselect` calls) that also runs on the greedy path, so
+    # coupling it to lambda would let anyone experimenting with assembly scoring
+    # silently enable mutating re-selection they never asked for. Gating on bare
+    # `config is not None` was tried first and rejected: the sample exercise catalog +
+    # templates leave most muscle groups genuinely below MEV for a typical short split,
+    # so the validator would fire -- and mutate the draft via `_reselect` -- for existing
+    # regression tests that pass a config expecting byte-identical output vs.
+    # `config=None` (`test_config_with_flag_off_matches_config_none`,
     # `test_beam_width_1_reproduces_greedy_output_exactly`, and the harness's
-    # width=1-equivalence sweep across ~250 profiles). See task-2.5a-report.md for the
-    # full reasoning and the concrete ledger numbers that surfaced this.
-    if config is not None and (config.assembly.lambda_v != 0.0 or config.assembly.lambda_f != 0.0):
+    # width=1-equivalence sweep across ~250 profiles), none of which set
+    # `use_volume_validator=True`. See task-2.5a-report.md for the full reasoning.
+    if config is not None and config.flags.use_volume_validator:
         _validate_and_repair_volume(program, definition, ctx, exercises, config, advisory_sink)
     return program
 

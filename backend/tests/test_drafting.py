@@ -736,7 +736,7 @@ def test_validate_and_repair_volume_resolves_when_a_better_candidate_exists():
     program, filler_exercises = _chest_program(chest_we_exercise_id=5, chest_sets=10)
     exercises = [*filler_exercises, ex_current, ex_better]
 
-    config = EngineConfig(config_version="x", assembly=AssemblyConfig(lambda_v=1.0))
+    config = EngineConfig(config_version="x", flags=EngineFlags(use_volume_validator=True))
     ctx = _ledger_test_ctx()
     sink: list = []
     _validate_and_repair_volume(program, None, ctx, exercises, config, sink)
@@ -756,7 +756,7 @@ def test_validate_and_repair_volume_surfaces_advisory_when_unresolvable():
     program, filler_exercises = _chest_program(chest_we_exercise_id=5, chest_sets=10)
     exercises = [*filler_exercises, ex_current, ex_alt]
 
-    config = EngineConfig(config_version="x", assembly=AssemblyConfig(lambda_v=1.0))
+    config = EngineConfig(config_version="x", flags=EngineFlags(use_volume_validator=True))
     ctx = _ledger_test_ctx()
     sink: list = []
     _validate_and_repair_volume(program, None, ctx, exercises, config, sink)
@@ -775,19 +775,22 @@ def test_validate_and_repair_volume_advisory_sink_none_does_not_crash():
     program, filler_exercises = _chest_program(chest_we_exercise_id=5, chest_sets=10)
     exercises = [*filler_exercises, ex_current, ex_alt]
 
-    config = EngineConfig(config_version="x", assembly=AssemblyConfig(lambda_v=1.0))
+    config = EngineConfig(config_version="x", flags=EngineFlags(use_volume_validator=True))
     ctx = _ledger_test_ctx()
     _validate_and_repair_volume(program, None, ctx, exercises, config, None)  # must not raise
 
 
 @pytest.mark.asyncio
-async def test_build_draft_wires_advisories_through_when_lambda_nonzero(sample_template_orm, sample_exercises):
+async def test_build_draft_wires_advisories_through_when_validator_enabled(sample_template_orm, sample_exercises):
     """Integration check: build_draft's advisory_sink actually gets populated end-to-end
-    when a real EngineConfig with a nonzero lambda is passed (the sample template's
-    volumes are well below intermediate MEV for most groups, so this should fire)."""
+    when a real EngineConfig with `flags.use_volume_validator=True` is passed (the sample
+    template's volumes are well below intermediate MEV for most groups, so this should
+    fire). Uses the dedicated validator flag, not lambda_v/lambda_f -- those are
+    assembly-objective scoring weights and must not also gate this separate, mutating
+    mechanism (see AssemblyConfig's docstring)."""
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     ctx = _ctx()
-    config = EngineConfig(config_version="test", assembly=AssemblyConfig(lambda_v=1.0))
+    config = EngineConfig(config_version="test", flags=EngineFlags(use_volume_validator=True))
     sink: list = []
     build_draft(
         sample_template_orm,
@@ -806,3 +809,32 @@ async def test_build_draft_wires_advisories_through_when_lambda_nonzero(sample_t
     )
     assert sink  # at least one unresolved violation surfaced
     assert all(a.code in ("VOLUME_BELOW_MEV", "VOLUME_ABOVE_MRV") for a in sink)
+
+
+@pytest.mark.asyncio
+async def test_build_draft_lambda_nonzero_alone_does_not_enable_validator(sample_template_orm, sample_exercises):
+    """Regression test for the reviewed gating bug: a nonzero lambda_v/lambda_f must
+    NOT enable the post-draft volume validator on its own (greedy path, use_beam_search
+    at its default False, use_volume_validator at its default False). lambda_v/lambda_f
+    are assembly-objective scoring weights only; the validator requires its own,
+    separate `flags.use_volume_validator=True`."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = _ctx()
+    config = EngineConfig(config_version="test", assembly=AssemblyConfig(lambda_v=1.0, lambda_f=1.0))
+    sink: list = []
+    build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        variety_preference="high",
+        config=config,
+        advisory_sink=sink,
+    )
+    assert sink == []  # validator never ran -- no advisories, no mutation
