@@ -9,6 +9,13 @@ function formatEffortTarget(target: SlotPreview['effort_target']): string | null
   return `${target.method.toUpperCase()} ${target.value}`;
 }
 
+function formatRestSeconds(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return remainder === 0 ? `${minutes}m` : `${minutes}m ${remainder}s`;
+}
+
 export function ExerciseSlotCard({
   slot,
   onAction,
@@ -69,6 +76,9 @@ export function ExerciseSlotCard({
           {effortLabel && (
             <span className="text-xs text-neutral-500 dark:text-neutral-400">{effortLabel}</span>
           )}
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            Rest: {formatRestSeconds(slot.rest_seconds)}
+          </span>
           {slot.note && (
             <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
               {slot.note}
@@ -77,7 +87,19 @@ export function ExerciseSlotCard({
           {slot.rotation_pool.length > 1 && (
             <span className="text-xs text-teal-600 dark:text-teal-400 font-medium">🔁</span>
           )}
+          {slot.tempo !== 'controlled' && (
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+              Tempo: {slot.tempo}
+            </span>
+          )}
         </div>
+
+        {slot.warmup_sets.length > 0 && (
+          <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            Warm-up:{' '}
+            {slot.warmup_sets.map((w) => `${Math.round(w.pct * 100)}%×${w.reps}`).join(', ')}
+          </div>
+        )}
       </div>
     </div>
   );

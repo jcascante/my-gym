@@ -31,6 +31,8 @@ const mockExercises: SlotPreview[] = [
     is_user_swapped: false,
     effort_target: null,
     rotation_pool: [1],
+    tempo: 'controlled',
+    warmup_sets: [],
   },
   {
     workout_exercise_id: 2,
@@ -45,6 +47,8 @@ const mockExercises: SlotPreview[] = [
     is_user_swapped: false,
     effort_target: null,
     rotation_pool: [2],
+    tempo: 'controlled',
+    warmup_sets: [],
   },
   {
     workout_exercise_id: 3,
@@ -59,6 +63,8 @@ const mockExercises: SlotPreview[] = [
     is_user_swapped: false,
     effort_target: null,
     rotation_pool: [3],
+    tempo: 'controlled',
+    warmup_sets: [],
   },
 ];
 

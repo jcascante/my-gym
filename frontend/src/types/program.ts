@@ -7,6 +7,12 @@ export interface Advisory {
   subject: string | null;
 }
 
+export interface WarmupSet {
+  pct: number;
+  reps: number;
+  load: number | null;
+}
+
 export interface RequiredInput {
   key: string;
   label: string;
@@ -46,6 +52,8 @@ export interface SlotPreview {
   is_user_swapped: boolean;
   effort_target: EffortTarget | null;
   rotation_pool: number[];
+  tempo: string;
+  warmup_sets: WarmupSet[];
 }
 
 export interface WorkoutPreview {
