@@ -1,9 +1,9 @@
 import pytest
 
 from app.models.exercise import BodyRegion, Exercise, ExperienceLevel, MovementPattern
-from app.models.program import Workout, WorkoutExercise, WorkoutProgram
-from app.schemas.template import SlotRule, TemplateDefinition
-from app.services.program.drafting import _validate_and_repair_volume, build_draft
+from app.models.program import ProgramTemplate, Workout, WorkoutExercise, WorkoutProgram
+from app.schemas.template import ProgressionRef, SchemeDef, SessionDef, SlotRule, SplitDef, TemplateDefinition
+from app.services.program.drafting import _apply_interference_scheduling, _validate_and_repair_volume, build_draft
 from app.services.program.engine_config import AssemblyConfig, EngineConfig, EngineFlags
 from app.services.program.ledger import compute_ledger
 from app.services.program.selection import SelectionContext, SelectionWeights
@@ -838,3 +838,239 @@ async def test_build_draft_lambda_nonzero_alone_does_not_enable_validator(sample
         advisory_sink=sink,
     )
     assert sink == []  # validator never ran -- no advisories, no mutation
+
+
+# --- Interference scheduler (Task 2.7b) -------------------------------------------------
+
+
+def _interference_workout_exercise(
+    id_: int, order: int, exercise_id: int, *, pattern: str, priority: str
+) -> WorkoutExercise:
+    return WorkoutExercise(
+        id=id_,
+        order=order,
+        exercise_id=exercise_id,
+        fills_rule={"pattern": pattern, "priority": priority},
+        sets=3,
+        reps_min=5,
+        reps_max=8,
+        base_load=None,
+        rest_seconds=120,
+        scheme_key="main",
+        target_rpe=None,
+        intensity_pct=None,
+        is_locked=False,
+        is_user_swapped=False,
+        rotation_pool=[],
+    )
+
+
+def _interference_program(workout: Workout) -> WorkoutProgram:
+    program = WorkoutProgram(
+        id=1,
+        user_id=1,
+        template_id=1,
+        environment_id=1,
+        name="Interference Test Program",
+        focus=None,
+        status="draft",
+        duration_weeks=8,
+        days_per_week=1,
+        weight_unit="kg",
+        constraints={"excluded_exercise_ids": [], "swaps": {}},
+    )
+    program.workouts = [workout]
+    return program
+
+
+def test_apply_interference_scheduling_advisory_fires_even_when_already_ordered():
+    """Strength already precedes conditioning in the original order: no reordering is
+    needed, but the advisory must still fire -- the ≥6h-separation recommendation is
+    about real-world scheduling, not display order (decision 4)."""
+    strength_ex = _validator_exercise(1, "back-squat", primary=["quads"])
+    cardio_ex = _validator_exercise(2, "jogging", primary=["cardio"])
+    we_strength = _interference_workout_exercise(1, 1, 1, pattern="squat", priority="primary")
+    we_cardio = _interference_workout_exercise(2, 2, 2, pattern="locomotion", priority="accessory")
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we_strength, we_cardio]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_interference_scheduling(program, [strength_ex, cardio_ex], sink)
+
+    assert [we.id for we in workout.exercises] == [1, 2]  # unchanged
+    assert [we.order for we in workout.exercises] == [1, 2]  # unchanged
+    assert len(sink) == 1
+    assert sink[0].code == "CONDITIONING_SEPARATION_RECOMMENDED"
+    assert sink[0].severity == "info"
+    assert sink[0].subject == "day_1"
+
+
+def test_apply_interference_scheduling_reorders_when_conditioning_precedes_strength():
+    """Conditioning originally precedes strength: the pass must actually reorder so the
+    conditioning slot's `.order` ends up greater than the strength slot's, and the
+    in-memory list itself (not just `.order`) must reflect the new sequence."""
+    strength_ex = _validator_exercise(1, "back-squat", primary=["quads"])
+    cardio_ex = _validator_exercise(2, "jogging", primary=["cardio"])
+    we_cardio = _interference_workout_exercise(1, 1, 2, pattern="locomotion", priority="accessory")
+    we_strength = _interference_workout_exercise(2, 2, 1, pattern="squat", priority="primary")
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we_cardio, we_strength]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_interference_scheduling(program, [strength_ex, cardio_ex], sink)
+
+    assert [we.id for we in workout.exercises] == [2, 1]  # strength row now iterates first
+    assert we_strength.order < we_cardio.order
+    assert [we.order for we in workout.exercises] == [1, 2]
+    assert len(sink) == 1
+
+
+def test_apply_interference_scheduling_stable_sort_preserves_relative_order_within_groups():
+    """Multiple strength and multiple conditioning slots, interleaved: after the pass,
+    every strength slot precedes every conditioning slot, and each group's *relative*
+    order from the original sequence is preserved (proves stability, not just
+    "some" reordering) -- verified against the actual list iteration order."""
+    strength_ex = _validator_exercise(1, "back-squat", primary=["quads"])
+    cardio_ex = _validator_exercise(2, "jogging", primary=["cardio"])
+    we_s1 = _interference_workout_exercise(10, 1, 1, pattern="squat", priority="primary")
+    we_c1 = _interference_workout_exercise(20, 2, 2, pattern="locomotion", priority="accessory")
+    we_s2 = _interference_workout_exercise(11, 3, 1, pattern="hinge", priority="primary")
+    we_c2 = _interference_workout_exercise(21, 4, 2, pattern="locomotion", priority="accessory")
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we_s1, we_c1, we_s2, we_c2]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_interference_scheduling(program, [strength_ex, cardio_ex], sink)
+
+    # Strength group (we_s1, we_s2) keeps its relative order, then conditioning group
+    # (we_c1, we_c2) keeps its relative order -- this is what `.id` order proves that
+    # checking only the renumbered `.order` integers would not.
+    assert [we.id for we in workout.exercises] == [10, 11, 20, 21]
+    assert [we.order for we in workout.exercises] == [1, 2, 3, 4]
+    assert len(sink) == 1
+
+
+def test_apply_interference_scheduling_no_op_without_strength():
+    """Conditioning slot present, but the only lower-body slot is accessory priority
+    (not primary) -- doesn't count as "heavy lower-body strength": no reorder, no
+    advisory."""
+    accessory_ex = _validator_exercise(1, "goblet-squat", primary=["quads"])
+    cardio_ex = _validator_exercise(2, "jogging", primary=["cardio"])
+    we_accessory = _interference_workout_exercise(1, 1, 1, pattern="squat", priority="accessory")
+    we_cardio = _interference_workout_exercise(2, 2, 2, pattern="locomotion", priority="accessory")
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we_accessory, we_cardio]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_interference_scheduling(program, [accessory_ex, cardio_ex], sink)
+
+    assert [we.id for we in workout.exercises] == [1, 2]
+    assert sink == []
+
+
+def test_apply_interference_scheduling_no_op_without_conditioning():
+    """Heavy lower-body strength slot present, but no conditioning slot: no reorder, no
+    advisory."""
+    strength_ex = _validator_exercise(1, "back-squat", primary=["quads"])
+    upper_ex = _validator_exercise(2, "bench-press", primary=["chest"])
+    we_strength = _interference_workout_exercise(1, 1, 1, pattern="squat", priority="primary")
+    we_upper = _interference_workout_exercise(2, 2, 2, pattern="horizontal_push", priority="primary")
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we_strength, we_upper]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_interference_scheduling(program, [strength_ex, upper_ex], sink)
+
+    assert [we.id for we in workout.exercises] == [1, 2]
+    assert sink == []
+
+
+def _interference_build_draft_inputs() -> tuple[ProgramTemplate, TemplateDefinition, list[Exercise]]:
+    """Hand-built template/definition placing a conditioning slot before a heavy
+    lower-body-strength slot in one session -- exercises this codebase's real seed
+    catalog can't (zero seeded templates define any locomotion-pattern slot, per the
+    brief), so build_draft's call-site gating can be exercised end to end."""
+    template = ProgramTemplate(id=1, name="Interference Gate Test", slug="interference-gate-test", goals=[])
+    definition = TemplateDefinition(
+        split=SplitDef(
+            sessions=[
+                SessionDef(
+                    key="day_1",
+                    name="Day 1",
+                    order=1,
+                    slots=[
+                        SlotRule(pattern="locomotion", priority="accessory", scheme="cardio"),
+                        SlotRule(pattern="squat", priority="primary", scheme="main"),
+                    ],
+                )
+            ]
+        ),
+        progression=ProgressionRef(model_key="linear_load"),
+        schemes={
+            "cardio": SchemeDef(sets=1, reps_min=1, reps_max=1, rest_seconds=60),
+            "main": SchemeDef(sets=3, reps_min=5, reps_max=5, rest_seconds=120),
+        },
+    )
+    squat_ex = _validator_exercise(1, "back-squat", primary=["quads"], secondary=["glutes"])
+    squat_ex.movement_pattern = MovementPattern.SQUAT
+    squat_ex.body_region = BodyRegion.LOWER_BODY
+    cardio_ex = _validator_exercise(2, "jogging", primary=["cardio"])
+    cardio_ex.movement_pattern = MovementPattern.LOCOMOTION
+    return template, definition, [cardio_ex, squat_ex]
+
+
+def _build_interference_draft(config: EngineConfig | None) -> tuple[WorkoutProgram, list]:
+    template, definition, exercises = _interference_build_draft_inputs()
+    ctx = SelectionContext(equipment=[], experience="intermediate", injuries=[], used_movement_slugs=set())
+    sink: list = []
+    program = build_draft(
+        template,
+        definition,
+        ctx,
+        exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=1,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={},
+        config=config,
+        advisory_sink=sink,
+    )
+    return program, sink
+
+
+def test_build_draft_config_none_never_triggers_interference_scheduling():
+    """config=None (today's production default): the pass must not run -- no reorder,
+    no advisories -- proving the feature is fully inert without the flag."""
+    program, sink = _build_interference_draft(config=None)
+    workout = program.workouts[0]
+    assert [we.exercise_id for we in workout.exercises] == [2, 1]  # original slot order: cardio, then squat
+    assert sink == []
+
+
+def test_build_draft_flag_explicitly_off_never_triggers_interference_scheduling():
+    """config supplied but flags.use_interference_scheduler=False (explicit default)
+    also stays inert -- mirrors the exact gate-correctness regression test pattern used
+    for every prior Phase 2 flag addition."""
+    config = EngineConfig(config_version="x", flags=EngineFlags(use_interference_scheduler=False))
+    program, sink = _build_interference_draft(config)
+    workout = program.workouts[0]
+    assert [we.exercise_id for we in workout.exercises] == [2, 1]
+    assert sink == []
+
+
+def test_build_draft_wires_interference_advisory_through_when_enabled():
+    """End-to-end: with the flag on, build_draft's own call site actually invokes the
+    pass and its advisory_sink gets populated."""
+    config = EngineConfig(config_version="x", flags=EngineFlags(use_interference_scheduler=True))
+    program, sink = _build_interference_draft(config)
+    workout = program.workouts[0]
+    assert [we.exercise_id for we in workout.exercises] == [1, 2]  # squat now precedes cardio
+    assert len(sink) == 1
+    assert sink[0].code == "CONDITIONING_SEPARATION_RECOMMENDED"

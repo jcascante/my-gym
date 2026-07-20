@@ -41,6 +41,7 @@ flags:
   use_beam_search: false
   use_volume_validator: false
   use_frequency_advisories: false
+  use_interference_scheduler: false
 
 # Volume bands table — MEV / target / MRV guard by experience level (plan §2.4).
 # Table varies only by experience; identical across all 15 taxonomy muscle groups.

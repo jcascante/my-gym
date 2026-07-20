@@ -202,6 +202,15 @@ def build_draft(
     # `use_volume_validator=True`. See task-2.5a-report.md for the full reasoning.
     if config is not None and config.flags.use_volume_validator:
         _validate_and_repair_volume(program, definition, ctx, exercises, config, advisory_sink)
+
+    # Independent post-draft pass, gated on its own dedicated flag (never reused from an
+    # unrelated field, per the established Task 2.5a convention). Safe to run after the
+    # volume validator: that pass only swaps `exercise_id` via `_reselect` (never touches
+    # `.order` or slot count); this pass only reorders existing rows and renumbers
+    # `.order` (never changes which exercise is picked or how many sets) -- the two
+    # commute.
+    if config is not None and config.flags.use_interference_scheduler:
+        _apply_interference_scheduling(program, exercises, advisory_sink)
     return program
 
 
@@ -297,6 +306,56 @@ def _validate_and_repair_volume(
                     message=(
                         f"{label} receives {gl.effective_sets_week:.1f} effective sets this week, "
                         f"above the {band.mrv_guard}-set maximum for your level."
+                    ),
+                )
+            )
+
+
+_LOWER_BODY_STRENGTH_PATTERNS = {"squat", "hinge", "lunge"}
+
+
+def _is_heavy_lower_body_strength(we: WorkoutExercise) -> bool:
+    return we.fills_rule.get("pattern") in _LOWER_BODY_STRENGTH_PATTERNS and we.fills_rule.get("priority") == "primary"
+
+
+def _is_conditioning(we: WorkoutExercise, exercise_by_id: dict[int, Exercise]) -> bool:
+    exercise = exercise_by_id.get(we.exercise_id)
+    return exercise is not None and Muscle.CARDIO.value in exercise.primary_muscles
+
+
+def _apply_interference_scheduling(
+    program: WorkoutProgram, exercises: list[Exercise], advisory_sink: list[Advisory] | None
+) -> None:
+    """Post-draft interference scheduling: strength-before-conditioning same-day
+    placement + separation advisory (plan §2.7, proposal §4.5 bullets 1-2).
+
+    Deliberate scope reduction (see task-2.7b-brief.md): the proposal's bullet 2
+    distinguishes high- from low-intensity conditioning work (only the former needs the
+    separation constraint). No data field in this schema carries an intensity/effort
+    signal for any exercise, so this pass applies the rule uniformly to every
+    cardio-primary-muscle slot rather than inventing an unsourced classification (e.g.
+    keyword-matching exercise names). A natural extension once the exercise schema grows
+    an intensity/effort tag.
+    """
+    exercise_by_id = {ex.id: ex for ex in exercises}
+    for workout in program.workouts:
+        has_strength = any(_is_heavy_lower_body_strength(we) for we in workout.exercises)
+        has_conditioning = any(_is_conditioning(we, exercise_by_id) for we in workout.exercises)
+        if not (has_strength and has_conditioning):
+            continue
+        workout.exercises.sort(key=lambda we: _is_conditioning(we, exercise_by_id))
+        for position, we in enumerate(workout.exercises, start=1):
+            we.order = position
+        if advisory_sink is not None:
+            advisory_sink.append(
+                Advisory(
+                    code="CONDITIONING_SEPARATION_RECOMMENDED",
+                    severity="info",
+                    subject=workout.key,
+                    message=(
+                        f"{workout.name} includes both heavy lower-body strength and conditioning work. "
+                        f"Where possible, separate these by at least 6 hours (e.g., strength earlier in the "
+                        f"day, conditioning later) to reduce interference with your strength adaptations."
                     ),
                 )
             )
