@@ -112,6 +112,7 @@ async def match(
         movement_preferences=data.movement_preferences,
         complementary_focus=data.complementary_focus,
         progression_style=data.progression_style.value,
+        goal_vector=profile.goal_weights if profile else None,
     )
     ranked = rank_templates(templates, inp, feasibility, definitions=definitions, all_exercises=exercises)
     for m in ranked:

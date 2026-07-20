@@ -181,3 +181,40 @@ async def test_match_returns_new_factor_keys(
     assert "movement_preference" in body[0]["factors"]
     assert "focus_complement" in body[0]["factors"]
     assert "periodization" in body[0]["factors"]
+
+
+@pytest.mark.asyncio
+async def test_match_uses_profile_goal_weights_to_score_templates(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    """profile.goal_weights must actually reach rank_templates via MatchInput.goal_vector.
+
+    "bodyweight-full-body-x3" has goals=["general"] (see app/db/seed/program_templates.py),
+    so its goal factor is 0.0 under the fitness_focus-only fallback ({"strength": 1.0}) but
+    becomes non-zero once goal_weights explicitly assigns weight to "general".
+    """
+    body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+    }
+
+    await authenticated_client.post("/api/v1/users/profile", json={"fitness_focus": "strength"})
+    resp = await authenticated_client.post("/api/v1/programs/match", json=body)
+    assert resp.status_code == 200
+    without_vector = {m["slug"]: m["factors"]["goal"] for m in resp.json()}
+    assert "bodyweight-full-body-x3" in without_vector
+    assert without_vector["bodyweight-full-body-x3"] == 0.0
+
+    await authenticated_client.post(
+        "/api/v1/users/profile",
+        json={"fitness_focus": "strength", "goal_weights": {"general": 0.9, "strength": 0.1}},
+    )
+    resp = await authenticated_client.post("/api/v1/programs/match", json=body)
+    assert resp.status_code == 200
+    with_vector = {m["slug"]: m["factors"]["goal"] for m in resp.json()}
+    assert with_vector["bodyweight-full-body-x3"] == pytest.approx(0.9)
+    assert with_vector["bodyweight-full-body-x3"] != without_vector["bodyweight-full-body-x3"]

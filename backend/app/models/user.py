@@ -2,7 +2,7 @@ import enum
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -70,6 +70,7 @@ class UserProfile(Base):
     height_cm: Mapped[float | None] = mapped_column(Float)
     activity_level: Mapped[ActivityLevel | None] = mapped_column(Enum(ActivityLevel))
     fitness_focus: Mapped[FitnessFocus | None] = mapped_column(Enum(FitnessFocus))
+    goal_weights: Mapped[dict[str, float] | None] = mapped_column(JSON)
     experience_level: Mapped[ExperienceLevel | None] = mapped_column(Enum(ExperienceLevel))
     days_per_week: Mapped[int | None] = mapped_column(Integer)
     workout_duration_min: Mapped[int | None] = mapped_column(Integer)
