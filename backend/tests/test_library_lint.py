@@ -152,6 +152,41 @@ class TestCheckReachability:
         template = _template("t5", slots_by_session=[[{"region": "core", "priority": "accessory", "scheme": "main"}]])
         assert check_reachability([], [template]) == []
 
+    def test_equipment_subset_semantics_partial_overlap_does_not_satisfy_preset(self):
+        # Exercise has equipment_tags=["barbell", "chalk"] where "chalk" is not
+        # a real equipment tag but exists on the exercise. A preset with only
+        # ["barbell", "bench"] should NOT be considered satisfied because
+        # {"barbell", "chalk"} is NOT a subset of {"barbell", "bench"}.
+        # This verifies subset (<=) semantics, not intersection (&) semantics.
+        template = _template("t6", slots_by_session=[[{"pattern": "squat", "priority": "primary", "scheme": "main"}]])
+        exercise = _exercise(
+            "squat-barbell-chalk",
+            movement_pattern=MovementPattern.SQUAT,
+            equipment_tags=["barbell", "chalk"],
+            difficulty_level=ExperienceLevel.BEGINNER,
+        )
+        violations = check_reachability([exercise], [template])
+        # All non-"other" presets should still lack a reachable squat exercise
+        # because the barbell+chalk combo doesn't fit any single preset.
+        assert len(violations) > 0
+        assert all("squat" in v for v in violations)
+
+    def test_intermediate_difficulty_does_not_satisfy_beginner_reachability(self):
+        # Reachability requires difficulty_level == BEGINNER exactly (tolerance 0),
+        # not the runtime tolerance-1 comparison selection.py uses. An INTERMEDIATE
+        # exercise is only one tier off BEGINNER — unlike ADVANCED (two tiers off),
+        # this is the case that would slip through a tolerance-1 bug undetected.
+        template = _template("t7", slots_by_session=[[{"pattern": "squat", "priority": "primary", "scheme": "main"}]])
+        exercise = _exercise(
+            "squat-intermediate",
+            movement_pattern=MovementPattern.SQUAT,
+            equipment_tags=[],
+            difficulty_level=ExperienceLevel.INTERMEDIATE,
+        )
+        violations = check_reachability([exercise], [template])
+        assert len(violations) > 0
+        assert all("squat" in v for v in violations)
+
 
 class TestCheckCoverage:
     def test_group_with_fewer_than_three_exercises_is_flagged(self):
@@ -182,6 +217,20 @@ class TestCheckCoverage:
         ]
         violations = check_coverage(exercises)
         assert any("'chest'" in v and "need >= 3" in v for v in violations)
+
+    def test_collective_preset_coverage_no_single_exercise_spans_two_presets(self):
+        # Muscle group qualifies with >=3 exercises, but NO single exercise's
+        # equipment_tags alone satisfies >=2 presets. The >=2-preset requirement
+        # is satisfied collectively: exercise-1 only fits in "gym" (barbell+bench),
+        # exercise-2 only fits in "home" (dumbbells), exercise-3 fits in both.
+        # Together they span >=2 presets, so no violation.
+        exercises = [
+            _exercise("chest-1", primary_muscles=["chest"], equipment_tags=["barbell", "bench"]),
+            _exercise("chest-2", primary_muscles=["chest"], equipment_tags=["dumbbells"]),
+            _exercise("chest-3", primary_muscles=["chest"], equipment_tags=[]),
+        ]
+        violations = check_coverage(exercises)
+        assert not any("'chest'" in v for v in violations)
 
 
 class TestCheckDuplicatesAndOrphans:
