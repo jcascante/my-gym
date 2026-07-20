@@ -12,6 +12,7 @@ const matches = [
     required_inputs: [],
     tier: 'best' as const,
     all_infeasible: false,
+    advisories: [],
   },
   {
     template_id: 2,
@@ -22,6 +23,7 @@ const matches = [
     required_inputs: [],
     tier: 'strong' as const,
     all_infeasible: false,
+    advisories: [],
   },
 ];
 
@@ -35,6 +37,7 @@ const matchesInfeasible = [
     required_inputs: [],
     tier: 'possible' as const,
     all_infeasible: true,
+    advisories: [],
   },
 ];
 
@@ -90,5 +93,43 @@ describe('TemplateMatchList', () => {
     const onSelect = vi.fn();
     render(<TemplateMatchList matches={[]} selectedId={null} onSelect={onSelect} />);
     expect(screen.getByText('No matching templates for your setup.')).toBeInTheDocument();
+  });
+
+  it('renders per-template advisories with correct severity', () => {
+    const onSelect = vi.fn();
+    const matchesWithAdvisories = [
+      {
+        template_id: 1,
+        slug: 'ul',
+        name: 'Upper/Lower x4',
+        fit_pct: 92,
+        factors: { goal: 1 },
+        required_inputs: [],
+        tier: 'best' as const,
+        all_infeasible: false,
+        advisories: [
+          {
+            code: 'freq-low',
+            severity: 'warning' as const,
+            message: 'Chest training frequency is below MEV for hypertrophy.',
+            subject: 'chest',
+          },
+        ],
+      },
+    ];
+    render(
+      <TemplateMatchList matches={matchesWithAdvisories} selectedId={null} onSelect={onSelect} />,
+    );
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(
+      screen.getByText('Chest training frequency is below MEV for hypertrophy.'),
+    ).toBeInTheDocument();
+  });
+
+  it('does not render advisories when array is empty', () => {
+    const onSelect = vi.fn();
+    render(<TemplateMatchList matches={matches} selectedId={null} onSelect={onSelect} />);
+    const alerts = screen.queryAllByRole('alert');
+    expect(alerts).toHaveLength(0);
   });
 });

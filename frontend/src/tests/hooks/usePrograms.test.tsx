@@ -33,6 +33,7 @@ describe('usePrograms hooks', () => {
           required_inputs: [],
           tier: 'best',
           all_infeasible: false,
+          advisories: [],
         },
       ]);
       const { result } = renderHook(() => useMatchTemplates(), { wrapper });
@@ -56,6 +57,7 @@ describe('usePrograms hooks', () => {
         status: 'draft' as const,
         duration_weeks: 8,
         weeks: {},
+        advisories: [],
       };
       vi.spyOn(api, 'createDraft').mockResolvedValue(mockPreview);
       const { result } = renderHook(() => useCreateDraft(), { wrapper });
@@ -83,6 +85,7 @@ describe('usePrograms hooks', () => {
         status: 'draft' as const,
         duration_weeks: 8,
         weeks: {},
+        advisories: [],
       };
       vi.spyOn(api, 'getProgramPreview').mockResolvedValue(mockPreview);
       const { result } = renderHook(() => useProgramPreview(1), { wrapper });
@@ -106,6 +109,7 @@ describe('usePrograms hooks', () => {
         status: 'draft' as const,
         duration_weeks: 8,
         weeks: {},
+        advisories: [],
       };
       vi.spyOn(api, 'submitFeedback').mockResolvedValue(mockPreview);
       const { result } = renderHook(() => useSubmitFeedback(1), { wrapper });
@@ -142,6 +146,7 @@ describe('usePrograms hooks', () => {
         status: 'active' as const,
         duration_weeks: 8,
         weeks: {},
+        advisories: [],
       };
       vi.spyOn(api, 'acceptProgram').mockResolvedValue(mockPreview);
       const { result } = renderHook(() => useAcceptProgram(1), { wrapper });

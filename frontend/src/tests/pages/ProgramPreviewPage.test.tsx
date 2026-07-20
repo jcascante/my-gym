@@ -50,6 +50,7 @@ vi.mock('@/hooks/usePrograms', () => ({
           },
         ],
       },
+      advisories: [],
     },
     isLoading: false,
   }),

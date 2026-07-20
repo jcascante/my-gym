@@ -1,4 +1,5 @@
 import { Card } from './Card';
+import { Alert } from './Alert';
 import type { TemplateMatch } from '@/types/program';
 
 const TIER_LABELS: Record<TemplateMatch['tier'], string> = {
@@ -44,6 +45,11 @@ export function TemplateMatchCard({
             Fit: {match.fit_pct}%
           </li>
         </ul>
+        {match.advisories.map((advisory, i) => (
+          <Alert key={i} type={advisory.severity} className="mt-2">
+            {advisory.message}
+          </Alert>
+        ))}
       </Card>
     </button>
   );

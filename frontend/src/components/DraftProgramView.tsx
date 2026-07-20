@@ -3,6 +3,7 @@ import { WeekTabs } from './WeekTabs';
 import { SessionCard } from './SessionCard';
 import { ExerciseAlternativesModal } from './ExerciseAlternativesModal';
 import { ExercisePreviewModal } from './ExercisePreviewModal';
+import { Alert } from './Alert';
 import { useSubmitFeedback } from '@/hooks/usePrograms';
 import { useExercises } from '@/hooks/useExercises';
 import type { FeedbackAction, ProgramPreview } from '@/types/program';
@@ -70,6 +71,15 @@ export function DraftProgramView({
             Review the generated program and make adjustments as needed
           </p>
         </div>
+        {program.advisories.length > 0 && (
+          <div className="space-y-2">
+            {program.advisories.map((advisory, i) => (
+              <Alert key={i} type={advisory.severity}>
+                {advisory.message}
+              </Alert>
+            ))}
+          </div>
+        )}
         <WeekTabs weeks={weeks} active={active} onSelect={setActive} />
         <div className="space-y-4">
           {(program.weeks[String(active)] ?? []).map((w) => (

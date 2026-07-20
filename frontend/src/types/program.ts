@@ -1,5 +1,12 @@
 import type { ProgressionStyle, EffortMethod } from '@/types/programCreation';
 
+export interface Advisory {
+  code: string;
+  severity: 'info' | 'warning' | 'error';
+  message: string;
+  subject: string | null;
+}
+
 export interface RequiredInput {
   key: string;
   label: string;
@@ -16,6 +23,7 @@ export interface TemplateMatch {
   required_inputs: RequiredInput[];
   tier: 'best' | 'strong' | 'possible';
   all_infeasible: boolean;
+  advisories: Advisory[];
 }
 
 export interface EffortTarget {
@@ -53,6 +61,7 @@ export interface ProgramPreview {
   status: 'draft' | 'active' | 'archived';
   duration_weeks: number;
   weeks: Record<string, WorkoutPreview[]>;
+  advisories: Advisory[];
 }
 
 export interface MatchRequest {
