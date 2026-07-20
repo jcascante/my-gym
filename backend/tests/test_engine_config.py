@@ -9,6 +9,9 @@ from app.services.program.engine_config import (
     EngineFlags,
     MatchConfig,
     SelectionConfig,
+    VolumeBandRow,
+    VolumeBandsConfig,
+    VolumeModifiers,
     get_engine_config,
 )
 from app.services.program.matching import MatchWeights
@@ -105,3 +108,126 @@ def test_get_engine_config_returns_validated_engine_config():
 
 def test_get_engine_config_is_cached_singleton():
     assert get_engine_config() is get_engine_config()
+
+
+def test_volume_modifiers_default_values():
+    modifiers = VolumeModifiers()
+    assert modifiers.emphasis_target_bonus_min == 2
+    assert modifiers.emphasis_target_bonus_max == 4
+    assert modifiers.amber_injury_guard_reduction_pct == 0.30
+
+
+def test_volume_band_row_rejects_invalid_ordering_target_min_greater_than_max():
+    with pytest.raises(ValidationError):
+        VolumeBandRow(
+            experience="beginner",
+            mev=6,
+            target_min=13,  # Invalid: greater than target_max
+            target_max=12,
+            mrv_guard=16,
+            citation="test",
+        )
+
+
+def test_volume_band_row_rejects_invalid_ordering_mev_greater_than_target_min():
+    with pytest.raises(ValidationError):
+        VolumeBandRow(
+            experience="beginner",
+            mev=9,  # Invalid: greater than target_min
+            target_min=8,
+            target_max=12,
+            mrv_guard=16,
+            citation="test",
+        )
+
+
+def test_volume_band_row_rejects_invalid_ordering_target_max_greater_than_mrv():
+    with pytest.raises(ValidationError):
+        VolumeBandRow(
+            experience="beginner",
+            mev=6,
+            target_min=8,
+            target_max=17,  # Invalid: greater than mrv_guard
+            mrv_guard=16,
+            citation="test",
+        )
+
+
+def test_volume_band_row_accepts_valid_ordering():
+    row = VolumeBandRow(
+        experience="beginner",
+        mev=6,
+        target_min=8,
+        target_max=12,
+        mrv_guard=16,
+        citation="test",
+    )
+    assert row.mev == 6
+    assert row.target_min == 8
+    assert row.target_max == 12
+    assert row.mrv_guard == 16
+
+
+def test_volume_bands_config_creates_with_defaults():
+    config = VolumeBandsConfig(bands=[])
+    assert config.bands == []
+    assert config.modifiers == VolumeModifiers()
+
+
+def test_engine_config_has_volume_bands_field():
+    config = EngineConfig(config_version="1")
+    assert hasattr(config, "volume_bands")
+    assert isinstance(config.volume_bands, VolumeBandsConfig)
+
+
+def test_engine_config_volume_bands_has_all_three_experience_levels():
+    config = EngineConfig(config_version="1")
+    experiences = {band.experience for band in config.volume_bands.bands}
+    assert experiences == {"beginner", "intermediate", "advanced"}
+
+
+def test_volume_band_rows_have_correct_values():
+    config = EngineConfig(config_version="1")
+    bands_by_exp = {band.experience: band for band in config.volume_bands.bands}
+
+    # Check beginner
+    beginner = bands_by_exp["beginner"]
+    assert beginner.mev == 6
+    assert beginner.target_min == 8
+    assert beginner.target_max == 12
+    assert beginner.mrv_guard == 16
+
+    # Check intermediate
+    intermediate = bands_by_exp["intermediate"]
+    assert intermediate.mev == 8
+    assert intermediate.target_min == 10
+    assert intermediate.target_max == 18
+    assert intermediate.mrv_guard == 22
+
+    # Check advanced
+    advanced = bands_by_exp["advanced"]
+    assert advanced.mev == 10
+    assert advanced.target_min == 12
+    assert advanced.target_max == 20
+    assert advanced.mrv_guard == 26
+
+
+def test_volume_band_rows_have_citation():
+    config = EngineConfig(config_version="1")
+    for band in config.volume_bands.bands:
+        assert band.citation
+        assert len(band.citation) > 0
+
+
+def test_volume_band_rows_all_have_same_citation():
+    config = EngineConfig(config_version="1")
+    citations = {band.citation for band in config.volume_bands.bands}
+    assert len(citations) == 1  # All rows should have the same citation
+
+
+def test_engine_yaml_round_trips_volume_bands():
+    with open(_CONFIG_PATH) as f:
+        raw = yaml.safe_load(f)
+    from_yaml = EngineConfig.model_validate(raw)
+    from_code = EngineConfig(config_version="1")
+    assert from_yaml.volume_bands == from_code.volume_bands

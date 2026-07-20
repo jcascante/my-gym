@@ -10,9 +10,10 @@ until those tasks land.
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 
 _CONFIG_PATH = Path(__file__).parent / "config" / "engine.yaml"
 
@@ -77,6 +78,73 @@ class EngineFlags(BaseModel):
     use_beam_search: bool = False
 
 
+class VolumeBandRow(BaseModel):
+    """Volume band row (MEV / target / MRV) per experience level (plan §2.4).
+
+    Enforces ordering: MEV <= target_min <= target_max <= MRV guard.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    experience: Literal["beginner", "intermediate", "advanced"]
+    mev: int
+    target_min: int
+    target_max: int
+    mrv_guard: int
+    citation: str
+
+    @field_validator("target_max")
+    @classmethod
+    def _target_max_at_least_min(cls, v: int, info: ValidationInfo) -> int:
+        if info.data.get("target_min") is not None and v < info.data["target_min"]:
+            raise ValueError(f"target_max ({v}) must be >= target_min ({info.data['target_min']})")
+        if info.data.get("mrv_guard") is not None and v > info.data["mrv_guard"]:
+            raise ValueError(f"target_max ({v}) must be <= mrv_guard ({info.data['mrv_guard']})")
+        if info.data.get("mev") is not None and v < info.data["mev"]:
+            raise ValueError(f"target_max ({v}) must be >= mev ({info.data['mev']})")
+        return v
+
+    @field_validator("target_min")
+    @classmethod
+    def _target_min_ordering(cls, v: int, info: ValidationInfo) -> int:
+        if info.data.get("mev") is not None and v < info.data["mev"]:
+            raise ValueError(f"target_min ({v}) must be >= mev ({info.data['mev']})")
+        if info.data.get("mrv_guard") is not None and v > info.data["mrv_guard"]:
+            raise ValueError(f"target_min ({v}) must be <= mrv_guard ({info.data['mrv_guard']})")
+        return v
+
+    @field_validator("mrv_guard")
+    @classmethod
+    def _mrv_guard_at_least_target_max(cls, v: int, info: ValidationInfo) -> int:
+        if info.data.get("target_max") is not None and v < info.data["target_max"]:
+            raise ValueError(f"mrv_guard ({v}) must be >= target_max ({info.data['target_max']})")
+        if info.data.get("mev") is not None and v < info.data["mev"]:
+            raise ValueError(f"mrv_guard ({v}) must be >= mev ({info.data['mev']})")
+        return v
+
+
+class VolumeModifiers(BaseModel):
+    """Volume band modifiers (plan §2.4)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    emphasis_target_bonus_min: int = 2
+    emphasis_target_bonus_max: int = 4
+    amber_injury_guard_reduction_pct: float = 0.30
+
+
+class VolumeBandsConfig(BaseModel):
+    """Volume bands config surface (plan §2.4).
+
+    Bands table (MEV / target / MRV guard by experience) plus modifiers.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    bands: list[VolumeBandRow]
+    modifiers: VolumeModifiers = VolumeModifiers()
+
+
 class EngineConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -85,6 +153,34 @@ class EngineConfig(BaseModel):
     selection: SelectionConfig = SelectionConfig()
     assembly: AssemblyConfig = AssemblyConfig()
     flags: EngineFlags = EngineFlags()
+    volume_bands: VolumeBandsConfig = VolumeBandsConfig(
+        bands=[
+            VolumeBandRow(
+                experience="beginner",
+                mev=6,
+                target_min=8,
+                target_max=12,
+                mrv_guard=16,
+                citation="Schoenfeld, Ogborn & Krieger (2017), dose-response of weekly set volume and hypertrophy, J Sports Sci; Schoenfeld et al. (2019), volume and hypertrophy in trained men, MSSE; Israetel et al., MEV/MAV/MRV volume landmarks framework, Renaissance Periodization; Ralston et al. (2017), weekly set volume and strength gain, Sports Med.",
+            ),
+            VolumeBandRow(
+                experience="intermediate",
+                mev=8,
+                target_min=10,
+                target_max=18,
+                mrv_guard=22,
+                citation="Schoenfeld, Ogborn & Krieger (2017), dose-response of weekly set volume and hypertrophy, J Sports Sci; Schoenfeld et al. (2019), volume and hypertrophy in trained men, MSSE; Israetel et al., MEV/MAV/MRV volume landmarks framework, Renaissance Periodization; Ralston et al. (2017), weekly set volume and strength gain, Sports Med.",
+            ),
+            VolumeBandRow(
+                experience="advanced",
+                mev=10,
+                target_min=12,
+                target_max=20,
+                mrv_guard=26,
+                citation="Schoenfeld, Ogborn & Krieger (2017), dose-response of weekly set volume and hypertrophy, J Sports Sci; Schoenfeld et al. (2019), volume and hypertrophy in trained men, MSSE; Israetel et al., MEV/MAV/MRV volume landmarks framework, Renaissance Periodization; Ralston et al. (2017), weekly set volume and strength gain, Sports Med.",
+            ),
+        ]
+    )
 
 
 @lru_cache(maxsize=1)
