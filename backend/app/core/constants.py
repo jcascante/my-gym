@@ -73,8 +73,10 @@ ENVIRONMENT_TYPE_EQUIPMENT_PRESETS: dict[str, list[str]] = {
         "assault_bike",
         "pull_up_bar",
         "resistance_bands",
+        "none",
+        "ab_wheel",
     ],
-    "home": ["dumbbells", "kettlebell", "resistance_bands", "bench", "pull_up_bar", "none"],
+    "home": ["dumbbells", "kettlebell", "resistance_bands", "bench", "pull_up_bar", "none", "ab_wheel"],
     "bodyweight": ["none", "pull_up_bar", "resistance_bands"],
     "crossfit_box": [
         "barbell",
@@ -90,9 +92,19 @@ ENVIRONMENT_TYPE_EQUIPMENT_PRESETS: dict[str, list[str]] = {
         "sled",
         "rowing_machine",
         "assault_bike",
+        "none",
     ],
-    "powerlifting_gym": ["barbell", "squat_rack", "bench", "ez_bar", "sled"],
-    "strength_gym": ["barbell", "squat_rack", "bench", "dumbbells", "kettlebell", "pull_up_bar", "resistance_bands"],
+    "powerlifting_gym": ["barbell", "squat_rack", "bench", "ez_bar", "sled", "none", "pull_up_bar"],
+    "strength_gym": [
+        "barbell",
+        "squat_rack",
+        "bench",
+        "dumbbells",
+        "kettlebell",
+        "pull_up_bar",
+        "resistance_bands",
+        "none",
+    ],
     "other": [],
 }
 
