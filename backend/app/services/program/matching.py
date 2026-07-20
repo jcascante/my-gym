@@ -3,10 +3,13 @@ import math
 from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Literal, Protocol
 
-from app.schemas.template import SlotRule, TemplateDefinition
+from app.models.exercise import Muscle
+from app.schemas.program_api import Advisory
+from app.schemas.template import SessionDef, SlotRule, TemplateDefinition
 from app.services.program.engine_config import EngineConfig, MatchConfig
 from app.services.program.preferences import movement_preference_weight
 from app.services.program.selection import _matches_rule
+from app.services.program.taxonomy import muscle_group_for
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +137,7 @@ class TemplateMatch:
     # True only when returned via the all-infeasible best-effort fallback.
     # Phase 2 (plan §2.5) will fold this into the general Advisory list.
     all_infeasible: bool = False
+    advisories: list[Advisory] = field(default_factory=list)
 
 
 def _goal_factor(t_goals: list[str], goal_vector: dict[str, float]) -> float:
@@ -206,6 +210,63 @@ def _periodization_feature(model_key: str, progression_style: str) -> float:
     return 0.3
 
 
+def _session_primary_groups(session: SessionDef, exercises: list[Any], equipment: list[str]) -> set[str]:
+    """Taxonomy groups reachable via a primary slot in this session (plan §2.5, proposal §4.3).
+
+    "Reachable" means at least one candidate exercise matches the slot's pattern/region/muscles
+    (`_matches_rule`) and its equipment is available. This is a structural proxy for "this
+    template intends non-trivial direct volume here" — no exercises are actually picked yet at
+    match time.
+    """
+    groups: set[str] = set()
+    for slot in session.slots:
+        if slot.priority != "primary":
+            continue
+        for ex in exercises:
+            if not _matches_rule(ex, slot):
+                continue
+            if not set(ex.equipment_tags) <= set(equipment):
+                continue
+            for m in ex.primary_muscles:
+                group = muscle_group_for(Muscle(m))
+                if group is not None:
+                    groups.add(group)
+    return groups
+
+
+def _frequency_advisories_for_template(
+    sessions: list[SessionDef], exercises: list[Any], equipment: list[str]
+) -> list[Advisory]:
+    """Structural frequency-reachability check (plan §2.5, proposal §4.3's "Frequency check").
+
+    A group is frequency-infeasible iff it is reachable in at least 1 session (the template
+    intends to load it) and in fewer than 2 distinct sessions (structurally capped at 1 training
+    day, regardless of which exercises get selected later). Deliberately coarser than the
+    post-draft ledger check (Task 2.5a) — no MEV/MRV comparison here, just slot-structure reach.
+    """
+    session_groups: dict[str, set[str]] = {
+        session.key: _session_primary_groups(session, exercises, equipment) for session in sessions
+    }
+    all_groups = {group for groups in session_groups.values() for group in groups}
+    advisories: list[Advisory] = []
+    for group in sorted(all_groups):
+        reachable_session_count = sum(1 for groups in session_groups.values() if group in groups)
+        if reachable_session_count < 2:
+            advisories.append(
+                Advisory(
+                    code="FREQUENCY_STRUCTURALLY_LIMITED",
+                    severity="info",
+                    subject=group,
+                    message=(
+                        f"{group.replace('_', ' ').title()} is only reachable on 1 training day in this "
+                        f"split — most muscles respond better to a training frequency of 2+ days per week "
+                        f"when carrying meaningful weekly volume."
+                    ),
+                )
+            )
+    return advisories
+
+
 def rank_templates(
     templates: list[Any],
     inp: MatchInput,
@@ -229,6 +290,7 @@ def rank_templates(
     explicitly-passed `scorer` always wins over the config-driven default.
     """
     use_constraint = config is not None and config.flags.use_constraint_scorer
+    use_frequency_advisories = config is not None and config.flags.use_frequency_advisories
     if scorer is None:
         if config is not None and use_constraint:
             scorer = ConstraintTemplateScorer(config.match)
@@ -253,10 +315,17 @@ def rank_templates(
             )
             focus_complement = _focus_complement_feature(sessions, inp.complementary_focus)
             periodization = _periodization_feature(definition.progression.model_key, inp.progression_style)
+            if use_frequency_advisories:
+                frequency_advisories = _frequency_advisories_for_template(
+                    sessions, exercises, inp.environment_equipment
+                )
+            else:
+                frequency_advisories = []
         else:
             movement_preference = 0.5
             focus_complement = 0.5
             periodization = 0.3
+            frequency_advisories = []
         goal_vector = inp.goal_vector or {inp.fitness_focus: 1.0}
         if config is not None and use_constraint:
             days = _gaussian_range_fit(
@@ -278,7 +347,9 @@ def rank_templates(
             "periodization": periodization,
         }
         score = scorer.score(factors)
-        match = TemplateMatch(t.id, t.slug, t.name, round(score * 100), factors, tier="possible")
+        match = TemplateMatch(
+            t.id, t.slug, t.name, round(score * 100), factors, tier="possible", advisories=frequency_advisories
+        )
         matches.append(match)
         if is_feasible:
             feasible_matches.append(match)

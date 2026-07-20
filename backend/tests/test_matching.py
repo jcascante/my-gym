@@ -1,10 +1,14 @@
+import dataclasses
 import math
 
+from app.models.exercise import BodyRegion, Exercise, ExperienceLevel, MovementPattern
+from app.schemas.program_api import Advisory, TemplateMatchOut
 from app.schemas.template import TemplateDefinition
 from app.services.program.engine_config import EngineConfig, EngineFlags, MatchConfig
 from app.services.program.matching import (
     ConstraintTemplateScorer,
     MatchInput,
+    TemplateMatch,
     _gaussian_range_fit,
     _goal_factor,
     rank_templates,
@@ -476,3 +480,205 @@ def test_rank_templates_all_infeasible_path_also_gets_tiers():
     assert len(ranked) == 2
     assert all(hasattr(m, "tier") and m.tier in ["best", "strong", "possible"] for m in ranked)
     assert all(m.all_infeasible is True for m in ranked)
+
+
+# Task 2.5b: match-time frequency advisories
+def _exercise(
+    slug: str,
+    *,
+    movement_pattern: MovementPattern = MovementPattern.ISOLATION,
+    body_region: BodyRegion = BodyRegion.FULL_BODY,
+    primary_muscles: list[str] | None = None,
+    secondary_muscles: list[str] | None = None,
+    equipment_tags: list[str] | None = None,
+) -> Exercise:
+    return Exercise(
+        name=slug,
+        slug=slug,
+        movement_slug=slug,
+        body_region=body_region,
+        movement_pattern=movement_pattern,
+        primary_muscles=primary_muscles if primary_muscles is not None else ["chest"],
+        secondary_muscles=secondary_muscles if secondary_muscles is not None else [],
+        equipment_tags=equipment_tags if equipment_tags is not None else [],
+        difficulty_level=ExperienceLevel.BEGINNER,
+        instructions="Do the thing.",
+        form_cues=[],
+        contraindications=[],
+        is_active=True,
+    )
+
+
+def _two_session_split(session_a_slots: list[dict], session_b_slots: list[dict]) -> dict:
+    return {
+        "sessions": [
+            {"key": "a", "name": "A", "order": 1, "slots": session_a_slots},
+            {"key": "b", "name": "B", "order": 2, "slots": session_b_slots},
+        ],
+        "schemes": {"main": {"sets": 3, "reps_min": 5, "reps_max": 5, "rest_seconds": 120}},
+    }
+
+
+def _frequency_template(id, slug, split) -> _TWithSplit:
+    return _TWithSplit(
+        id,
+        slug,
+        ["strength"],
+        ["intermediate"],
+        4,
+        4,
+        45,
+        75,
+        split,
+        {"model_key": "linear_load", "params": {}},
+    )
+
+
+def _frequency_config(enabled: bool) -> EngineConfig:
+    return EngineConfig(config_version="t", flags=EngineFlags(use_frequency_advisories=enabled))
+
+
+def test_group_reachable_in_two_sessions_produces_no_advisory():
+    """Positive case: a group with genuine 2-session primary-slot coverage is not flagged."""
+    bench = _exercise("bench", movement_pattern=MovementPattern.HORIZONTAL_PUSH, primary_muscles=["chest"])
+    split = _two_session_split(
+        [{"pattern": "horizontal_push", "priority": "primary", "scheme": "main"}],
+        [{"pattern": "horizontal_push", "priority": "primary", "scheme": "main"}],
+    )
+    t = _frequency_template(1, "two-session", split)
+    definitions = {1: _definition_for(t)}
+    inp = MatchInput("strength", "intermediate", 4, 60, [])
+    cfg = _frequency_config(enabled=True)
+    ranked = rank_templates([t], inp, feasibility={1: True}, definitions=definitions, all_exercises=[bench], config=cfg)
+    assert ranked[0].advisories == []
+
+
+def test_group_reachable_in_one_session_only_produces_advisory():
+    """A group confined to 1 session's primary slots gets exactly one advisory for that group."""
+    bench = _exercise("bench", movement_pattern=MovementPattern.HORIZONTAL_PUSH, primary_muscles=["chest"])
+    split = _two_session_split(
+        [{"pattern": "horizontal_push", "priority": "primary", "scheme": "main"}],
+        [{"pattern": "squat", "priority": "primary", "scheme": "main"}],
+    )
+    t = _frequency_template(1, "one-session", split)
+    definitions = {1: _definition_for(t)}
+    inp = MatchInput("strength", "intermediate", 4, 60, [])
+    cfg = _frequency_config(enabled=True)
+    ranked = rank_templates([t], inp, feasibility={1: True}, definitions=definitions, all_exercises=[bench], config=cfg)
+    advisories = ranked[0].advisories
+    assert len(advisories) == 1
+    assert advisories[0].code == "FREQUENCY_STRUCTURALLY_LIMITED"
+    assert advisories[0].severity == "info"
+    assert advisories[0].subject == "chest"
+
+
+def test_group_reachable_in_zero_sessions_produces_no_advisory():
+    """A group never reachable as a primary-slot candidate anywhere is not a frequency problem."""
+    # Triceps only ever appears as a secondary muscle -- never counted as reachable.
+    bench = _exercise(
+        "bench",
+        movement_pattern=MovementPattern.HORIZONTAL_PUSH,
+        primary_muscles=["chest"],
+        secondary_muscles=["triceps"],
+    )
+    split = _two_session_split(
+        [{"pattern": "horizontal_push", "priority": "primary", "scheme": "main"}],
+        [{"pattern": "horizontal_push", "priority": "primary", "scheme": "main"}],
+    )
+    t = _frequency_template(1, "no-triceps", split)
+    definitions = {1: _definition_for(t)}
+    inp = MatchInput("strength", "intermediate", 4, 60, [])
+    cfg = _frequency_config(enabled=True)
+    ranked = rank_templates([t], inp, feasibility={1: True}, definitions=definitions, all_exercises=[bench], config=cfg)
+    assert all(a.subject != "triceps" for a in ranked[0].advisories)
+
+
+def test_config_none_produces_no_frequency_advisories():
+    """config=None (today's production default) leaves advisories == [] for every match."""
+    bench = _exercise("bench", movement_pattern=MovementPattern.HORIZONTAL_PUSH, primary_muscles=["chest"])
+    split = _two_session_split(
+        [{"pattern": "horizontal_push", "priority": "primary", "scheme": "main"}],
+        [{"pattern": "squat", "priority": "primary", "scheme": "main"}],
+    )
+    t = _frequency_template(1, "one-session", split)
+    definitions = {1: _definition_for(t)}
+    inp = MatchInput("strength", "intermediate", 4, 60, [])
+    ranked = rank_templates([t], inp, feasibility={1: True}, definitions=definitions, all_exercises=[bench])
+    assert ranked[0].advisories == []
+
+
+def test_flag_explicitly_off_produces_no_frequency_advisories():
+    """config supplied but flags.use_frequency_advisories=False (explicit default) stays inert.
+
+    Mirrors the exact bug class from Task 2.5a's fix: the gate must check the flag itself,
+    not just `config is not None`.
+    """
+    bench = _exercise("bench", movement_pattern=MovementPattern.HORIZONTAL_PUSH, primary_muscles=["chest"])
+    split = _two_session_split(
+        [{"pattern": "horizontal_push", "priority": "primary", "scheme": "main"}],
+        [{"pattern": "squat", "priority": "primary", "scheme": "main"}],
+    )
+    t = _frequency_template(1, "one-session", split)
+    definitions = {1: _definition_for(t)}
+    inp = MatchInput("strength", "intermediate", 4, 60, [])
+    cfg = _frequency_config(enabled=False)
+    ranked = rank_templates([t], inp, feasibility={1: True}, definitions=definitions, all_exercises=[bench], config=cfg)
+    assert ranked[0].advisories == []
+
+
+def test_equipment_infeasible_exercises_excluded_from_reachability():
+    """A session whose only matching exercise requires unavailable equipment does not
+    count that group as reachable via that session -- equipment filtering must apply
+    before the 2-session reachability count, not after."""
+    bench = _exercise(
+        "bench-barbell",
+        movement_pattern=MovementPattern.HORIZONTAL_PUSH,
+        primary_muscles=["chest"],
+        equipment_tags=["barbell"],
+    )
+    cable_fly = _exercise(
+        "cable-fly",
+        movement_pattern=MovementPattern.ISOLATION,
+        primary_muscles=["chest"],
+        equipment_tags=["cable_machine"],
+    )
+    # Session A's slot only matches bench (barbell, available); session B's slot only
+    # matches cable_fly (cable_machine, unavailable) -- without equipment filtering both
+    # sessions would count as reachable, but only session A is reachable once filtered.
+    split = _two_session_split(
+        [{"pattern": "horizontal_push", "priority": "primary", "scheme": "main"}],
+        [{"pattern": "isolation", "priority": "primary", "scheme": "main"}],
+    )
+    t = _frequency_template(1, "equip-gated", split)
+    definitions = {1: _definition_for(t)}
+    inp = MatchInput("strength", "intermediate", 4, 60, ["barbell"])
+    cfg = _frequency_config(enabled=True)
+    ranked = rank_templates(
+        [t],
+        inp,
+        feasibility={1: True},
+        definitions=definitions,
+        all_exercises=[bench, cable_fly],
+        config=cfg,
+    )
+    advisories = ranked[0].advisories
+    assert len(advisories) == 1
+    assert advisories[0].subject == "chest"
+
+
+def test_template_match_out_round_trips_advisories_field():
+    """TemplateMatchOut(**m.__dict__, ...) -- programs.py's actual conversion -- carries
+    a nonempty advisories list through unchanged."""
+    match = TemplateMatch(
+        template_id=1,
+        slug="t",
+        name="T",
+        fit_pct=80,
+        factors={},
+        tier="best",
+        advisories=[Advisory(code="FREQUENCY_STRUCTURALLY_LIMITED", severity="info", subject="chest", message="x")],
+    )
+    assert dataclasses.is_dataclass(match)
+    out = TemplateMatchOut(**match.__dict__, required_inputs=[])
+    assert out.advisories == match.advisories
+    assert out.advisories[0].code == "FREQUENCY_STRUCTURALLY_LIMITED"

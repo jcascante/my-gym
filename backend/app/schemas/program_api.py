@@ -26,6 +26,20 @@ class MatchRequest(BaseModel):
         return v
 
 
+class Advisory(BaseModel):
+    """Structured, surfaced-not-silently-accepted advisory (plan §2.5, proposal §4.3).
+
+    `severity` mirrors `Alert.tsx`'s existing `type` prop vocabulary minus `"success"`
+    (an advisory is never a success state), so the frontend task can map directly with
+    no translation layer.
+    """
+
+    code: str
+    severity: Literal["info", "warning", "error"]
+    message: str
+    subject: str | None = None
+
+
 class TemplateMatchOut(BaseModel):
     template_id: int
     slug: str
@@ -38,6 +52,7 @@ class TemplateMatchOut(BaseModel):
     # Phase 2 (plan §2.5) will fold this into the general Advisory list rather
     # than keep it as a standalone boolean.
     all_infeasible: bool = False
+    advisories: list[Advisory] = []
 
 
 class DraftRequest(MatchRequest):
@@ -75,20 +90,6 @@ class WorkoutPreviewOut(BaseModel):
     key: str
     name: str
     slots: list[SlotPreviewOut]
-
-
-class Advisory(BaseModel):
-    """Structured, surfaced-not-silently-accepted advisory (plan §2.5, proposal §4.3).
-
-    `severity` mirrors `Alert.tsx`'s existing `type` prop vocabulary minus `"success"`
-    (an advisory is never a success state), so the frontend task can map directly with
-    no translation layer.
-    """
-
-    code: str
-    severity: Literal["info", "warning", "error"]
-    message: str
-    subject: str | None = None
 
 
 class ProgramPreviewOut(BaseModel):

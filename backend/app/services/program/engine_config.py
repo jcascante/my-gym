@@ -80,6 +80,7 @@ class EngineFlags(BaseModel):
     use_constraint_scorer: bool = False
     use_beam_search: bool = False
     use_volume_validator: bool = False
+    use_frequency_advisories: bool = False
 
 
 class VolumeBandRow(BaseModel):
