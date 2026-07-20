@@ -1,11 +1,16 @@
 from typing import Any
 
 from app.models import Exercise, ProgramStatus, ProgramTemplate, Workout, WorkoutExercise, WorkoutProgram
+from app.models.exercise import Muscle
 from app.schemas.program import EffortMethod
+from app.schemas.program_api import Advisory
 from app.schemas.template import SchemeDef, SlotRule, TemplateDefinition
+from app.services.program.adaptation import _reselect
 from app.services.program.assembly import SlotAssignment, assemble_session
 from app.services.program.engine_config import EngineConfig
+from app.services.program.ledger import LedgerPick, band_for_experience, compute_ledger
 from app.services.program.selection import SelectionContext, _extract_features, ranked_pool_for_slot
+from app.services.program.taxonomy import ROLE_FACTOR, muscle_group_for
 from app.services.program.variety import pool_size_for, rotation_pool_ids
 
 
@@ -50,11 +55,12 @@ def _make_workout_exercise(
     )
 
 
-def _apply_pick_to_ctx(ctx: SelectionContext, chosen: Exercise) -> None:
+def _apply_pick_to_ctx(ctx: SelectionContext, chosen: Exercise, *, sets: int, is_hard: bool, workout_key: str) -> None:
     ctx.used_movement_slugs.add(chosen.movement_slug)
     ctx.used_unilateral_flags.append(chosen.is_unilateral)
     for muscle in chosen.primary_muscles:
         ctx.muscle_coverage[muscle] += 1
+    ctx.ledger.apply(LedgerPick(exercise_id=chosen.id, workout_key=workout_key, sets=sets, is_hard=is_hard), chosen)
 
 
 def build_draft(
@@ -75,6 +81,7 @@ def build_draft(
     engine_config_version: str = "unversioned",
     config: EngineConfig | None = None,
     telemetry_sink: list[dict[str, Any]] | None = None,
+    advisory_sink: list[Advisory] | None = None,
 ) -> WorkoutProgram:
     applies_to_values = {
         ri.applies_to: required_inputs[ri.key]
@@ -116,7 +123,13 @@ def build_draft(
         if use_beam:
             assert config is not None  # narrowed by use_beam
             assignments: list[SlotAssignment] = assemble_session(
-                session.slots, exercises, ctx, config.assembly.beam_width
+                session.slots,
+                exercises,
+                ctx,
+                config.assembly.beam_width,
+                config=config,
+                schemes=definition.schemes,
+                workout_key=session.key,
             )
             for a in assignments:
                 scheme = definition.schemes[a.rule.scheme]
@@ -131,8 +144,10 @@ def build_draft(
                         }
                     )
                 # Apply the winning beam's picks to the shared ctx in slot order, so the next
-                # session continues from the correct accumulated variety/coverage state.
-                _apply_pick_to_ctx(ctx, a.exercise)
+                # session continues from the correct accumulated variety/coverage/ledger state.
+                _apply_pick_to_ctx(
+                    ctx, a.exercise, sets=scheme.sets, is_hard=(a.rule.scheme == "main"), workout_key=session.key
+                )
                 workout.exercises.append(
                     _make_workout_exercise(
                         a.order,
@@ -162,9 +177,124 @@ def build_draft(
                             "features": _extract_features(chosen, rule, ctx),
                         }
                     )
-                _apply_pick_to_ctx(ctx, chosen)
+                _apply_pick_to_ctx(
+                    ctx, chosen, sets=scheme.sets, is_hard=(rule.scheme == "main"), workout_key=session.key
+                )
                 workout.exercises.append(
                     _make_workout_exercise(i, chosen, rule, scheme, ranked, pool_size, applies_to_values, effort_method)
                 )
         program.workouts.append(workout)
+
+    # The post-draft volume validator is gated on the ledger term actually being active
+    # (lambda_v/lambda_f nonzero), not merely `config is not None`. This is a deliberate
+    # deviation from the plan's literal "if config is not None" gating: the sample
+    # exercise catalog + templates leave most muscle groups genuinely below MEV for a
+    # typical short split (there's no dedicated "enable the volume validator" flag in
+    # `EngineFlags` to key off instead, and lambda=0 is this task's own definition of
+    # "the ledger/volume feature is off"), so gating on bare `config is not None` would
+    # make the validator fire -- and mutate the draft via `_reselect` -- for existing
+    # regression tests that pass a config with default (zero) lambdas expecting
+    # byte-identical output vs. `config=None` (`test_config_with_flag_off_matches_config_none`,
+    # `test_beam_width_1_reproduces_greedy_output_exactly`, and the harness's
+    # width=1-equivalence sweep across ~250 profiles). See task-2.5a-report.md for the
+    # full reasoning and the concrete ledger numbers that surfaced this.
+    if config is not None and (config.assembly.lambda_v != 0.0 or config.assembly.lambda_f != 0.0):
+        _validate_and_repair_volume(program, definition, ctx, exercises, config, advisory_sink)
     return program
+
+
+def _group_contribution(exercise: Exercise, group: str, sets: int) -> float:
+    """How much a single WorkoutExercise row (for `exercise`, with `sets` sets) credits
+    `group`'s effective weekly sets -- mirrors `ledger.py`'s primary/secondary
+    group-crediting + role-factor logic for a single pick, without needing a full
+    `LedgerAccumulator` round-trip."""
+    primary_groups = {g for m in exercise.primary_muscles if (g := muscle_group_for(Muscle(m))) is not None}
+    if group in primary_groups:
+        return sets * ROLE_FACTOR["primary"]
+    secondary_groups = {
+        g for m in exercise.secondary_muscles if (g := muscle_group_for(Muscle(m))) is not None
+    } - primary_groups
+    if group in secondary_groups:
+        return sets * ROLE_FACTOR["secondary"]
+    return 0.0
+
+
+def _validate_and_repair_volume(
+    program: WorkoutProgram,
+    definition: TemplateDefinition,  # noqa: ARG001 -- unused today; reserved for template-structure-aware repair (Task 2.5b territory)
+    ctx: SelectionContext,
+    exercises: list[Exercise],
+    config: EngineConfig,
+    advisory_sink: list[Advisory] | None,
+) -> None:
+    """Post-draft volume validation + best-effort repair (plan §2.5, proposal §4.3).
+
+    One bounded pass: every group violating MEV/MRV gets exactly one targeted
+    `_reselect` attempt on its least-/most-contributing non-locked slot, then the ledger
+    is recomputed once and any group still violating gets a structured `Advisory`.
+
+    Not a loop-until-resolved: `_reselect` reuses the ordinary, ledger-unaware
+    `select_for_slot` heuristic -- it has no way to bias its pick toward improving a
+    specific muscle group, so there's no guarantee retrying would ever converge.
+    Surfacing what didn't resolve via an `Advisory` (rather than pretending a loop would
+    reliably fix it) matches the proposal's own framing: "surfaced, not silently
+    accepted." Making `_reselect` ledger-aware is a natural follow-up, out of scope here.
+    """
+    exercise_by_id = {ex.id: ex for ex in exercises}
+    band = band_for_experience(config.volume_bands, ctx.experience)
+
+    ledger = compute_ledger(program, exercises)
+    violations = [
+        group
+        for group, gl in ledger.items()
+        if gl.effective_sets_week < band.mev or gl.effective_sets_week > band.mrv_guard
+    ]
+
+    rows: list[tuple[Workout, WorkoutExercise]] = [(w, we) for w in program.workouts for we in w.exercises]
+
+    for group in violations:
+        below = ledger[group].effective_sets_week < band.mev
+        candidates = [(w, we) for w, we in rows if not we.is_locked]
+        if not candidates:
+            continue
+
+        def _contribution(item: tuple[Workout, WorkoutExercise]) -> float:
+            w, we = item
+            ex = exercise_by_id.get(we.exercise_id)
+            return 0.0 if ex is None else _group_contribution(ex, group, we.sets)
+
+        if below:
+            target = min(candidates, key=lambda item: (_contribution(item), item[0].order, item[1].order))
+        else:
+            target = min(candidates, key=lambda item: (-_contribution(item), item[0].order, item[1].order))
+        _reselect(program, target[1].id, ctx, exercises)
+
+    ledger = compute_ledger(program, exercises)
+    if advisory_sink is None:
+        return
+    for group, gl in ledger.items():
+        label = group.replace("_", " ").title()
+        if gl.effective_sets_week < band.mev:
+            advisory_sink.append(
+                Advisory(
+                    code="VOLUME_BELOW_MEV",
+                    severity="warning",
+                    subject=group,
+                    message=(
+                        f"{label} receives {gl.effective_sets_week:.1f} effective sets this week, "
+                        f"below the {band.mev}-set minimum for your level."
+                    ),
+                )
+            )
+        elif gl.effective_sets_week > band.mrv_guard:
+            advisory_sink.append(
+                Advisory(
+                    code="VOLUME_ABOVE_MRV",
+                    severity="warning",
+                    subject=group,
+                    message=(
+                        f"{label} receives {gl.effective_sets_week:.1f} effective sets this week, "
+                        f"above the {band.mrv_guard}-set maximum for your level."
+                    ),
+                )
+            )

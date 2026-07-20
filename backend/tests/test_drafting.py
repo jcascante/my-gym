@@ -1,9 +1,13 @@
 import pytest
 
-from app.schemas.template import TemplateDefinition
-from app.services.program.drafting import build_draft
+from app.models.exercise import BodyRegion, Exercise, ExperienceLevel, MovementPattern
+from app.models.program import Workout, WorkoutExercise, WorkoutProgram
+from app.schemas.template import SlotRule, TemplateDefinition
+from app.services.program.drafting import _validate_and_repair_volume, build_draft
 from app.services.program.engine_config import AssemblyConfig, EngineConfig, EngineFlags
-from app.services.program.selection import SelectionContext
+from app.services.program.ledger import compute_ledger
+from app.services.program.selection import SelectionContext, SelectionWeights
+from app.services.program.taxonomy import MUSCLE_GROUPS
 
 FEATURE_KEYS = {
     "variety",
@@ -553,3 +557,252 @@ async def test_build_draft_telemetry_sink_does_not_affect_program_output(sample_
     )
     assert _fingerprint(without_sink) == _fingerprint(with_sink)
     assert sink  # sanity: something was recorded
+
+
+# --- ctx.ledger bookkeeping (decision #4/#7: unconditional, safe no-op) -----------
+
+
+@pytest.mark.asyncio
+async def test_build_draft_populates_ctx_ledger_greedy(sample_template_orm, sample_exercises):
+    """_apply_pick_to_ctx's ledger.apply() call runs unconditionally (config=None too),
+    so ctx.ledger must end up matching an independent compute_ledger() over the same
+    program -- proving the bookkeeping is accurate, not just "doesn't crash"."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = _ctx()
+    program = _build(ctx, sample_template_orm, definition, sample_exercises, config=None)
+    expected = compute_ledger(program, sample_exercises)
+    actual = ctx.ledger.snapshot()
+    for group in MUSCLE_GROUPS:
+        assert actual[group].effective_sets_week == pytest.approx(expected[group].effective_sets_week)
+        assert actual[group].frequency_days == expected[group].frequency_days
+
+
+@pytest.mark.asyncio
+async def test_build_draft_populates_ctx_ledger_beam(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = _ctx()
+    config = EngineConfig(
+        config_version="test",
+        assembly=AssemblyConfig(beam_width=1),
+        flags=EngineFlags(use_beam_search=True),
+    )
+    program = _build(ctx, sample_template_orm, definition, sample_exercises, config=config)
+    expected = compute_ledger(program, sample_exercises)
+    actual = ctx.ledger.snapshot()
+    for group in MUSCLE_GROUPS:
+        assert actual[group].effective_sets_week == pytest.approx(expected[group].effective_sets_week)
+        assert actual[group].frequency_days == expected[group].frequency_days
+
+
+# --- Post-draft volume validator (plan §2.5, decision #6) -------------------------
+
+_ZERO_WEIGHTS = SelectionWeights(
+    variety=0.0,
+    priority_fit=0.0,
+    muscle_fit=0.0,
+    difficulty=0.0,
+    unilateral_balance=0.0,
+    movement_preference=0.0,
+    complementary_coverage=0.0,
+)
+
+
+def _validator_exercise(id_: int, slug: str, *, primary: list[str], secondary: list[str] | None = None) -> Exercise:
+    return Exercise(
+        id=id_,
+        name=slug,
+        slug=slug,
+        movement_slug=slug,
+        body_region=BodyRegion.FULL_BODY,
+        movement_pattern=MovementPattern.HORIZONTAL_PUSH,
+        primary_muscles=primary,
+        secondary_muscles=secondary or [],
+        equipment_tags=[],
+        difficulty_level=ExperienceLevel.INTERMEDIATE,
+        instructions="Do the thing.",
+        form_cues=[],
+        contraindications=[],
+        is_active=True,
+    )
+
+
+def _filler_workout_exercises(start_id: int) -> tuple[list[Exercise], list[WorkoutExercise]]:
+    """One locked, in-band (12 effective sets, intermediate band [8, 22]) WorkoutExercise
+    per group other than "chest" -- so only "chest" is ever a volume violation in these
+    tests, and the 14 filler rows (locked) are never eligible reselection targets."""
+    exercises: list[Exercise] = []
+    workout_exercises: list[WorkoutExercise] = []
+    muscle_for_group = {
+        "back": "lats",
+        "traps": "traps",
+        "shoulders": "shoulders_anterior",
+        "biceps": "biceps",
+        "triceps": "triceps",
+        "forearms": "forearms",
+        "quads": "quads",
+        "hamstrings": "hamstrings",
+        "glutes": "glutes",
+        "calves": "calves",
+        "abs": "abs",
+        "obliques": "obliques",
+        "lower_back": "lower_back",
+        "hips": "hip_flexors",
+    }
+    assert set(muscle_for_group) == set(MUSCLE_GROUPS) - {"chest"}
+    for i, (group, muscle) in enumerate(muscle_for_group.items()):
+        ex_id = start_id + i
+        ex = _validator_exercise(ex_id, f"filler-{group}", primary=[muscle])
+        exercises.append(ex)
+        workout_exercises.append(
+            WorkoutExercise(
+                id=ex_id,
+                order=i,
+                exercise_id=ex_id,
+                fills_rule={},
+                sets=12,
+                reps_min=8,
+                reps_max=12,
+                base_load=None,
+                rest_seconds=90,
+                scheme_key="main",
+                target_rpe=None,
+                intensity_pct=None,
+                is_locked=True,
+                is_user_swapped=False,
+                rotation_pool=[],
+            )
+        )
+    return exercises, workout_exercises
+
+
+def _ledger_test_ctx() -> SelectionContext:
+    return SelectionContext(
+        equipment=[],
+        experience="intermediate",
+        injuries=[],
+        used_movement_slugs=set(),
+        weights=_ZERO_WEIGHTS,
+    )
+
+
+_CHEST_RULE = SlotRule(pattern="horizontal_push", priority="accessory", scheme="accessory")
+
+
+def _chest_program(chest_we_exercise_id: int, chest_sets: int) -> tuple[WorkoutProgram, list[Exercise]]:
+    filler_exercises, filler_wes = _filler_workout_exercises(start_id=100)
+    chest_we = WorkoutExercise(
+        id=1,
+        order=99,
+        exercise_id=chest_we_exercise_id,
+        fills_rule=_CHEST_RULE.model_dump(),
+        sets=chest_sets,
+        reps_min=8,
+        reps_max=12,
+        base_load=None,
+        rest_seconds=90,
+        scheme_key="accessory",
+        target_rpe=None,
+        intensity_pct=None,
+        is_locked=False,
+        is_user_swapped=False,
+        rotation_pool=[],
+    )
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=0)
+    workout.exercises = [*filler_wes, chest_we]
+    program = WorkoutProgram(
+        id=1,
+        user_id=1,
+        template_id=1,
+        environment_id=1,
+        name="Validator Test Program",
+        focus=None,
+        status="draft",
+        duration_weeks=8,
+        days_per_week=1,
+        weight_unit="kg",
+        constraints={"excluded_exercise_ids": [], "swaps": {}},
+    )
+    program.workouts = [workout]
+    return program, filler_exercises
+
+
+def test_validate_and_repair_volume_resolves_when_a_better_candidate_exists():
+    """ex_current (id=5) credits chest only as a SECONDARY muscle (0.5x); ex_better
+    (id=1, lower id -- wins the all-zero-weight tie in select_for_slot) credits chest
+    as PRIMARY (1.0x). Reselection swaps the slot to ex_better, pushing chest's
+    effective sets from 5.0 (< MEV=8) to 10.0 (>= MEV) without changing `we.sets`."""
+    ex_current = _validator_exercise(5, "current", primary=["cardio"], secondary=["chest"])
+    ex_better = _validator_exercise(1, "better", primary=["chest"])
+    program, filler_exercises = _chest_program(chest_we_exercise_id=5, chest_sets=10)
+    exercises = [*filler_exercises, ex_current, ex_better]
+
+    config = EngineConfig(config_version="x", assembly=AssemblyConfig(lambda_v=1.0))
+    ctx = _ledger_test_ctx()
+    sink: list = []
+    _validate_and_repair_volume(program, None, ctx, exercises, config, sink)
+
+    ledger = compute_ledger(program, exercises)
+    assert ledger["chest"].effective_sets_week >= 8.0
+    assert program.workouts[0].exercises[-1].exercise_id == 1  # swapped to ex_better
+    assert sink == []  # resolved -- no advisory
+
+
+def test_validate_and_repair_volume_surfaces_advisory_when_unresolvable():
+    """Both available candidates for the chest slot only credit chest as a SECONDARY
+    muscle (0.5x): no matter which one `_reselect` picks, chest's effective sets can't
+    cross MEV. Exactly one Advisory must be emitted for it."""
+    ex_current = _validator_exercise(5, "current", primary=["cardio"], secondary=["chest"])
+    ex_alt = _validator_exercise(2, "alt", primary=["cardio"], secondary=["chest"])
+    program, filler_exercises = _chest_program(chest_we_exercise_id=5, chest_sets=10)
+    exercises = [*filler_exercises, ex_current, ex_alt]
+
+    config = EngineConfig(config_version="x", assembly=AssemblyConfig(lambda_v=1.0))
+    ctx = _ledger_test_ctx()
+    sink: list = []
+    _validate_and_repair_volume(program, None, ctx, exercises, config, sink)
+
+    ledger = compute_ledger(program, exercises)
+    assert ledger["chest"].effective_sets_week < 8.0
+    assert len(sink) == 1
+    assert sink[0].code == "VOLUME_BELOW_MEV"
+    assert sink[0].subject == "chest"
+    assert sink[0].severity == "warning"
+
+
+def test_validate_and_repair_volume_advisory_sink_none_does_not_crash():
+    ex_current = _validator_exercise(5, "current", primary=["cardio"], secondary=["chest"])
+    ex_alt = _validator_exercise(2, "alt", primary=["cardio"], secondary=["chest"])
+    program, filler_exercises = _chest_program(chest_we_exercise_id=5, chest_sets=10)
+    exercises = [*filler_exercises, ex_current, ex_alt]
+
+    config = EngineConfig(config_version="x", assembly=AssemblyConfig(lambda_v=1.0))
+    ctx = _ledger_test_ctx()
+    _validate_and_repair_volume(program, None, ctx, exercises, config, None)  # must not raise
+
+
+@pytest.mark.asyncio
+async def test_build_draft_wires_advisories_through_when_lambda_nonzero(sample_template_orm, sample_exercises):
+    """Integration check: build_draft's advisory_sink actually gets populated end-to-end
+    when a real EngineConfig with a nonzero lambda is passed (the sample template's
+    volumes are well below intermediate MEV for most groups, so this should fire)."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = _ctx()
+    config = EngineConfig(config_version="test", assembly=AssemblyConfig(lambda_v=1.0))
+    sink: list = []
+    build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80, "bench_start": 60},
+        variety_preference="high",
+        config=config,
+        advisory_sink=sink,
+    )
+    assert sink  # at least one unresolved violation surfaced
+    assert all(a.code in ("VOLUME_BELOW_MEV", "VOLUME_ABOVE_MRV") for a in sink)

@@ -77,12 +77,27 @@ class WorkoutPreviewOut(BaseModel):
     slots: list[SlotPreviewOut]
 
 
+class Advisory(BaseModel):
+    """Structured, surfaced-not-silently-accepted advisory (plan §2.5, proposal §4.3).
+
+    `severity` mirrors `Alert.tsx`'s existing `type` prop vocabulary minus `"success"`
+    (an advisory is never a success state), so the frontend task can map directly with
+    no translation layer.
+    """
+
+    code: str
+    severity: Literal["info", "warning", "error"]
+    message: str
+    subject: str | None = None
+
+
 class ProgramPreviewOut(BaseModel):
     program_id: int
     name: str
     status: str
     duration_weeks: int
     weeks: dict[int, list[WorkoutPreviewOut]]
+    advisories: list[Advisory] = []
 
 
 class AlternativeOut(BaseModel):

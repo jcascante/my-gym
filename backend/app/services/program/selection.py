@@ -5,6 +5,7 @@ from typing import Protocol
 from app.models.exercise import Exercise
 from app.schemas.template import SlotRule
 from app.services.program.complementation import coverage_deficit
+from app.services.program.ledger import LedgerAccumulator
 from app.services.program.preferences import movement_preference_weight
 
 EXPERIENCE_ORDER = {"beginner": 0, "intermediate": 1, "advanced": 2}
@@ -53,6 +54,7 @@ class SelectionContext:
     muscle_coverage: "Counter[str]" = field(default_factory=Counter)
     complementary_focus: bool = True
     weights: SelectionWeights = field(default_factory=SelectionWeights)
+    ledger: LedgerAccumulator = field(default_factory=LedgerAccumulator)
 
 
 def _matches_rule(ex: Exercise, rule: SlotRule) -> bool:

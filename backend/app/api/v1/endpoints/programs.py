@@ -15,6 +15,7 @@ from app.crud.program import get_program, get_template, list_active_templates, s
 from app.crud.training_environment import get_training_environment
 from app.models import ProgramStatus, TrainingEnvironment, User, WorkoutProgram
 from app.schemas.program_api import (
+    Advisory,
     AlternativeOut,
     DraftRequest,
     FeedbackRequest,
@@ -59,7 +60,12 @@ async def _ctx_for(
     )
 
 
-async def _preview_out(db: AsyncSession, program: WorkoutProgram, definition: TemplateDefinition) -> ProgramPreviewOut:
+async def _preview_out(
+    db: AsyncSession,
+    program: WorkoutProgram,
+    definition: TemplateDefinition,
+    advisories: list[Advisory] | None = None,
+) -> ProgramPreviewOut:
     exercise_ids = [ex.exercise_id for w in program.workouts for ex in w.exercises]
     exercises = await get_exercises_by_ids(db, exercise_ids) if exercise_ids else {}
     weeks = {
@@ -72,6 +78,7 @@ async def _preview_out(db: AsyncSession, program: WorkoutProgram, definition: Te
         status=program.status.value,
         duration_weeks=program.duration_weeks,
         weeks=weeks,
+        advisories=advisories or [],
     )
 
 
@@ -154,6 +161,7 @@ async def draft(
     )
     exercises = await list_exercises(db)
     telemetry_sink: list[dict[str, Any]] = []
+    advisory_sink: list[Advisory] = []
     program = build_draft(
         template,
         definition,
@@ -170,6 +178,7 @@ async def draft(
         variety_preference=data.variety_preference.value,
         engine_config_version=engine_config.config_version,
         telemetry_sink=telemetry_sink,
+        advisory_sink=advisory_sink,
     )
     await save_program(db, program)
     for entry in telemetry_sink:
@@ -183,7 +192,7 @@ async def draft(
     saved = await get_program(db, user.id, program.id)
     assert saved is not None
     preview_definition = apply_progression_style(definition, data.progression_style.value)
-    return await _preview_out(db, saved, preview_definition)
+    return await _preview_out(db, saved, preview_definition, advisories=advisory_sink)
 
 
 async def _load(db: AsyncSession, user: User, program_id: int) -> tuple[WorkoutProgram, TemplateDefinition]:

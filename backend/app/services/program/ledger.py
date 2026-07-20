@@ -18,6 +18,7 @@ from dataclasses import dataclass
 
 from app.models.exercise import Exercise, Muscle
 from app.models.program import WorkoutProgram
+from app.services.program.engine_config import VolumeBandRow, VolumeBandsConfig
 from app.services.program.taxonomy import MUSCLE_GROUPS, ROLE_FACTOR, muscle_group_for
 
 
@@ -153,6 +154,19 @@ class LedgerAccumulator:
             key = (group, pick.workout_key)
             self._pick_counts[key] -= 1
 
+    def clone(self) -> "LedgerAccumulator":
+        """Return an independent copy of this accumulator (deep-copies the three
+        internal dicts, mirroring their construction in `__init__`).
+
+        Used by beam search to branch speculative per-candidate volume state without
+        mutating the parent beam's ledger (plan §2.5).
+        """
+        new = LedgerAccumulator()
+        new._effective_sets = dict(self._effective_sets)
+        new._hard_sets = dict(self._hard_sets)
+        new._pick_counts = dict(self._pick_counts)
+        return new
+
     def snapshot(self) -> Ledger:
         """Return the current ledger state as a frozen Ledger dict.
 
@@ -182,6 +196,17 @@ class LedgerAccumulator:
             )
 
         return result
+
+
+def band_for_experience(volume_bands: VolumeBandsConfig, experience: str) -> VolumeBandRow:
+    """Look up the volume band row matching `experience` (plan §2.4/§2.5).
+
+    A validated `engine.yaml` always has exactly one row per experience level (Task
+    2.4's schema, not enforced by a validator but true of every config that will ever
+    load), so a linear scan is fine; a missing row means a config-loading bug, not a
+    runtime-recoverable case, so it's allowed to raise `StopIteration`.
+    """
+    return next(b for b in volume_bands.bands if b.experience == experience)
 
 
 def compute_ledger(program: WorkoutProgram, exercises: list[Exercise]) -> Ledger:
