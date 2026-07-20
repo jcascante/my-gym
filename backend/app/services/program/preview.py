@@ -77,14 +77,7 @@ def derive_week(
             is_first_primary = not first_primary_assigned and ex.fills_rule.get("priority") == "primary"
             if is_first_primary:
                 first_primary_assigned = True
-            warmup_sets = (
-                [
-                    {"pct": pct, "reps": reps, "load": round(pct * scheme.load, 1) if scheme.load is not None else None}
-                    for pct, reps in _WARMUP_RAMP
-                ]
-                if is_first_primary and scheme.load is not None
-                else []
-            )
+            warmup_sets = _warmup_sets(scheme.load) if is_first_primary else []
             slots.append(
                 {
                     "workout_exercise_id": ex.id,

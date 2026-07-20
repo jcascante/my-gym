@@ -499,9 +499,10 @@ async def test_derive_week_warmup_sets_first_primary_slot_only(sample_template_o
         assert len(warmup_slots) <= 1, f"Expected at most 1 slot with warmup_sets per workout, got {len(warmup_slots)}"
         # Verify the warmup slot has the expected structure
         if warmup_slots:
+            warmup_slot_load = warmup_slots[0]["load"]
             warmup = warmup_slots[0]["warmup_sets"]
             assert len(warmup) == 3, "Warmup ramp should have 3 sets"
-            assert warmup[0] == {"pct": 0.4, "reps": 5, "load": 0.4 * slots[0]["load"] if slots[0]["load"] else None}
+            assert warmup[0] == {"pct": 0.4, "reps": 5, "load": round(0.4 * warmup_slot_load, 1)}
 
 
 @pytest.mark.asyncio
