@@ -8,6 +8,7 @@ from app.api.v1 import (
     exercises_router,
     injuries_router,
     programs_router,
+    templates_router,
     training_environments_router,
     users_router,
 )
@@ -84,6 +85,7 @@ app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(users_router, prefix=settings.API_V1_STR)
 app.include_router(training_environments_router, prefix=settings.API_V1_STR)
 app.include_router(exercises_router, prefix=settings.API_V1_STR)
+app.include_router(templates_router, prefix=settings.API_V1_STR)
 app.include_router(programs_router, prefix=settings.API_V1_STR)
 app.include_router(injuries_router, prefix=settings.API_V1_STR)
 
