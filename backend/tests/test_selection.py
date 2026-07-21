@@ -1,6 +1,9 @@
 # backend/tests/test_selection.py
+from datetime import date
+
+from app.models.injury import InjuryCondition, InjuryPhase, InjuryRecord, InjuryRegion, InjurySource
 from app.schemas.template import SlotRule
-from app.services.program.selection import SelectionContext, select_for_slot
+from app.services.program.selection import SelectionContext, select_for_slot, selection_hazards_from_injury_records
 
 
 class _Ex:
@@ -106,6 +109,60 @@ def test_movement_preference_biases_selection_without_excluding_others():
     )
     chosen = select_for_slot([barbell_ex, kb_ex], rule, ctx, None, set())
     assert chosen.id == 2  # kettlebell strongly preferred
+
+
+def _injury(
+    region: str,
+    *,
+    phase: str = "rehabilitating",
+    provocations: list[str] | None = None,
+) -> InjuryRecord:
+    return InjuryRecord(
+        user_id=1,
+        region=InjuryRegion(region),
+        condition=InjuryCondition.TENDINOPATHY,
+        phase=InjuryPhase(phase),
+        provocations=provocations or [],
+        severity=2,
+        reported_at=date(2026, 1, 1),
+        source=InjurySource.USER_REPORTED,
+    )
+
+
+def test_selection_hazards_maps_region_to_contraindication_tag():
+    injuries, provocations = selection_hazards_from_injury_records([_injury("knee", provocations=[])])
+    assert injuries == ["knee"]
+    assert provocations == []
+
+
+def test_selection_hazards_maps_region_synonyms():
+    injuries, _ = selection_hazards_from_injury_records([_injury("cervical"), _injury("lumbar"), _injury("ankle_foot")])
+    assert set(injuries) == {"neck", "lower_back", "ankle"}
+
+
+def test_selection_hazards_thoracic_has_no_contraindication_tag():
+    injuries, _ = selection_hazards_from_injury_records([_injury("thoracic")])
+    assert injuries == []
+
+
+def test_selection_hazards_cleared_record_contributes_nothing():
+    injuries, provocations = selection_hazards_from_injury_records(
+        [_injury("knee", phase="cleared", provocations=["deep_knee_flexion"])]
+    )
+    assert injuries == []
+    assert provocations == []
+
+
+def test_selection_hazards_tracks_rehabilitating_flag_per_provocation():
+    injuries, provocations = selection_hazards_from_injury_records(
+        [
+            _injury("knee", phase="rehabilitating", provocations=["deep_knee_flexion"]),
+            _injury("shoulder", phase="acute", provocations=["overhead"]),
+        ]
+    )
+    assert injuries == ["knee", "shoulder"]
+    by_provocation = {p.provocation: p.is_rehabilitating for p in provocations}
+    assert by_provocation == {"deep_knee_flexion": True, "overhead": False}
 
 
 def test_movement_preference_never_empties_a_slot():

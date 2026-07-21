@@ -2,13 +2,65 @@ from collections import Counter
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from app.models.exercise import Exercise
+from app.models.exercise import Contraindication, Exercise
+from app.models.injury import InjuryPhase, InjuryRecord, InjuryRegion
 from app.schemas.template import SlotRule
 from app.services.program.complementation import coverage_deficit
 from app.services.program.ledger import LedgerAccumulator
 from app.services.program.preferences import movement_preference_weight
 
 EXPERIENCE_ORDER = {"beginner": 0, "intermediate": 1, "advanced": 2}
+
+# InjuryRegion -> Contraindication tag, for the pre-existing region-level hard filter in
+# `_passes_filters` (task 3.3, plan §3.3). THORACIC has no Contraindication equivalent -
+# the exercise library has no mid/upper-back tag - so a thoracic record only ever
+# contributes provocation-based hazards, never a contraindication tag.
+_REGION_TO_CONTRAINDICATION: dict[InjuryRegion, str] = {
+    InjuryRegion.SHOULDER: Contraindication.SHOULDER.value,
+    InjuryRegion.ELBOW: Contraindication.ELBOW.value,
+    InjuryRegion.WRIST: Contraindication.WRIST.value,
+    InjuryRegion.CERVICAL: Contraindication.NECK.value,
+    InjuryRegion.LUMBAR: Contraindication.LOWER_BACK.value,
+    InjuryRegion.HIP: Contraindication.HIP.value,
+    InjuryRegion.KNEE: Contraindication.KNEE.value,
+    InjuryRegion.ANKLE_FOOT: Contraindication.ANKLE.value,
+}
+
+
+@dataclass(frozen=True)
+class ActiveInjuryProvocation:
+    """One (provocation, rehab-phase) pair contributed by an active InjuryRecord.
+
+    Flat rather than grouped by record: a slot can be hit by several records at once,
+    and the safety-substitution pass (drafting.py) only needs "is this provocation
+    live, and if so is any contributing record rehabilitating" - not full record detail.
+    """
+
+    provocation: str
+    is_rehabilitating: bool
+
+
+def selection_hazards_from_injury_records(
+    records: list[InjuryRecord],
+) -> tuple[list[str], list[ActiveInjuryProvocation]]:
+    """Convert a user's InjuryRecord rows into the two hazard signals the engine
+    consumes: region-derived contraindication tags (existing `_passes_filters` hard
+    exclude, unchanged) and per-provocation rehab flags (new, task 3.3's
+    safety-substitution pass in drafting.py). A `CLEARED` record contributes neither -
+    it's resolved and shouldn't constrain selection.
+    """
+    contraindications: list[str] = []
+    provocations: list[ActiveInjuryProvocation] = []
+    for record in records:
+        if record.phase == InjuryPhase.CLEARED:
+            continue
+        tag = _REGION_TO_CONTRAINDICATION.get(record.region)
+        if tag is not None:
+            contraindications.append(tag)
+        is_rehabilitating = record.phase == InjuryPhase.REHABILITATING
+        for provocation in record.provocations:
+            provocations.append(ActiveInjuryProvocation(provocation=provocation, is_rehabilitating=is_rehabilitating))
+    return contraindications, provocations
 
 
 @dataclass(frozen=True)
@@ -55,6 +107,7 @@ class SelectionContext:
     complementary_focus: bool = True
     weights: SelectionWeights = field(default_factory=SelectionWeights)
     ledger: LedgerAccumulator = field(default_factory=LedgerAccumulator)
+    injury_provocations: list[ActiveInjuryProvocation] = field(default_factory=list)
 
 
 def _matches_rule(ex: Exercise, rule: SlotRule) -> bool:

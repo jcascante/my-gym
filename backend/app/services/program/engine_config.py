@@ -82,6 +82,7 @@ class EngineFlags(BaseModel):
     use_volume_validator: bool = False
     use_frequency_advisories: bool = False
     use_interference_scheduler: bool = False
+    use_safety_substitution: bool = False
 
 
 class VolumeBandRow(BaseModel):

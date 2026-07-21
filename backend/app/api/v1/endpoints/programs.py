@@ -11,6 +11,7 @@ from app.core import (
 )
 from app.core.database import get_db
 from app.crud.exercise import get_exercises_by_ids, list_exercises
+from app.crud.injury import list_injury_records
 from app.crud.program import get_program, get_template, list_active_templates, save_program
 from app.crud.training_environment import get_training_environment
 from app.models import ProgramStatus, TrainingEnvironment, User, WorkoutProgram
@@ -30,7 +31,7 @@ from app.services.program.drafting import build_draft
 from app.services.program.engine_config import EngineConfig, get_engine_config
 from app.services.program.matching import MatchInput, rank_templates
 from app.services.program.preview import derive_week
-from app.services.program.selection import SelectionContext, template_is_feasible
+from app.services.program.selection import SelectionContext, selection_hazards_from_injury_records, template_is_feasible
 from app.services.program.style_override import apply_progression_style
 from app.services.program.telemetry import record_event
 
@@ -46,9 +47,8 @@ async def _ctx_for(
     complementary_focus: bool = True,
 ) -> SelectionContext:
     profile = user.profile
-    injuries = []
-    if profile and profile.injuries_limitations:
-        injuries = [w.strip().lower() for w in profile.injuries_limitations.split(",") if w.strip()]
+    injury_records = await list_injury_records(db, user.id)
+    injuries, injury_provocations = selection_hazards_from_injury_records(injury_records)
     experience = profile.experience_level.value if profile and profile.experience_level else "beginner"
     return SelectionContext(
         list(environment.equipment_tags),
@@ -57,6 +57,7 @@ async def _ctx_for(
         set(),
         movement_preferences=movement_preferences or {},
         complementary_focus=complementary_focus,
+        injury_provocations=injury_provocations,
     )
 
 

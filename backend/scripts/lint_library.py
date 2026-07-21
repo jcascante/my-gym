@@ -27,6 +27,7 @@ from app.core.database import async_session
 from app.models.exercise import Equipment, Exercise, Muscle, Provocation
 from app.models.program import ProgramTemplate
 from app.models.user import ExperienceLevel
+from app.services.program.regression_graphs import RegressionGraphsConfig, get_regression_graphs
 from app.services.program.taxonomy import MUSCLE_GROUPS, muscle_group_for
 
 # The "other" environment preset is deliberately empty (core/constants.py) --
@@ -194,13 +195,48 @@ def check_duplicates_and_orphans(exercises: list[Exercise]) -> list[str]:
     return violations
 
 
-def lint_library(exercises: list[Exercise], templates: list[ProgramTemplate]) -> list[str]:
-    """Run all four checks and concatenate violation messages. Empty result = library passes."""
+def check_regression_graphs(
+    exercises: list[Exercise], templates: list[ProgramTemplate], graphs: RegressionGraphsConfig
+) -> list[str]:
+    """Every regression-graph node slug must exist in the library (all rows, not just
+    active -- same rationale as `check_schema_validity`), and every movement pattern
+    used by an active template must have >=2 `regression` edges + >=1 `cross_pattern`
+    edge (plan §3.3 exit criteria). Edge `relieves` values are already validated as real
+    `Provocation` members at config-load time (`RegressionEdge`'s Pydantic typing), so
+    that half of "edge axes" doesn't need a separate check here.
+    """
+    violations: list[str] = []
+    slugs = {exercise.slug for exercise in exercises}
+
+    for pattern, edges in graphs.patterns.items():
+        for edge in edges:
+            if edge.from_slug not in slugs:
+                violations.append(f"regression_graphs.{pattern}: unknown 'from' slug {edge.from_slug!r}")
+            if edge.to not in slugs:
+                violations.append(f"regression_graphs.{pattern}: unknown 'to' slug {edge.to!r}")
+
+    for pattern in sorted(_active_template_patterns(templates)):
+        edges = graphs.patterns.get(pattern, [])
+        regressions = sum(1 for e in edges if e.kind == "regression")
+        cross_pattern = sum(1 for e in edges if e.kind == "cross_pattern")
+        if regressions < 2:
+            violations.append(f"regression_graphs.{pattern}: only {regressions} regression edge(s), need >= 2")
+        if cross_pattern < 1:
+            violations.append(f"regression_graphs.{pattern}: only {cross_pattern} cross_pattern edge(s), need >= 1")
+
+    return violations
+
+
+def lint_library(
+    exercises: list[Exercise], templates: list[ProgramTemplate], graphs: RegressionGraphsConfig
+) -> list[str]:
+    """Run all five checks and concatenate violation messages. Empty result = library passes."""
     violations: list[str] = []
     violations.extend(check_schema_validity(exercises))
     violations.extend(check_reachability(exercises, templates))
     violations.extend(check_coverage(exercises))
     violations.extend(check_duplicates_and_orphans(exercises))
+    violations.extend(check_regression_graphs(exercises, templates, graphs))
     return violations
 
 
@@ -208,7 +244,7 @@ async def _load_and_lint() -> list[str]:
     async with async_session() as db:
         exercises = list((await db.execute(select(Exercise))).scalars().all())
         templates = list((await db.execute(select(ProgramTemplate))).scalars().all())
-    return lint_library(exercises, templates)
+    return lint_library(exercises, templates, get_regression_graphs())
 
 
 def main() -> int:

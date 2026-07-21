@@ -3,13 +3,17 @@ from sqlalchemy import select
 
 from app.models.exercise import BodyRegion, Exercise, ExperienceLevel, MovementPattern
 from app.models.program import ProgramTemplate
+from app.services.program.regression_graphs import RegressionEdge, RegressionGraphsConfig, get_regression_graphs
 from scripts.lint_library import (
     check_coverage,
     check_duplicates_and_orphans,
     check_reachability,
+    check_regression_graphs,
     check_schema_validity,
     lint_library,
 )
+
+_EMPTY_GRAPHS = RegressionGraphsConfig(config_version="test")
 
 
 def _exercise(
@@ -275,13 +279,65 @@ class TestCheckDuplicatesAndOrphans:
 class TestLintLibrary:
     def test_concatenates_all_four_checks(self):
         exercises = [_exercise("dup", equipment_tags=["not_a_real_tag"]), _exercise("dup")]
-        violations = lint_library(exercises, [])
+        violations = lint_library(exercises, [], _EMPTY_GRAPHS)
         assert any("Duplicate" in v for v in violations)
         assert any("equipment_tags" in v for v in violations)
 
     def test_empty_input_has_no_schema_or_duplicate_violations(self):
-        violations = lint_library([], [])
+        violations = lint_library([], [], _EMPTY_GRAPHS)
         assert not any("Duplicate" in v or "invalid" in v for v in violations)
+
+
+class TestCheckRegressionGraphs:
+    def _graphs(self, patterns: dict[str, list[RegressionEdge]]) -> RegressionGraphsConfig:
+        return RegressionGraphsConfig(config_version="test", patterns=patterns)
+
+    def test_unknown_from_slug_is_flagged(self):
+        edge = RegressionEdge(from_slug="ghost", to="real-ex", kind="regression", relieves=["axial_loading"])
+        exercises = [_exercise("real-ex")]
+        violations = check_regression_graphs(exercises, [], self._graphs({"squat": [edge]}))
+        assert any("unknown 'from' slug" in v and "ghost" in v for v in violations)
+
+    def test_unknown_to_slug_is_flagged(self):
+        edge = RegressionEdge(from_slug="real-ex", to="ghost", kind="regression", relieves=["axial_loading"])
+        exercises = [_exercise("real-ex")]
+        violations = check_regression_graphs(exercises, [], self._graphs({"squat": [edge]}))
+        assert any("unknown 'to' slug" in v and "ghost" in v for v in violations)
+
+    def test_active_template_pattern_with_fewer_than_two_regressions_is_flagged(self):
+        exercises = [_exercise("a"), _exercise("b")]
+        edge = RegressionEdge(from_slug="a", to="b", kind="regression", relieves=["axial_loading"])
+        template = _template("t1", slots_by_session=[[{"pattern": "squat", "priority": "primary", "scheme": "main"}]])
+        violations = check_regression_graphs(exercises, [template], self._graphs({"squat": [edge]}))
+        assert any("only 1 regression edge" in v for v in violations)
+
+    def test_active_template_pattern_missing_cross_pattern_edge_is_flagged(self):
+        exercises = [_exercise("a"), _exercise("b"), _exercise("c")]
+        edges = [
+            RegressionEdge(from_slug="a", to="b", kind="regression", relieves=["axial_loading"]),
+            RegressionEdge(from_slug="a", to="c", kind="regression", relieves=["axial_loading"]),
+        ]
+        template = _template("t1", slots_by_session=[[{"pattern": "squat", "priority": "primary", "scheme": "main"}]])
+        violations = check_regression_graphs(exercises, [template], self._graphs({"squat": edges}))
+        assert any("only 0 cross_pattern edge" in v for v in violations)
+
+    def test_valid_graph_for_active_pattern_has_no_violations(self):
+        exercises = [_exercise("a"), _exercise("b"), _exercise("c"), _exercise("d")]
+        edges = [
+            RegressionEdge(from_slug="a", to="b", kind="regression", relieves=["axial_loading"]),
+            RegressionEdge(from_slug="a", to="c", kind="regression", relieves=["axial_loading"]),
+            RegressionEdge(from_slug="a", to="d", kind="cross_pattern", relieves=["deep_knee_flexion"]),
+        ]
+        template = _template("t1", slots_by_session=[[{"pattern": "squat", "priority": "primary", "scheme": "main"}]])
+        violations = check_regression_graphs(exercises, [template], self._graphs({"squat": edges}))
+        assert violations == []
+
+    def test_pattern_not_used_by_any_active_template_is_not_required_to_have_edges(self):
+        template = _template(
+            "t1", slots_by_session=[[{"pattern": "squat", "priority": "primary", "scheme": "main"}]], is_active=False
+        )
+        violations = check_regression_graphs([], [template], self._graphs({}))
+        assert violations == []
 
 
 @pytest.mark.asyncio
@@ -296,5 +352,5 @@ async def test_real_seeded_catalog_passes_lint(db_session, seeded_templates, see
     all_exercises = list((await db_session.execute(select(Exercise))).scalars().all())
     templates = list((await db_session.execute(select(ProgramTemplate))).scalars().all())
 
-    violations = lint_library(all_exercises, templates)
+    violations = lint_library(all_exercises, templates, get_regression_graphs())
     assert violations == [], "\n".join(violations)

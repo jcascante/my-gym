@@ -9,6 +9,7 @@ from app.services.program.adaptation import _reselect_exercise
 from app.services.program.assembly import SlotAssignment, assemble_session
 from app.services.program.engine_config import EngineConfig
 from app.services.program.ledger import LedgerPick, band_for_experience, compute_ledger
+from app.services.program.regression_graphs import RegressionEdge, RegressionGraphsConfig, get_regression_graphs
 from app.services.program.selection import SelectionContext, _extract_features, ranked_pool_for_slot
 from app.services.program.taxonomy import ROLE_FACTOR, muscle_group_for
 from app.services.program.variety import pool_size_for, rotation_pool_ids
@@ -82,6 +83,7 @@ def build_draft(
     config: EngineConfig | None = None,
     telemetry_sink: list[dict[str, Any]] | None = None,
     advisory_sink: list[Advisory] | None = None,
+    regression_graphs: RegressionGraphsConfig | None = None,
 ) -> WorkoutProgram:
     applies_to_values = {
         ri.applies_to: required_inputs[ri.key]
@@ -211,6 +213,15 @@ def build_draft(
     # commute.
     if config is not None and config.flags.use_interference_scheduler:
         _apply_interference_scheduling(program, exercises, advisory_sink)
+
+    # Independent post-draft pass, gated on its own dedicated flag (same convention as
+    # the two passes above). Safe to run after both: it only ever swaps `exercise_id`
+    # (like the volume validator) or removes a row entirely when no safe substitute
+    # exists - it never reorders or renumbers `.order` (the interference scheduler's
+    # concern), and it doesn't touch the ledger.
+    if config is not None and config.flags.use_safety_substitution:
+        graphs = regression_graphs if regression_graphs is not None else get_regression_graphs()
+        _apply_safety_substitution(program, exercises, ctx, graphs, advisory_sink)
     return program
 
 
@@ -359,3 +370,99 @@ def _apply_interference_scheduling(
                     ),
                 )
             )
+
+
+def _permissible_substitute(
+    edges: list[RegressionEdge],
+    kind: str,
+    exercise_by_slug: dict[str, Exercise],
+    ctx: SelectionContext,
+    hit_provocations: set[str],
+) -> Exercise | None:
+    """First edge of `kind` whose target relieves one of `hit_provocations`, exists in
+    the library, fits the user's equipment, and doesn't itself trigger the same
+    hazard(s) -- edges are tried in authored order (nearest-first for regressions)."""
+    for edge in edges:
+        if edge.kind != kind or not ({p.value for p in edge.relieves} & hit_provocations):
+            continue
+        candidate = exercise_by_slug.get(edge.to)
+        if candidate is None:
+            continue
+        if not set(candidate.equipment_tags) <= set(ctx.equipment):
+            continue
+        if set(candidate.provocation_tags) & hit_provocations:
+            continue
+        return candidate
+    return None
+
+
+def _apply_safety_substitution(
+    program: WorkoutProgram,
+    exercises: list[Exercise],
+    ctx: SelectionContext,
+    graphs: RegressionGraphsConfig,
+    advisory_sink: list[Advisory] | None,
+) -> None:
+    """Post-draft safety substitution (plan §3.3, proposal §5.1/§5.2): every slot whose
+    chosen exercise's `provocation_tags` collides with one of the user's active
+    `InjuryRecord.provocations` gets walked through its pattern's regression graph -
+    nearest same-pattern regression first, then a cross-pattern substitute, and only if
+    neither exists is the slot dropped entirely. Never silent: every substitution or
+    removal emits an `Advisory`.
+
+    Region-level contraindication exclusion (`ctx.injuries`) is a separate, pre-existing
+    mechanism in `selection.py::_passes_filters` and is untouched here - this pass only
+    concerns the provocation vocabulary task 3.1 introduced, which `_passes_filters`
+    never checked at all.
+    """
+    if not ctx.injury_provocations:
+        return
+    exercise_by_id = {ex.id: ex for ex in exercises}
+    exercise_by_slug = {ex.slug: ex for ex in exercises}
+    injury_provocation_by_value = {p.provocation: p for p in ctx.injury_provocations}
+    active_provocations = set(injury_provocation_by_value)
+
+    for workout in program.workouts:
+        for we in list(workout.exercises):
+            exercise = exercise_by_id.get(we.exercise_id)
+            if exercise is None:
+                continue
+            hit = set(exercise.provocation_tags) & active_provocations
+            if not hit:
+                continue
+            edges = graphs.patterns.get(exercise.movement_pattern.value, [])
+            substitute = _permissible_substitute(
+                edges, "regression", exercise_by_slug, ctx, hit
+            ) or _permissible_substitute(edges, "cross_pattern", exercise_by_slug, ctx, hit)
+
+            hazard_list = ", ".join(sorted(hit))
+            if substitute is not None:
+                we.exercise_id = substitute.id
+                if we.base_load is not None and any(injury_provocation_by_value[p].is_rehabilitating for p in hit):
+                    we.base_load = round(we.base_load * graphs.rehabilitating_load_multiplier, 2)
+                if advisory_sink is not None:
+                    advisory_sink.append(
+                        Advisory(
+                            code="SAFETY_SUBSTITUTION",
+                            severity="info",
+                            subject=workout.key,
+                            message=(
+                                f"Swapped {exercise.name} for {substitute.name} to avoid aggravating "
+                                f"your reported {hazard_list}."
+                            ),
+                        )
+                    )
+            else:
+                workout.exercises.remove(we)
+                if advisory_sink is not None:
+                    advisory_sink.append(
+                        Advisory(
+                            code="SAFETY_EXCLUSION",
+                            severity="warning",
+                            subject=workout.key,
+                            message=(
+                                f"Removed {exercise.name} - no available substitute avoids your reported "
+                                f"{hazard_list} with your current equipment."
+                            ),
+                        )
+                    )

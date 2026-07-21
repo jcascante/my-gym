@@ -3,10 +3,16 @@ import pytest
 from app.models.exercise import BodyRegion, Exercise, ExperienceLevel, MovementPattern
 from app.models.program import ProgramTemplate, Workout, WorkoutExercise, WorkoutProgram
 from app.schemas.template import ProgressionRef, SchemeDef, SessionDef, SlotRule, SplitDef, TemplateDefinition
-from app.services.program.drafting import _apply_interference_scheduling, _validate_and_repair_volume, build_draft
+from app.services.program.drafting import (
+    _apply_interference_scheduling,
+    _apply_safety_substitution,
+    _validate_and_repair_volume,
+    build_draft,
+)
 from app.services.program.engine_config import AssemblyConfig, EngineConfig, EngineFlags
 from app.services.program.ledger import compute_ledger
-from app.services.program.selection import SelectionContext, SelectionWeights
+from app.services.program.regression_graphs import RegressionEdge, RegressionGraphsConfig
+from app.services.program.selection import ActiveInjuryProvocation, SelectionContext, SelectionWeights
 from app.services.program.taxonomy import MUSCLE_GROUPS
 
 FEATURE_KEYS = {
@@ -1161,3 +1167,325 @@ def test_build_draft_wires_interference_advisory_through_when_enabled():
     assert [we.exercise_id for we in workout.exercises] == [1, 2]  # squat now precedes cardio
     assert len(sink) == 1
     assert sink[0].code == "CONDITIONING_SEPARATION_RECOMMENDED"
+
+
+# --- Safety substitution (Task 3.3) -----------------------------------------------------
+
+
+def _safety_exercise(
+    id_: int,
+    slug: str,
+    *,
+    movement_pattern: MovementPattern,
+    equipment_tags: list[str] | None = None,
+    provocation_tags: list[str] | None = None,
+) -> Exercise:
+    return Exercise(
+        id=id_,
+        name=slug,
+        slug=slug,
+        movement_slug=slug,
+        body_region=BodyRegion.FULL_BODY,
+        movement_pattern=movement_pattern,
+        primary_muscles=["quads"],
+        secondary_muscles=[],
+        equipment_tags=equipment_tags or [],
+        difficulty_level=ExperienceLevel.INTERMEDIATE,
+        instructions="Do the thing.",
+        form_cues=[],
+        contraindications=[],
+        provocation_tags=provocation_tags or [],
+        is_active=True,
+    )
+
+
+def _safety_workout_exercise(id_: int, exercise_id: int, *, base_load: float | None = None) -> WorkoutExercise:
+    return WorkoutExercise(
+        id=id_,
+        order=1,
+        exercise_id=exercise_id,
+        fills_rule={"pattern": "squat", "priority": "primary"},
+        sets=3,
+        reps_min=5,
+        reps_max=8,
+        base_load=base_load,
+        rest_seconds=120,
+        scheme_key="main",
+        target_rpe=None,
+        intensity_pct=None,
+        is_locked=False,
+        is_user_swapped=False,
+        rotation_pool=[],
+    )
+
+
+def _safety_ctx(*, equipment: list[str], provocations: list[ActiveInjuryProvocation]) -> SelectionContext:
+    return SelectionContext(
+        equipment=equipment,
+        experience="intermediate",
+        injuries=[],
+        used_movement_slugs=set(),
+        injury_provocations=provocations,
+    )
+
+
+def _safety_graphs(edges: list[RegressionEdge]) -> RegressionGraphsConfig:
+    return RegressionGraphsConfig(config_version="test", rehabilitating_load_multiplier=0.8, patterns={"squat": edges})
+
+
+def test_apply_safety_substitution_picks_nearest_regression_over_cross_pattern():
+    main_ex = _safety_exercise(
+        1,
+        "main-squat",
+        movement_pattern=MovementPattern.SQUAT,
+        equipment_tags=["barbell"],
+        provocation_tags=["axial_loading"],
+    )
+    regression_ex = _safety_exercise(
+        2, "reg-squat", movement_pattern=MovementPattern.SQUAT, equipment_tags=["dumbbells"]
+    )
+    cross_ex = _safety_exercise(3, "cross-hinge", movement_pattern=MovementPattern.HINGE, equipment_tags=["none"])
+    graphs = _safety_graphs(
+        [
+            RegressionEdge(from_slug="main-squat", to="reg-squat", kind="regression", relieves=["axial_loading"]),
+            RegressionEdge(from_slug="main-squat", to="cross-hinge", kind="cross_pattern", relieves=["axial_loading"]),
+        ]
+    )
+    ctx = _safety_ctx(
+        equipment=["barbell", "dumbbells", "none"],
+        provocations=[ActiveInjuryProvocation(provocation="axial_loading", is_rehabilitating=False)],
+    )
+    we = _safety_workout_exercise(1, 1, base_load=100.0)
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_safety_substitution(program, [main_ex, regression_ex, cross_ex], ctx, graphs, sink)
+
+    assert we.exercise_id == 2  # regression preferred over cross-pattern
+    assert we.base_load == 100.0  # not rehabilitating -> no load cap
+    assert len(sink) == 1
+    assert sink[0].code == "SAFETY_SUBSTITUTION"
+    assert sink[0].severity == "info"
+    assert sink[0].subject == "day_1"
+
+
+def test_apply_safety_substitution_falls_back_to_cross_pattern_when_regression_not_in_equipment():
+    main_ex = _safety_exercise(
+        1,
+        "main-squat",
+        movement_pattern=MovementPattern.SQUAT,
+        equipment_tags=["barbell"],
+        provocation_tags=["axial_loading"],
+    )
+    regression_ex = _safety_exercise(
+        2, "reg-squat", movement_pattern=MovementPattern.SQUAT, equipment_tags=["squat_rack"]
+    )
+    cross_ex = _safety_exercise(3, "cross-hinge", movement_pattern=MovementPattern.HINGE, equipment_tags=["none"])
+    graphs = _safety_graphs(
+        [
+            RegressionEdge(from_slug="main-squat", to="reg-squat", kind="regression", relieves=["axial_loading"]),
+            RegressionEdge(from_slug="main-squat", to="cross-hinge", kind="cross_pattern", relieves=["axial_loading"]),
+        ]
+    )
+    ctx = _safety_ctx(
+        equipment=["barbell", "none"],  # squat_rack unavailable -> regression not permissible
+        provocations=[ActiveInjuryProvocation(provocation="axial_loading", is_rehabilitating=False)],
+    )
+    we = _safety_workout_exercise(1, 1)
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_safety_substitution(program, [main_ex, regression_ex, cross_ex], ctx, graphs, sink)
+
+    assert we.exercise_id == 3
+    assert sink[0].code == "SAFETY_SUBSTITUTION"
+
+
+def test_apply_safety_substitution_removes_slot_when_no_substitute_is_permissible():
+    main_ex = _safety_exercise(
+        1,
+        "main-squat",
+        movement_pattern=MovementPattern.SQUAT,
+        equipment_tags=["barbell"],
+        provocation_tags=["axial_loading"],
+    )
+    graphs = _safety_graphs([])  # no edges at all for this pattern
+    ctx = _safety_ctx(
+        equipment=["barbell"],
+        provocations=[ActiveInjuryProvocation(provocation="axial_loading", is_rehabilitating=False)],
+    )
+    we = _safety_workout_exercise(1, 1)
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_safety_substitution(program, [main_ex], ctx, graphs, sink)
+
+    assert workout.exercises == []
+    assert len(sink) == 1
+    assert sink[0].code == "SAFETY_EXCLUSION"
+    assert sink[0].severity == "warning"
+
+
+def test_apply_safety_substitution_applies_rehab_load_multiplier_on_substitution():
+    main_ex = _safety_exercise(
+        1,
+        "main-squat",
+        movement_pattern=MovementPattern.SQUAT,
+        equipment_tags=["barbell"],
+        provocation_tags=["axial_loading"],
+    )
+    regression_ex = _safety_exercise(
+        2, "reg-squat", movement_pattern=MovementPattern.SQUAT, equipment_tags=["dumbbells"]
+    )
+    graphs = _safety_graphs(
+        [RegressionEdge(from_slug="main-squat", to="reg-squat", kind="regression", relieves=["axial_loading"])]
+    )
+    ctx = _safety_ctx(
+        equipment=["barbell", "dumbbells"],
+        provocations=[ActiveInjuryProvocation(provocation="axial_loading", is_rehabilitating=True)],
+    )
+    we = _safety_workout_exercise(1, 1, base_load=100.0)
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_safety_substitution(program, [main_ex, regression_ex], ctx, graphs, sink)
+
+    assert we.exercise_id == 2
+    assert we.base_load == 80.0  # 100 * rehabilitating_load_multiplier (0.8)
+
+
+def test_apply_safety_substitution_no_op_without_injury_provocations():
+    main_ex = _safety_exercise(
+        1,
+        "main-squat",
+        movement_pattern=MovementPattern.SQUAT,
+        equipment_tags=["barbell"],
+        provocation_tags=["axial_loading"],
+    )
+    graphs = _safety_graphs([])
+    ctx = _safety_ctx(equipment=["barbell"], provocations=[])
+    we = _safety_workout_exercise(1, 1)
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_safety_substitution(program, [main_ex], ctx, graphs, sink)
+
+    assert we.exercise_id == 1
+    assert sink == []
+
+
+def test_apply_safety_substitution_no_op_when_exercise_not_hit():
+    main_ex = _safety_exercise(
+        1,
+        "main-squat",
+        movement_pattern=MovementPattern.SQUAT,
+        equipment_tags=["barbell"],
+        provocation_tags=["deep_knee_flexion"],
+    )
+    graphs = _safety_graphs([])
+    ctx = _safety_ctx(
+        equipment=["barbell"],
+        provocations=[ActiveInjuryProvocation(provocation="axial_loading", is_rehabilitating=False)],
+    )
+    we = _safety_workout_exercise(1, 1)
+    workout = Workout(id=1, key="day_1", name="Day 1", focus=None, order=1)
+    workout.exercises = [we]
+    program = _interference_program(workout)
+
+    sink: list = []
+    _apply_safety_substitution(program, [main_ex], ctx, graphs, sink)
+
+    assert we.exercise_id == 1
+    assert sink == []
+
+
+def _safety_build_draft_inputs() -> tuple[ProgramTemplate, TemplateDefinition, list[Exercise]]:
+    template = ProgramTemplate(id=1, name="Safety Gate Test", slug="safety-gate-test", goals=[])
+    definition = TemplateDefinition(
+        split=SplitDef(
+            sessions=[
+                SessionDef(
+                    key="day_1",
+                    name="Day 1",
+                    order=1,
+                    slots=[SlotRule(pattern="squat", priority="primary", scheme="main")],
+                )
+            ]
+        ),
+        progression=ProgressionRef(model_key="linear_load"),
+        schemes={"main": SchemeDef(sets=3, reps_min=5, reps_max=5, rest_seconds=120)},
+    )
+    main_ex = _safety_exercise(
+        1,
+        "main-squat",
+        movement_pattern=MovementPattern.SQUAT,
+        equipment_tags=["barbell"],
+        provocation_tags=["axial_loading"],
+    )
+    regression_ex = _safety_exercise(2, "reg-squat", movement_pattern=MovementPattern.SQUAT, equipment_tags=["barbell"])
+    return template, definition, [main_ex, regression_ex]
+
+
+def _build_safety_draft(config: EngineConfig | None) -> tuple[WorkoutProgram, list]:
+    template, definition, exercises = _safety_build_draft_inputs()
+    graphs = _safety_graphs(
+        [RegressionEdge(from_slug="main-squat", to="reg-squat", kind="regression", relieves=["axial_loading"])]
+    )
+    ctx = _safety_ctx(
+        equipment=["barbell"],
+        provocations=[ActiveInjuryProvocation(provocation="axial_loading", is_rehabilitating=False)],
+    )
+    sink: list = []
+    program = build_draft(
+        template,
+        definition,
+        ctx,
+        exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=1,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={},
+        config=config,
+        advisory_sink=sink,
+        regression_graphs=graphs,
+    )
+    return program, sink
+
+
+def test_build_draft_config_none_never_triggers_safety_substitution():
+    """config=None (today's production default): the pass must not run."""
+    program, sink = _build_safety_draft(config=None)
+    workout = program.workouts[0]
+    assert [we.exercise_id for we in workout.exercises] == [1]  # untouched main-squat pick
+    assert sink == []
+
+
+def test_build_draft_flag_explicitly_off_never_triggers_safety_substitution():
+    config = EngineConfig(config_version="x", flags=EngineFlags(use_safety_substitution=False))
+    program, sink = _build_safety_draft(config)
+    workout = program.workouts[0]
+    assert [we.exercise_id for we in workout.exercises] == [1]
+    assert sink == []
+
+
+def test_build_draft_wires_safety_substitution_advisory_through_when_enabled():
+    """End-to-end: with the flag on, build_draft's own call site actually invokes the
+    pass and substitutes the contraindicated pick."""
+    config = EngineConfig(config_version="x", flags=EngineFlags(use_safety_substitution=True))
+    program, sink = _build_safety_draft(config)
+    workout = program.workouts[0]
+    assert [we.exercise_id for we in workout.exercises] == [2]  # reg-squat substituted in
+    assert len(sink) == 1
+    assert sink[0].code == "SAFETY_SUBSTITUTION"
