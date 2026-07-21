@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { saveUserProfile } from '@/api/auth';
 import { createTrainingEnvironment } from '@/api/trainingEnvironments';
+import { createInjuryRecord } from '@/api/injuries';
 import { getErrorMessage } from '@/api/errors';
 import {
   Button,
@@ -11,8 +12,11 @@ import {
   Alert,
   TrainingEnvironmentCard,
   TrainingEnvironmentForm,
+  InjuryRecordCard,
+  InjuryRecordForm,
 } from '@/components';
 import type { TrainingEnvironment, TrainingEnvironmentPayload } from '@/types/trainingEnvironment';
+import type { InjuryRecord, InjuryRecordPayload } from '@/types/injury';
 
 type OnboardingFormData = {
   age: string;
@@ -24,7 +28,6 @@ type OnboardingFormData = {
   experience_level: string;
   days_per_week: string;
   workout_duration_min: string;
-  injuries_limitations: string;
   short_term_goals: string;
   medium_term_goals: string;
 };
@@ -47,7 +50,7 @@ const STEPS: { title: string; requiredFields: (keyof OnboardingFormData)[] }[] =
   },
   { title: 'Training Environments', requiredFields: [] },
   { title: 'Your Goals', requiredFields: [] },
-  { title: 'Additional Information', requiredFields: [] },
+  { title: 'Injuries & Limitations', requiredFields: [] },
 ];
 
 export default function OnboardingPage() {
@@ -67,13 +70,15 @@ export default function OnboardingPage() {
     experience_level: '',
     days_per_week: '',
     workout_duration_min: '',
-    injuries_limitations: '',
     short_term_goals: '',
     medium_term_goals: '',
   });
   const [environments, setEnvironments] = useState<TrainingEnvironment[]>([]);
   const [showAddEnvironment, setShowAddEnvironment] = useState(false);
   const [environmentError, setEnvironmentError] = useState<string | null>(null);
+  const [injuries, setInjuries] = useState<InjuryRecord[]>([]);
+  const [showAddInjury, setShowAddInjury] = useState(false);
+  const [injuryError, setInjuryError] = useState<string | null>(null);
   const [goalWeights, setGoalWeights] = useState<Record<string, number>>({});
   const [showGoalWeights, setShowGoalWeights] = useState(false);
 
@@ -118,6 +123,17 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleAddInjury = async (payload: InjuryRecordPayload) => {
+    setInjuryError(null);
+    try {
+      const injury = await createInjuryRecord(payload);
+      setInjuries((prev) => [...prev, injury]);
+      setShowAddInjury(false);
+    } catch (err) {
+      setInjuryError(getErrorMessage(err));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -139,7 +155,6 @@ export default function OnboardingPage() {
         experience_level: formData.experience_level || undefined,
         days_per_week: parseInt(formData.days_per_week) || undefined,
         workout_duration_min: parseInt(formData.workout_duration_min) || undefined,
-        injuries_limitations: formData.injuries_limitations || undefined,
         short_term_goals: formData.short_term_goals || undefined,
         medium_term_goals: formData.medium_term_goals || undefined,
         goal_weights: Object.values(goalWeights).some((v) => v > 0)
@@ -464,24 +479,52 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* Additional Info */}
+            {/* Injuries & Limitations */}
             {currentStep === 5 && (
               <div>
-                <h2 className="heading-md mb-6">Additional Information</h2>
-                <div className="input-group">
-                  <label htmlFor="injuries" className="input-label">
-                    Injuries or Limitations
-                  </label>
-                  <textarea
-                    id="injuries"
-                    name="injuries_limitations"
-                    value={formData.injuries_limitations}
-                    onChange={handleChange}
-                    placeholder="Let us know about any injuries or physical limitations..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-md bg-white text-neutral-900 placeholder-neutral-400 transition-colors dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-50 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-neutral-900"
+                <h2 className="heading-md mb-4">Injuries & Limitations</h2>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                  Tell us about any injuries or physical limitations so we can avoid exercises that
+                  aggravate them. This step is optional — you can skip it and add these later from
+                  your profile.
+                </p>
+
+                {showAddInjury && (
+                  <p className="text-sm text-primary-700 dark:text-primary-400 mb-4 font-medium">
+                    Click "Add Injury" below to add it to your list — the wizard's Next button won't
+                    save it for you.
+                  </p>
+                )}
+
+                {injuryError && (
+                  <Alert
+                    type="error"
+                    dismissible
+                    onDismiss={() => setInjuryError(null)}
+                    className="mb-4"
+                  >
+                    {injuryError}
+                  </Alert>
+                )}
+
+                {injuries.length > 0 && (
+                  <div className="space-y-3 mb-4">
+                    {injuries.map((injury) => (
+                      <InjuryRecordCard key={injury.id} injury={injury} />
+                    ))}
+                  </div>
+                )}
+
+                {showAddInjury ? (
+                  <InjuryRecordForm
+                    onSubmit={handleAddInjury}
+                    onCancel={() => setShowAddInjury(false)}
                   />
-                </div>
+                ) : (
+                  <Button type="button" variant="secondary" onClick={() => setShowAddInjury(true)}>
+                    Add Injury
+                  </Button>
+                )}
               </div>
             )}
 

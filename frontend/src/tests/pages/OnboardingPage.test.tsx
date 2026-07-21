@@ -92,7 +92,7 @@ async function skipTrainingEnvironmentsStep() {
 async function advanceThroughGoalsAndAdditionalInfoSteps() {
   fireEvent.click(screen.getByRole('button', { name: /Next/i }));
   await waitFor(() =>
-    expect(screen.getByRole('heading', { name: /Additional Information/ })).toBeInTheDocument(),
+    expect(screen.getByRole('heading', { name: /Injuries & Limitations/ })).toBeInTheDocument(),
   );
 }
 
