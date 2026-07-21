@@ -615,3 +615,72 @@ async def test_derive_week_slot_preview_out_roundtrip(sample_template_orm, sampl
         assert out.workout_exercise_id == slot["workout_exercise_id"]
         assert out.tempo == "controlled"
         assert isinstance(out.warmup_sets, list)
+
+
+# --- Ramp guard (Task 3.5) ---------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_derive_week_caps_load_ramp_for_beginner_experience(sample_template_orm, sample_exercises):
+    """A small base_load makes linear_load's fixed +2.5 weekly increment exceed the
+    beginner population's +20% ramp cap (10 -> 12.5 is +25%) - ramp_guard should clamp
+    week 2 to 12.0 (10 * 1.20) instead."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(["barbell", "bench", "squat_rack"], "beginner", [], set())
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 10, "bench_start": 10},
+    )
+    assert program.constraints["experience_level"] == "beginner"
+    for w in program.workouts:
+        w.id = w.order
+        for j, ex in enumerate(w.exercises, 1):
+            ex.id = j
+    exercise_map = {e.id: e for e in sample_exercises}
+
+    week2 = derive_week(program, definition, 2, exercise_map)
+    loads = [s["load"] for d in week2 for s in d["slots"] if s["load"] is not None]
+
+    assert loads
+    assert all(load <= 12.0 for load in loads)
+    assert any(s.get("note") == "ramp_capped" for d in week2 for s in d["slots"])
+
+
+@pytest.mark.asyncio
+async def test_derive_week_does_not_cap_load_ramp_for_intermediate_experience(sample_template_orm, sample_exercises):
+    """Same small base_load and the same +25% jump, but intermediate experience has no
+    ramp cap - the natural progression-model output passes through untouched."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(["barbell", "bench", "squat_rack"], "intermediate", [], set())
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 10, "bench_start": 10},
+    )
+    for w in program.workouts:
+        w.id = w.order
+        for j, ex in enumerate(w.exercises, 1):
+            ex.id = j
+    exercise_map = {e.id: e for e in sample_exercises}
+
+    week2 = derive_week(program, definition, 2, exercise_map)
+    loads = [s["load"] for d in week2 for s in d["slots"] if s["load"] is not None]
+
+    assert loads
+    assert any(load == 12.5 for load in loads)
+    assert not any(s.get("note") == "ramp_capped" for d in week2 for s in d["slots"])

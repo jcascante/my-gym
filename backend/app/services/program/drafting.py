@@ -112,6 +112,7 @@ def build_draft(
             "complementary_focus": ctx.complementary_focus,
             "variety_preference": variety_preference,
             "engine_config_version": engine_config_version,
+            "experience_level": ctx.experience,
         },
     )
     use_beam = config is not None and config.flags.use_beam_search

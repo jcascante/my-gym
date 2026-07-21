@@ -4,6 +4,7 @@ from app.models import Exercise, WorkoutExercise, WorkoutProgram
 from app.schemas.template import TemplateDefinition
 from app.services.program.progression.base import SetScheme, SlotBase, get_model
 from app.services.program.progression.deload import apply_deload
+from app.services.program.progression.ramp_guard import apply_ramp_guard, population_for
 
 _STRENGTH_REST_SECONDS = 195
 _HYPERTROPHY_REST_SECONDS = 120
@@ -56,6 +57,8 @@ def derive_week(
     every = definition.progression.deload_every
     params = definition.progression.params
     effort_method = program.constraints.get("effort_method")
+    check_in_load_adjustments = program.constraints.get("check_in_load_adjustments", {})
+    experience = program.constraints.get("experience_level", "intermediate")
     exercise_map = exercises or {}
     days: list[dict[str, Any]] = []
     for workout in program.workouts:
@@ -69,9 +72,17 @@ def derive_week(
                 rest_seconds=ex.rest_seconds,
                 base_load=ex.base_load,
             )
-            scheme = apply_deload(model.resolve(base, week, params), week, every)
             resolved_exercise_id = _resolved_exercise_id(ex, week)
             exercise = exercise_map.get(resolved_exercise_id)
+            population = population_for(
+                exercise.contraindications if exercise else [], check_in_load_adjustments, experience
+            )
+            prior_scheme = None
+            if population != "unrestricted" and week > 1:
+                prior_scheme = apply_deload(model.resolve(base, week - 1, params), week - 1, every)
+            scheme = apply_ramp_guard(
+                apply_deload(model.resolve(base, week, params), week, every), prior_scheme, population
+            )
             exercise_name = exercise.name if exercise else f"Exercise #{resolved_exercise_id}"
             rest_seconds = _rest_seconds_for_intent(scheme.reps, ex.intensity_pct)
             is_first_primary = not first_primary_assigned and ex.fills_rule.get("priority") == "primary"
