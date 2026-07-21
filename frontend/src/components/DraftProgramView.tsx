@@ -4,6 +4,7 @@ import { SessionCard } from './SessionCard';
 import { ExerciseAlternativesModal } from './ExerciseAlternativesModal';
 import { ExercisePreviewModal } from './ExercisePreviewModal';
 import { Alert } from './Alert';
+import { TemplateExplanationPanel } from './TemplateExplanationPanel';
 import { useSubmitFeedback } from '@/hooks/usePrograms';
 import { useExercises } from '@/hooks/useExercises';
 import type { FeedbackAction, ProgramPreview } from '@/types/program';
@@ -71,6 +72,7 @@ export function DraftProgramView({
             Review the generated program and make adjustments as needed
           </p>
         </div>
+        <TemplateExplanationPanel programId={programId} />
         {program.advisories.length > 0 && (
           <div className="space-y-2">
             {program.advisories.map((advisory, i) => (
@@ -86,6 +88,7 @@ export function DraftProgramView({
             <SessionCard
               key={w.workout_id}
               workout={w}
+              programId={programId}
               onAction={onAction}
               onSwap={setSwapFor}
               onPreview={setPreviewExerciseId}

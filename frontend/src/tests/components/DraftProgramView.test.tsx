@@ -56,7 +56,9 @@ function wrap(ui: React.ReactNode) {
 it('shows session, slot, and locked badge', () => {
   render(wrap(<DraftProgramView program={program} programId={1} />));
   expect(screen.getByText('Day A')).toBeInTheDocument();
-  expect(screen.getByText(/3 × 5/)).toBeInTheDocument();
+  // ExerciseSlotCard (the draft-review compact card) renders "3×5@60" with no spaces,
+  // unlike SlotRow's spaced "3 × 5 @ 60" - this test targets the compact card's format.
+  expect(screen.getByText(/3×5@60/)).toBeInTheDocument();
   expect(screen.getByLabelText(/locked/i)).toBeInTheDocument();
 });
 

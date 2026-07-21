@@ -1,7 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ExerciseSlotCard } from '@/components/ExerciseSlotCard';
 import type { SlotPreview } from '@/types/program';
+
+function wrap(ui: React.ReactNode) {
+  return <QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>;
+}
 
 const baseSlot: SlotPreview = {
   workout_exercise_id: 1,
@@ -24,25 +29,25 @@ describe('ExerciseSlotCard', () => {
   describe('rest_seconds rendering', () => {
     it('formats rest seconds less than 60 as "Xs"', () => {
       const slot = { ...baseSlot, rest_seconds: 45 };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.getByText(/Rest: 45s/)).toBeInTheDocument();
     });
 
     it('formats rest seconds as exact minute when divisible by 60', () => {
       const slot = { ...baseSlot, rest_seconds: 120 };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.getByText(/Rest: 2m/)).toBeInTheDocument();
     });
 
     it('formats rest seconds as "Xm Ys" when greater than 60 with remainder', () => {
       const slot = { ...baseSlot, rest_seconds: 68 };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.getByText(/Rest: 1m 8s/)).toBeInTheDocument();
     });
 
     it('formats rest seconds as "Xm" when exactly 60 seconds', () => {
       const slot = { ...baseSlot, rest_seconds: 60 };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.getByText(/Rest: 1m/)).toBeInTheDocument();
     });
   });
@@ -50,13 +55,13 @@ describe('ExerciseSlotCard', () => {
   describe('tempo rendering', () => {
     it('does not render tempo tag when tempo is "controlled"', () => {
       const slot = { ...baseSlot, tempo: 'controlled' };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.queryByText(/Tempo:/)).not.toBeInTheDocument();
     });
 
     it('renders tempo tag when tempo is not "controlled"', () => {
       const slot = { ...baseSlot, tempo: 'eccentric_2s' };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.getByText(/Tempo: eccentric_2s/)).toBeInTheDocument();
     });
   });
@@ -64,7 +69,7 @@ describe('ExerciseSlotCard', () => {
   describe('warmup_sets rendering', () => {
     it('does not render warmup block when warmup_sets is empty', () => {
       const slot = { ...baseSlot, warmup_sets: [] };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.queryByText(/Warm-up:/)).not.toBeInTheDocument();
     });
 
@@ -73,7 +78,7 @@ describe('ExerciseSlotCard', () => {
         ...baseSlot,
         warmup_sets: [{ pct: 0.5, reps: 5, load: 50 }],
       };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.getByText(/Warm-up: 50%×5/)).toBeInTheDocument();
     });
 
@@ -86,7 +91,7 @@ describe('ExerciseSlotCard', () => {
           { pct: 0.8, reps: 1, load: 96 },
         ],
       };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.getByText(/Warm-up: 40%×5, 60%×3, 80%×1/)).toBeInTheDocument();
     });
 
@@ -98,7 +103,7 @@ describe('ExerciseSlotCard', () => {
           { pct: 0.6, reps: 3, load: null },
         ],
       };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.getByText(/Warm-up: 40%×5, 60%×3/)).toBeInTheDocument();
     });
   });
@@ -114,14 +119,14 @@ describe('ExerciseSlotCard', () => {
           { pct: 0.75, reps: 2, load: 75 },
         ],
       };
-      render(<ExerciseSlotCard slot={slot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} readOnly />));
       expect(screen.getByText(/Rest: 3m/)).toBeInTheDocument();
       expect(screen.getByText(/Tempo: explosive_1s/)).toBeInTheDocument();
       expect(screen.getByText(/Warm-up: 50%×5, 75%×2/)).toBeInTheDocument();
     });
 
     it('renders exercise name and basic info', () => {
-      render(<ExerciseSlotCard slot={baseSlot} readOnly />);
+      render(wrap(<ExerciseSlotCard slot={baseSlot} programId={1} readOnly />));
       expect(screen.getByText('Barbell Back Squat')).toBeInTheDocument();
       expect(screen.getByText(/3×5/)).toBeInTheDocument();
     });
@@ -129,7 +134,11 @@ describe('ExerciseSlotCard', () => {
     it('can be rendered with onAction and onSwap callbacks', () => {
       const onAction = vi.fn();
       const onSwap = vi.fn();
-      render(<ExerciseSlotCard slot={baseSlot} onAction={onAction} onSwap={onSwap} />);
+      render(
+        wrap(
+          <ExerciseSlotCard slot={baseSlot} programId={1} onAction={onAction} onSwap={onSwap} />,
+        ),
+      );
       expect(screen.getByText('Barbell Back Squat')).toBeInTheDocument();
     });
   });

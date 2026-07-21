@@ -1,5 +1,7 @@
 import type { FeedbackAction, SlotPreview } from '@/types/program';
 import { SlotFeedbackMenu } from './SlotFeedbackMenu';
+import { SlotExplanationPanel } from './SlotExplanationPanel';
+import { formatSlotNote } from '@/utils/slotNote';
 
 function formatEffortTarget(target: SlotPreview['effort_target']): string | null {
   if (!target) return null;
@@ -18,12 +20,14 @@ function formatRestSeconds(seconds: number): string {
 
 export function ExerciseSlotCard({
   slot,
+  programId,
   onAction,
   onSwap,
   onPreview,
   readOnly = false,
 }: {
   slot: SlotPreview;
+  programId: number;
   onAction?: (a: FeedbackAction) => void;
   onSwap?: () => void;
   onPreview?: (exerciseId: number) => void;
@@ -81,7 +85,7 @@ export function ExerciseSlotCard({
           </span>
           {slot.note && (
             <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-              {slot.note}
+              {formatSlotNote(slot.note)}
             </span>
           )}
           {slot.rotation_pool.length > 1 && (
@@ -100,6 +104,8 @@ export function ExerciseSlotCard({
             {slot.warmup_sets.map((w) => `${Math.round(w.pct * 100)}%×${w.reps}`).join(', ')}
           </div>
         )}
+
+        <SlotExplanationPanel programId={programId} workoutExerciseId={slot.workout_exercise_id} />
       </div>
     </div>
   );

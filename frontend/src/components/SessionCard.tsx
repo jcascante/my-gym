@@ -3,11 +3,13 @@ import type { FeedbackAction, WorkoutPreview } from '@/types/program';
 
 export function SessionCard({
   workout,
+  programId,
   onAction,
   onSwap,
   onPreview,
 }: {
   workout: WorkoutPreview;
+  programId: number;
   onAction: (a: FeedbackAction) => void;
   onSwap: (weId: number) => void;
   onPreview?: (exerciseId: number) => void;
@@ -24,6 +26,7 @@ export function SessionCard({
           <ExerciseSlotCard
             key={s.workout_exercise_id}
             slot={s}
+            programId={programId}
             onAction={onAction}
             onSwap={() => onSwap(s.workout_exercise_id)}
             onPreview={onPreview}

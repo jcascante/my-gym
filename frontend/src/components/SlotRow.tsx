@@ -1,5 +1,6 @@
 import type { FeedbackAction, SlotPreview } from '@/types/program';
 import { SlotFeedbackMenu } from './SlotFeedbackMenu';
+import { formatSlotNote } from '@/utils/slotNote';
 
 function formatEffortTarget(target: SlotPreview['effort_target']): string | null {
   if (!target) return null;
@@ -7,17 +8,6 @@ function formatEffortTarget(target: SlotPreview['effort_target']): string | null
     return `${Math.round((target.pct ?? 0) * 100)}%`;
   }
   return `${target.method.toUpperCase()} ${target.value}`;
-}
-
-// Known engine-generated `note` values (deload.py / ramp_guard.py) get a friendlier
-// label; anything else (e.g. a future note key, or a user-swap note) renders as-is.
-const NOTE_LABELS: Record<string, string> = {
-  deload: 'Deload week',
-  ramp_capped: 'Capped for safe progression',
-};
-
-function formatNote(note: string): string {
-  return NOTE_LABELS[note] ?? note;
 }
 
 export function SlotRow({
@@ -73,7 +63,7 @@ export function SlotRow({
             )}
             {slot.note && (
               <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-                {formatNote(slot.note)}
+                {formatSlotNote(slot.note)}
               </span>
             )}
             {slot.rotation_pool.length > 1 && (

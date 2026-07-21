@@ -42,3 +42,5 @@ export { ProgramWizardStep1 } from './ProgramWizardStep1';
 export { ExerciseSelection } from './ExerciseSelection';
 export { ExercisePreviewModal } from './ExercisePreviewModal';
 export { CheckInWidget } from './CheckInWidget';
+export { SlotExplanationPanel } from './SlotExplanationPanel';
+export { TemplateExplanationPanel } from './TemplateExplanationPanel';
