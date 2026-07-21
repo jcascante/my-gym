@@ -57,3 +57,5 @@ htmlcov/
 postgres_data/
 
 .worktrees/
+
+.claude/sessions/
