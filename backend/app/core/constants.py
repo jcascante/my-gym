@@ -148,3 +148,21 @@ ALLOWED_CONTRAINDICATION_TAGS: list[str] = [
     "neck",
     "ankle",
 ]
+
+# Mirrors app.models.exercise.Provocation - shared vocabulary between
+# Exercise.provocation_tags and InjuryRecord.provocations so the two can be
+# matched against each other (Phase 3.2+).
+ALLOWED_PROVOCATION_TAGS: list[str] = [
+    "overhead",
+    "loaded_spinal_flexion",
+    "loaded_spinal_extension",
+    "axial_loading",
+    "deep_knee_flexion",
+    "deep_hip_flexion",
+    "heavy_grip",
+    "high_impact",
+    "ballistic_loading",
+    "end_range_shoulder_rotation",
+    "wrist_extension_load",
+    "unilateral_loading",
+]

@@ -21,6 +21,7 @@ def _exercise(
     secondary_muscles: list[str] | None = None,
     equipment_tags: list[str] | None = None,
     contraindications: list[str] | None = None,
+    provocation_tags: list[str] | None = None,
     difficulty_level: ExperienceLevel = ExperienceLevel.BEGINNER,
     is_active: bool = True,
 ) -> Exercise:
@@ -37,6 +38,7 @@ def _exercise(
         instructions="Do the thing.",
         form_cues=[],
         contraindications=contraindications if contraindications is not None else [],
+        provocation_tags=provocation_tags if provocation_tags is not None else [],
         is_active=is_active,
     )
 
@@ -94,10 +96,20 @@ class TestCheckSchemaValidity:
         violations = check_schema_validity([exercise])
         assert any("bad-contra" in v and "contraindications" in v for v in violations)
 
+    def test_invalid_provocation_tag_is_flagged(self):
+        exercise = _exercise("bad-provocation", provocation_tags=["not_a_real_provocation"])
+        violations = check_schema_validity([exercise])
+        assert any("bad-provocation" in v and "provocation_tags" in v for v in violations)
+
     def test_equipment_allowlist_drift_is_detected(self, monkeypatch):
         monkeypatch.setattr("scripts.lint_library.ALLOWED_EQUIPMENT_TAGS", ["totally_made_up_equipment"])
         violations = check_schema_validity([])
         assert any("drifted" in v for v in violations)
+
+    def test_provocation_allowlist_drift_is_detected(self, monkeypatch):
+        monkeypatch.setattr("scripts.lint_library.ALLOWED_PROVOCATION_TAGS", ["totally_made_up_provocation"])
+        violations = check_schema_validity([])
+        assert any("ALLOWED_PROVOCATION_TAGS" in v and "drifted" in v for v in violations)
 
     def test_covers_inactive_exercises_too(self):
         exercise = _exercise("inactive-bad", equipment_tags=["not_a_real_tag"], is_active=False)

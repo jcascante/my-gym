@@ -2,6 +2,7 @@ from .config import settings
 from .exceptions import (
     AppException,
     ExerciseNotFoundError,
+    InjuryRecordNotFoundError,
     InvalidCredentialsError,
     InvalidTokenError,
     ProgramNotFoundError,
@@ -26,6 +27,7 @@ __all__ = [
     "InvalidTokenError",
     "TrainingEnvironmentNotFoundError",
     "ExerciseNotFoundError",
+    "InjuryRecordNotFoundError",
     "ProgramTemplateNotFoundError",
     "ProgramNotFoundError",
     "hash_password",

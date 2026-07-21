@@ -5,6 +5,7 @@ from .auth import (
     UserResponse,
 )
 from .exercise import ExerciseResponse
+from .injury import InjuryRecordCreate, InjuryRecordResponse, InjuryRecordUpdate
 from .program import (
     DayOfWeek,
     FocusArea,
@@ -54,6 +55,9 @@ __all__ = [
     "TrainingEnvironmentUpdate",
     "TrainingEnvironmentResponse",
     "ExerciseResponse",
+    "InjuryRecordCreate",
+    "InjuryRecordUpdate",
+    "InjuryRecordResponse",
     "FocusArea",
     "WeightUnit",
     "ProgressionStyle",

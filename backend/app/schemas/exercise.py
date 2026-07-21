@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models import BodyRegion, Contraindication, Equipment, ExperienceLevel, MovementPattern, Muscle
+from app.models import BodyRegion, Contraindication, Equipment, ExperienceLevel, MovementPattern, Muscle, Provocation
 
 
 class ExerciseResponse(BaseModel):
@@ -22,6 +22,7 @@ class ExerciseResponse(BaseModel):
     form_cues: list[str]
     safety_notes: str | None
     contraindications: list[Contraindication]
+    provocation_tags: list[Provocation]
     is_unilateral: bool
     is_compound: bool
     created_at: datetime

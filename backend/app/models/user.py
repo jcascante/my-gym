@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 if TYPE_CHECKING:
+    from app.models.injury import InjuryRecord
     from app.models.training_environment import TrainingEnvironment
 
 
@@ -54,6 +55,7 @@ class User(Base):
     environments: Mapped[list["TrainingEnvironment"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    injury_records: Mapped[list["InjuryRecord"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email={self.email})>"

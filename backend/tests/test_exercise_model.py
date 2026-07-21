@@ -1,4 +1,4 @@
-from app.models.exercise import Contraindication, Equipment, Exercise, Muscle
+from app.models.exercise import Contraindication, Equipment, Exercise, Muscle, Provocation
 
 
 def test_equipment_enum_covers_all_seeded_values():
@@ -84,3 +84,26 @@ def test_exercise_has_unilateral_and_compound_flags():
     assert "is_compound" in columns
     assert columns["is_unilateral"].nullable is False
     assert columns["is_compound"].nullable is False
+
+
+def test_exercise_has_provocation_tags_column():
+    columns = Exercise.__table__.columns
+    assert "provocation_tags" in columns
+    assert columns["provocation_tags"].nullable is False
+
+
+def test_provocation_enum_values():
+    assert {p.value for p in Provocation} == {
+        "overhead",
+        "loaded_spinal_flexion",
+        "loaded_spinal_extension",
+        "axial_loading",
+        "deep_knee_flexion",
+        "deep_hip_flexion",
+        "heavy_grip",
+        "high_impact",
+        "ballistic_loading",
+        "end_range_shoulder_rotation",
+        "wrist_extension_load",
+        "unilateral_loading",
+    }

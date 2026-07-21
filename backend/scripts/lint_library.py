@@ -20,10 +20,11 @@ from app.core.constants import (
     ALLOWED_CONTRAINDICATION_TAGS,
     ALLOWED_EQUIPMENT_TAGS,
     ALLOWED_MUSCLE_GROUPS,
+    ALLOWED_PROVOCATION_TAGS,
     ENVIRONMENT_TYPE_EQUIPMENT_PRESETS,
 )
 from app.core.database import async_session
-from app.models.exercise import Equipment, Exercise, Muscle
+from app.models.exercise import Equipment, Exercise, Muscle, Provocation
 from app.models.program import ProgramTemplate
 from app.models.user import ExperienceLevel
 from app.services.program.taxonomy import MUSCLE_GROUPS, muscle_group_for
@@ -50,6 +51,7 @@ def check_schema_validity(exercises: list[Exercise]) -> list[str]:
     allowed_equipment = set(ALLOWED_EQUIPMENT_TAGS)
     allowed_muscles = set(ALLOWED_MUSCLE_GROUPS)
     allowed_contraindications = set(ALLOWED_CONTRAINDICATION_TAGS)
+    allowed_provocations = set(ALLOWED_PROVOCATION_TAGS)
 
     # Drift check: ALLOWED_EQUIPMENT_TAGS is meant to mirror the Equipment
     # enum exactly, but nothing enforces that at import time.
@@ -59,6 +61,14 @@ def check_schema_validity(exercises: list[Exercise]) -> list[str]:
             "ALLOWED_EQUIPMENT_TAGS has drifted from the Equipment enum: "
             f"missing_from_allowed_list={sorted(equipment_enum_values - allowed_equipment)}, "
             f"extra_in_allowed_list={sorted(allowed_equipment - equipment_enum_values)}"
+        )
+
+    provocation_enum_values = {p.value for p in Provocation}
+    if allowed_provocations != provocation_enum_values:
+        violations.append(
+            "ALLOWED_PROVOCATION_TAGS has drifted from the Provocation enum: "
+            f"missing_from_allowed_list={sorted(provocation_enum_values - allowed_provocations)}, "
+            f"extra_in_allowed_list={sorted(allowed_provocations - provocation_enum_values)}"
         )
 
     for exercise in exercises:
@@ -77,6 +87,10 @@ def check_schema_validity(exercises: list[Exercise]) -> list[str]:
         invalid_contraindications = set(exercise.contraindications) - allowed_contraindications
         if invalid_contraindications:
             violations.append(f"{exercise.slug}: invalid contraindications {sorted(invalid_contraindications)}")
+
+        invalid_provocations = set(exercise.provocation_tags) - allowed_provocations
+        if invalid_provocations:
+            violations.append(f"{exercise.slug}: invalid provocation_tags {sorted(invalid_provocations)}")
 
     return violations
 
