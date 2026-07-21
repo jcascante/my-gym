@@ -5,7 +5,7 @@ from app.models.exercise import Muscle
 from app.schemas.program import EffortMethod
 from app.schemas.program_api import Advisory
 from app.schemas.template import SchemeDef, SlotRule, TemplateDefinition
-from app.services.program.adaptation import _reselect
+from app.services.program.adaptation import _reselect_exercise
 from app.services.program.assembly import SlotAssignment, assemble_session
 from app.services.program.engine_config import EngineConfig
 from app.services.program.ledger import LedgerPick, band_for_experience, compute_ledger
@@ -278,7 +278,7 @@ def _validate_and_repair_volume(
             target = min(candidates, key=lambda item: (_contribution(item), item[0].order, item[1].order))
         else:
             target = min(candidates, key=lambda item: (-_contribution(item), item[0].order, item[1].order))
-        _reselect(program, target[1].id, ctx, exercises)
+        _reselect_exercise(program, target[1], ctx, exercises)
 
     ledger = compute_ledger(program, exercises)
     if advisory_sink is None:

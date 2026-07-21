@@ -23,16 +23,27 @@ def _find_slot(program: WorkoutProgram, we_id: int) -> tuple[Workout | None, Wor
     return None, None
 
 
-def _reselect(program: WorkoutProgram, we_id: int, ctx: SelectionContext, exercises: list[Exercise]) -> None:
-    _, ex = _find_slot(program, we_id)
-    if ex is None or ex.is_locked:
+def _reselect_exercise(
+    program: WorkoutProgram, ex: WorkoutExercise, ctx: SelectionContext, exercises: list[Exercise]
+) -> None:
+    """Core reselection logic, operating directly on an already-located WorkoutExercise
+    object rather than looking it up by id -- id-based lookup breaks for unsaved drafts,
+    where every row's id is None until the program is persisted (see _find_slot)."""
+    if ex.is_locked:
         return
     rule = SlotRule(**ex.fills_rule)
     excluded = set(program.constraints.get("excluded_exercise_ids", []))
-    locked = program.constraints.get("swaps", {}).get(str(we_id))
+    locked = program.constraints.get("swaps", {}).get(str(ex.id))
     chosen = select_for_slot(exercises, rule, ctx, locked, excluded)
     if chosen is not None:
         ex.exercise_id = chosen.id
+
+
+def _reselect(program: WorkoutProgram, we_id: int, ctx: SelectionContext, exercises: list[Exercise]) -> None:
+    _, ex = _find_slot(program, we_id)
+    if ex is None:
+        return
+    _reselect_exercise(program, ex, ctx, exercises)
 
 
 def apply_feedback(

@@ -840,6 +840,93 @@ async def test_build_draft_lambda_nonzero_alone_does_not_enable_validator(sample
     assert sink == []  # validator never ran -- no advisories, no mutation
 
 
+def _volume_regression_build_draft_inputs() -> tuple[ProgramTemplate, TemplateDefinition, list[Exercise]]:
+    """Hand-built two-workout template driving the real build_draft path, where every
+    WorkoutExercise.id is None until the program is persisted -- unlike the
+    _chest_program()-based unit tests above, which hand-construct rows with explicit
+    `id=` values and so can't exercise the id=None lookup bug at all.
+
+    Session "day_1" has a single "back" slot, deliberately kept in-band (10 effective
+    sets, within intermediate [8, 22]) so it never violates. Session "day_2" has a
+    single "chest" slot with enough sets (30) to push "chest" above the intermediate
+    MRV guard (22) -- uniquely, since no other slot contributes to "chest" at all, so
+    the validator's max-contribution search has exactly one correct answer: day_2's
+    slot, not day_1's (which happens to be first in iteration order).
+    """
+    template = ProgramTemplate(id=1, name="Volume Regression Test", slug="volume-regression-test", goals=[])
+    definition = TemplateDefinition(
+        split=SplitDef(
+            sessions=[
+                SessionDef(
+                    key="day_1",
+                    name="Day 1",
+                    order=1,
+                    slots=[SlotRule(pattern="vertical_pull", priority="accessory", scheme="back")],
+                ),
+                SessionDef(
+                    key="day_2",
+                    name="Day 2",
+                    order=2,
+                    slots=[SlotRule(pattern="horizontal_push", priority="accessory", scheme="chest")],
+                ),
+            ]
+        ),
+        progression=ProgressionRef(model_key="linear_load"),
+        schemes={
+            "back": SchemeDef(sets=10, reps_min=8, reps_max=12, rest_seconds=90),
+            "chest": SchemeDef(sets=30, reps_min=8, reps_max=12, rest_seconds=90),
+        },
+    )
+    back_ex = _validator_exercise(1, "back-row", primary=["lats"])
+    back_ex.movement_pattern = MovementPattern.VERTICAL_PULL
+    # Two chest candidates with distinct movement_slugs: the initial greedy fill picks
+    # chest_current (lower id wins an all-else-tied ranking); once it's placed, its
+    # movement_slug is marked "used" in ctx, so a correct reselect -- scoring the same
+    # slot's rule against the same ctx -- naturally prefers chest_alt for variety. This
+    # makes "did the right slot get repaired" directly observable via exercise_id.
+    chest_current = _validator_exercise(10, "chest-current", primary=["chest"])
+    chest_alt = _validator_exercise(11, "chest-alt", primary=["chest"])
+    return template, definition, [back_ex, chest_current, chest_alt]
+
+
+@pytest.mark.asyncio
+async def test_build_draft_volume_validator_repairs_the_correct_slot_not_the_first_slot():
+    """Regression for the id=None `_reselect` bug (see adaptation.py's `_find_slot` /
+    `_reselect_exercise`): on the real build_draft path, every WorkoutExercise.id is
+    None pre-persist, so an id-based lookup of the validator's chosen target collapses
+    to "the first id=None slot anywhere in program.workouts" -- always day_1's back
+    slot here -- regardless of which slot the min/max-contribution search actually
+    identified. The correct target is day_2's chest slot (the sole contributor pushing
+    "chest" above the MRV guard). This test fails against the pre-fix code (verified by
+    temporarily reverting the fix): day_1's slot never changes id (single candidate) so
+    it wouldn't betray the bug either way, but day_2's chest slot would stay at
+    chest-current (id=10) instead of being repaired to chest-alt (id=11)."""
+    template, definition, exercises = _volume_regression_build_draft_inputs()
+    ctx = SelectionContext(equipment=[], experience="intermediate", injuries=[], used_movement_slugs=set())
+    config = EngineConfig(config_version="x", flags=EngineFlags(use_volume_validator=True))
+    sink: list = []
+    program = build_draft(
+        template,
+        definition,
+        ctx,
+        exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=2,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={},
+        config=config,
+        advisory_sink=sink,
+    )
+
+    back_workout = next(w for w in program.workouts if w.key == "day_1")
+    chest_workout = next(w for w in program.workouts if w.key == "day_2")
+
+    assert back_workout.exercises[0].exercise_id == 1  # untouched: not the violated slot
+    assert chest_workout.exercises[0].exercise_id == 11  # repaired: chest-current -> chest-alt
+
+
 # --- Interference scheduler (Task 2.7b) -------------------------------------------------
 
 
