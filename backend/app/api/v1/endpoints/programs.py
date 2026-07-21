@@ -10,11 +10,13 @@ from app.core import (
     TrainingEnvironmentNotFoundError,
 )
 from app.core.database import get_db
+from app.crud.checkin import create_check_in, list_check_ins_for_program
 from app.crud.exercise import get_exercises_by_ids, list_exercises
 from app.crud.injury import list_injury_records
 from app.crud.program import get_program, get_template, list_active_templates, save_program
 from app.crud.training_environment import get_training_environment
-from app.models import ProgramStatus, TrainingEnvironment, User, WorkoutProgram
+from app.models import CheckIn, InjuryRegion, ProgramStatus, TrainingEnvironment, User, WorkoutProgram
+from app.schemas.checkin import CheckInCreate, CheckInResponse, CheckInResultResponse
 from app.schemas.program_api import (
     Advisory,
     AlternativeOut,
@@ -26,12 +28,18 @@ from app.schemas.program_api import (
     WorkoutPreviewOut,
 )
 from app.schemas.template import TemplateDefinition
-from app.services.program.adaptation import FeedbackAction, alternatives_for_slot, apply_feedback
+from app.services.program.adaptation import FeedbackAction, _reselect_exercise, alternatives_for_slot, apply_feedback
+from app.services.program.checkin import apply_check_in
 from app.services.program.drafting import build_draft
 from app.services.program.engine_config import EngineConfig, get_engine_config
 from app.services.program.matching import MatchInput, rank_templates
 from app.services.program.preview import derive_week
-from app.services.program.selection import SelectionContext, selection_hazards_from_injury_records, template_is_feasible
+from app.services.program.selection import (
+    SelectionContext,
+    contraindication_tag_for_region,
+    selection_hazards_from_injury_records,
+    template_is_feasible,
+)
 from app.services.program.style_override import apply_progression_style
 from app.services.program.telemetry import record_event
 
@@ -45,10 +53,21 @@ async def _ctx_for(
     *,
     movement_preferences: dict[str, float] | None = None,
     complementary_focus: bool = True,
+    program: WorkoutProgram | None = None,
 ) -> SelectionContext:
     profile = user.profile
     injury_records = await list_injury_records(db, user.id)
     injuries, injury_provocations = selection_hazards_from_injury_records(injury_records)
+    region_score_penalties: dict[str, float] = {}
+    if program is not None:
+        check_in_state = program.constraints.get("check_in_state", {})
+        for region_value, region_state in check_in_state.items():
+            if not region_state.get("excluded"):
+                continue
+            tag = contraindication_tag_for_region(InjuryRegion(region_value))
+            if tag is not None and tag not in injuries:
+                injuries = [*injuries, tag]
+        region_score_penalties = dict(program.constraints.get("region_score_penalties", {}))
     experience = profile.experience_level.value if profile and profile.experience_level else "beginner"
     return SelectionContext(
         list(environment.equipment_tags),
@@ -58,6 +77,7 @@ async def _ctx_for(
         movement_preferences=movement_preferences or {},
         complementary_focus=complementary_focus,
         injury_provocations=injury_provocations,
+        region_score_penalties=region_score_penalties,
     )
 
 
@@ -241,6 +261,7 @@ async def feedback(
         environment,
         movement_preferences=program.constraints.get("movement_preferences", {}),
         complementary_focus=program.constraints.get("complementary_focus", True),
+        program=program,
     )
     exercises = await list_exercises(db)
     apply_feedback(program, definition, FeedbackAction(**data.model_dump()), ctx, exercises)
@@ -282,6 +303,7 @@ async def alternatives(
         environment,
         movement_preferences=program.constraints.get("movement_preferences", {}),
         complementary_focus=program.constraints.get("complementary_focus", True),
+        program=program,
     )
     exercises = await list_exercises(db)
     alts = alternatives_for_slot(program, definition, we_id, ctx, exercises)
@@ -296,3 +318,55 @@ async def accept(
     program.status = ProgramStatus.ACTIVE
     await save_program(db, program)
     return await _preview_out(db, program, definition)
+
+
+@router.post("/{program_id}/check-ins", response_model=CheckInResultResponse, status_code=status.HTTP_201_CREATED)
+async def create_check_in_endpoint(
+    program_id: int,
+    data: CheckInCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> CheckInResultResponse:
+    program, _definition = await _load(db, user, program_id)
+    effects = apply_check_in(program, data.region, data.status)
+
+    if effects.excluded:
+        environment = await get_training_environment(db, user.id, program.environment_id)
+        if environment is None:
+            raise TrainingEnvironmentNotFoundError()
+        ctx = await _ctx_for(
+            db,
+            user,
+            environment,
+            movement_preferences=program.constraints.get("movement_preferences", {}),
+            complementary_focus=program.constraints.get("complementary_focus", True),
+            program=program,
+        )
+        exercises = await list_exercises(db)
+        tag = contraindication_tag_for_region(data.region)
+        if tag is not None:
+            exercise_by_id = {ex.id: ex for ex in exercises}
+            for workout in program.workouts:
+                for we in workout.exercises:
+                    current = exercise_by_id.get(we.exercise_id)
+                    if current is not None and tag in current.contraindications:
+                        _reselect_exercise(program, we, ctx, exercises)
+
+    await save_program(db, program)
+    check_in = await create_check_in(db, user.id, program.id, data.region, data.status, data.note)
+
+    return CheckInResultResponse(
+        check_in=CheckInResponse.model_validate(check_in),
+        excluded=effects.excluded,
+        consult_recommended=effects.consult_recommended,
+        draft_injury_record=effects.draft_injury_record,
+        advisories=effects.advisories,
+    )
+
+
+@router.get("/{program_id}/check-ins", response_model=list[CheckInResponse])
+async def list_check_ins_endpoint(
+    program_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> list[CheckIn]:
+    program, _definition = await _load(db, user, program_id)
+    return await list_check_ins_for_program(db, user.id, program.id)

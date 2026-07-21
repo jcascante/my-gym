@@ -4,6 +4,7 @@ from .auth import (
     TokenResponse,
     UserResponse,
 )
+from .checkin import CheckInCreate, CheckInResponse, CheckInResultResponse
 from .exercise import ExerciseResponse
 from .injury import InjuryRecordCreate, InjuryRecordResponse, InjuryRecordUpdate
 from .program import (
@@ -78,4 +79,7 @@ __all__ = [
     "WorkoutPreviewOut",
     "ProgramPreviewOut",
     "AlternativeOut",
+    "CheckInCreate",
+    "CheckInResponse",
+    "CheckInResultResponse",
 ]

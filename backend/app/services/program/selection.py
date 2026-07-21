@@ -63,6 +63,12 @@ def selection_hazards_from_injury_records(
     return contraindications, provocations
 
 
+def contraindication_tag_for_region(region: InjuryRegion) -> str | None:
+    """Public accessor for `_REGION_TO_CONTRAINDICATION` - task 3.4's check-in state
+    machine (services/program/checkin.py) needs the same region -> tag mapping."""
+    return _REGION_TO_CONTRAINDICATION.get(region)
+
+
 @dataclass(frozen=True)
 class SelectionWeights:
     variety: float = 1.0
@@ -108,6 +114,11 @@ class SelectionContext:
     weights: SelectionWeights = field(default_factory=SelectionWeights)
     ledger: LedgerAccumulator = field(default_factory=LedgerAccumulator)
     injury_provocations: list[ActiveInjuryProvocation] = field(default_factory=list)
+    # Contraindication tag -> score penalty (task 3.4's amber check-in bias, proposal
+    # §5.3's "-1.0 selection bias"). Subtracted from the scorer's output in
+    # `_ranked_pool`, summed across every tag an exercise carries - a softer nudge than
+    # `injuries`' hard exclude, deliberately: amber shouldn't remove an exercise outright.
+    region_score_penalties: dict[str, float] = field(default_factory=dict)
 
 
 def _matches_rule(ex: Exercise, rule: SlotRule) -> bool:
@@ -169,8 +180,12 @@ def _ranked_pool(
     if not pool:
         return []
     scorer = HeuristicExerciseScorer(ctx.weights)
+
+    def _penalty(ex: Exercise) -> float:
+        return sum(ctx.region_score_penalties.get(tag, 0.0) for tag in ex.contraindications)
+
     # score descending, exercise id ascending on ties (deterministic, no reliance on input order).
-    return sorted(pool, key=lambda ex: (-scorer.score(_extract_features(ex, rule, ctx)), ex.id))
+    return sorted(pool, key=lambda ex: (-(scorer.score(_extract_features(ex, rule, ctx)) - _penalty(ex)), ex.id))
 
 
 def ranked_pool_for_slot(

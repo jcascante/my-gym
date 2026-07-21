@@ -165,6 +165,22 @@ def test_selection_hazards_tracks_rehabilitating_flag_per_provocation():
     assert by_provocation == {"deep_knee_flexion": True, "overhead": False}
 
 
+def test_region_score_penalty_biases_away_without_hard_excluding():
+    """Task 3.4's amber check-in bias: a contraindicated exercise is de-weighted, not
+    removed from the pool outright (unlike `injuries`' hard exclude)."""
+    knee_ex = _Ex(1, "knee-heavy", "k", "squat", "lower_body", ["quads"], [], "intermediate", ["knee"])
+    safe_ex = _Ex(2, "safe", "s", "squat", "lower_body", ["quads"], [], "intermediate", [])
+    rule = SlotRule(pattern="squat", priority="primary", scheme="main")
+    ctx = SelectionContext([], "intermediate", [], set(), region_score_penalties={"knee": 1.0})
+    chosen = select_for_slot([knee_ex, safe_ex], rule, ctx, None, set())
+    assert chosen.id == 2
+
+    # Penalty alone never excludes: with only the penalized exercise available, it's
+    # still selectable.
+    chosen_only_option = select_for_slot([knee_ex], rule, ctx, None, set())
+    assert chosen_only_option.id == 1
+
+
 def test_movement_preference_never_empties_a_slot():
     from app.schemas.template import SlotRule
     from app.services.program.selection import SelectionContext, select_for_slot

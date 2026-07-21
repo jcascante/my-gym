@@ -218,3 +218,138 @@ async def test_match_uses_profile_goal_weights_to_score_templates(
     with_vector = {m["slug"]: m["factors"]["goal"] for m in resp.json()}
     assert with_vector["bodyweight-full-body-x3"] == pytest.approx(0.9)
     assert with_vector["bodyweight-full-body-x3"] != without_vector["bodyweight-full-body-x3"]
+
+
+async def _drafted_program_id(authenticated_client, user_environment) -> int:
+    body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+    }
+    r = await authenticated_client.post("/api/v1/programs/match", json=body)
+    template_id = r.json()[0]["template_id"]
+    draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80, "bench_start": 60}}
+    r = await authenticated_client.post("/api/v1/programs/draft", json=draft_body)
+    assert r.status_code == 201
+    return int(r.json()["program_id"])
+
+
+@pytest.mark.asyncio
+async def test_check_in_green_returns_no_effects(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    pid = await _drafted_program_id(authenticated_client, user_environment)
+
+    r = await authenticated_client.post(
+        f"/api/v1/programs/{pid}/check-ins", json={"region": "knee", "status": "green", "note": "feeling fine"}
+    )
+    assert r.status_code == 201
+    data = r.json()
+    assert data["check_in"]["region"] == "knee"
+    assert data["check_in"]["status"] == "green"
+    assert data["check_in"]["note"] == "feeling fine"
+    assert data["excluded"] is False
+    assert data["consult_recommended"] is False
+    assert data["draft_injury_record"] is None
+    assert data["advisories"] == []
+
+
+@pytest.mark.asyncio
+async def test_check_in_two_ambers_triggers_regression_step(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    pid = await _drafted_program_id(authenticated_client, user_environment)
+
+    first = await authenticated_client.post(
+        f"/api/v1/programs/{pid}/check-ins", json={"region": "knee", "status": "amber"}
+    )
+    assert first.status_code == 201
+    assert first.json()["excluded"] is False
+
+    second = await authenticated_client.post(
+        f"/api/v1/programs/{pid}/check-ins", json={"region": "knee", "status": "amber"}
+    )
+    assert second.status_code == 201
+    data = second.json()
+    assert data["excluded"] is True
+    assert data["advisories"][0]["code"] == "CHECK_IN_REGRESSION_STEP"
+
+
+@pytest.mark.asyncio
+async def test_check_in_red_returns_consult_message_and_draft_injury_record(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    pid = await _drafted_program_id(authenticated_client, user_environment)
+
+    r = await authenticated_client.post(
+        f"/api/v1/programs/{pid}/check-ins", json={"region": "shoulder", "status": "red"}
+    )
+    assert r.status_code == 201
+    data = r.json()
+    assert data["excluded"] is True
+    assert data["consult_recommended"] is True
+    assert data["advisories"][0]["code"] == "CHECK_IN_RED_FLAG"
+    assert data["advisories"][0]["severity"] == "error"
+    draft = data["draft_injury_record"]
+    assert draft["region"] == "shoulder"
+    assert draft["phase"] == "acute"
+    assert draft["severity"] == 3
+
+
+@pytest.mark.asyncio
+async def test_list_check_ins_returns_history_in_order(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    pid = await _drafted_program_id(authenticated_client, user_environment)
+    await authenticated_client.post(f"/api/v1/programs/{pid}/check-ins", json={"region": "knee", "status": "green"})
+    await authenticated_client.post(f"/api/v1/programs/{pid}/check-ins", json={"region": "knee", "status": "amber"})
+
+    r = await authenticated_client.get(f"/api/v1/programs/{pid}/check-ins")
+    assert r.status_code == 200
+    statuses = [c["status"] for c in r.json()]
+    assert statuses == ["green", "amber"]
+
+
+@pytest.mark.asyncio
+async def test_check_in_404_for_foreign_program(client, auth_headers, db_session):
+    other_user = User(
+        email="other-checkin@example.com",
+        password_hash=hash_password("password123"),
+        first_name="Other",
+        last_name="User",
+    )
+    db_session.add(other_user)
+    await db_session.commit()
+    await db_session.refresh(other_user)
+
+    from app.crud.program import save_program
+    from app.models import ProgramStatus, WorkoutProgram
+
+    other_program = WorkoutProgram(
+        user_id=other_user.id,
+        template_id=1,
+        environment_id=1,
+        name="Other's Program",
+        status=ProgramStatus.DRAFT,
+        duration_weeks=8,
+        days_per_week=3,
+        weight_unit="kg",
+        constraints={},
+    )
+    await save_program(db_session, other_program)
+
+    r = await client.post(
+        f"/api/v1/programs/{other_program.id}/check-ins",
+        json={"region": "knee", "status": "green"},
+        headers=auth_headers,
+    )
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_check_in_unauthorized(client):
+    r = await client.post("/api/v1/programs/1/check-ins", json={"region": "knee", "status": "green"})
+    assert r.status_code == 401

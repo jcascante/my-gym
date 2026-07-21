@@ -1,5 +1,6 @@
 from app.core.database import Base
 
+from .checkin import CheckIn, CheckInStatus
 from .exercise import BodyRegion, Contraindication, Equipment, Exercise, MovementPattern, Muscle, Provocation
 from .injury import InjuryCondition, InjuryPhase, InjuryRecord, InjuryRegion, InjurySource
 from .program import (  # noqa: F401
@@ -46,4 +47,6 @@ __all__ = [
     "InjuryCondition",
     "InjuryPhase",
     "InjurySource",
+    "CheckIn",
+    "CheckInStatus",
 ]
