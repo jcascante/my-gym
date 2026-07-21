@@ -82,3 +82,10 @@ class ProgramNotFoundError(AppException):
 
     def __init__(self, message: str = "Program not found"):
         super().__init__(message, status_code=404)
+
+
+class WorkoutExerciseNotFoundError(AppException):
+    error_code: str = "WORKOUT_EXERCISE_NOT_FOUND"
+
+    def __init__(self, message: str = "Workout exercise not found"):
+        super().__init__(message, status_code=404)

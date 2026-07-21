@@ -353,3 +353,92 @@ async def test_check_in_404_for_foreign_program(client, auth_headers, db_session
 async def test_check_in_unauthorized(client):
     r = await client.post("/api/v1/programs/1/check-ins", json={"region": "knee", "status": "green"})
     assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_explain_template_returns_factors_and_tier(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    pid = await _drafted_program_id(authenticated_client, user_environment)
+
+    r = await authenticated_client.get(f"/api/v1/programs/{pid}/explain/template")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["tier"] == "best"
+    assert set(data["factors"].keys()) == {
+        "goal",
+        "experience",
+        "days",
+        "duration",
+        "movement_preference",
+        "focus_complement",
+        "periodization",
+    }
+    assert isinstance(data["fit_pct"], int)
+
+
+@pytest.mark.asyncio
+async def test_explain_template_404_for_foreign_program(client, auth_headers, db_session):
+    other_user = User(
+        email="other-explain-template@example.com",
+        password_hash=hash_password("password123"),
+        first_name="Other",
+        last_name="User",
+    )
+    db_session.add(other_user)
+    await db_session.commit()
+    await db_session.refresh(other_user)
+
+    from app.crud.program import save_program
+    from app.models import ProgramStatus, WorkoutProgram
+
+    other_program = WorkoutProgram(
+        user_id=other_user.id,
+        template_id=1,
+        environment_id=1,
+        name="Other's Program",
+        status=ProgramStatus.DRAFT,
+        duration_weeks=8,
+        days_per_week=3,
+        weight_unit="kg",
+        constraints={},
+    )
+    await save_program(db_session, other_program)
+
+    r = await client.get(f"/api/v1/programs/{other_program.id}/explain/template", headers=auth_headers)
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_explain_slot_returns_factors_ledger_and_no_safety_note(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    pid = await _drafted_program_id(authenticated_client, user_environment)
+    program = await authenticated_client.get(f"/api/v1/programs/{pid}")
+    we_id = program.json()["weeks"]["1"][0]["slots"][0]["workout_exercise_id"]
+
+    r = await authenticated_client.get(f"/api/v1/programs/{pid}/explain/slot/{we_id}")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["workout_exercise_id"] == we_id
+    assert set(data["factors"].keys()) == {
+        "variety",
+        "priority_fit",
+        "muscle_fit",
+        "difficulty",
+        "unilateral_balance",
+        "movement_preference",
+        "complementary_coverage",
+    }
+    assert data["ledger_contributions"]
+    assert data["safety_note"] is None
+
+
+@pytest.mark.asyncio
+async def test_explain_slot_404_for_unknown_slot(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    pid = await _drafted_program_id(authenticated_client, user_environment)
+
+    r = await authenticated_client.get(f"/api/v1/programs/{pid}/explain/slot/999999")
+    assert r.status_code == 404

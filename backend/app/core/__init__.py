@@ -12,6 +12,7 @@ from .exceptions import (
     UserAlreadyExistsError,
     UserNotFoundError,
     ValidationError,
+    WorkoutExerciseNotFoundError,
 )
 from .logging import get_logger, setup_logging
 from .security import create_access_token, create_refresh_token, decode_token, hash_password, verify_password
@@ -30,6 +31,7 @@ __all__ = [
     "InjuryRecordNotFoundError",
     "ProgramTemplateNotFoundError",
     "ProgramNotFoundError",
+    "WorkoutExerciseNotFoundError",
     "hash_password",
     "verify_password",
     "create_access_token",

@@ -6,6 +6,7 @@ from .auth import (
 )
 from .checkin import CheckInCreate, CheckInResponse, CheckInResultResponse
 from .exercise import ExerciseResponse
+from .explain import LedgerContributionOut, SlotExplanationOut, TemplateExplanationOut
 from .injury import InjuryRecordCreate, InjuryRecordResponse, InjuryRecordUpdate
 from .program import (
     DayOfWeek,
@@ -82,4 +83,7 @@ __all__ = [
     "CheckInCreate",
     "CheckInResponse",
     "CheckInResultResponse",
+    "TemplateExplanationOut",
+    "LedgerContributionOut",
+    "SlotExplanationOut",
 ]

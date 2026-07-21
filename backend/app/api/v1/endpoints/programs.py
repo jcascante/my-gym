@@ -8,6 +8,7 @@ from app.core import (
     ProgramNotFoundError,
     ProgramTemplateNotFoundError,
     TrainingEnvironmentNotFoundError,
+    WorkoutExerciseNotFoundError,
 )
 from app.core.database import get_db
 from app.crud.checkin import create_check_in, list_check_ins_for_program
@@ -17,6 +18,7 @@ from app.crud.program import get_program, get_template, list_active_templates, s
 from app.crud.training_environment import get_training_environment
 from app.models import CheckIn, InjuryRegion, ProgramStatus, TrainingEnvironment, User, WorkoutProgram
 from app.schemas.checkin import CheckInCreate, CheckInResponse, CheckInResultResponse
+from app.schemas.explain import LedgerContributionOut, SlotExplanationOut, TemplateExplanationOut
 from app.schemas.program_api import (
     Advisory,
     AlternativeOut,
@@ -32,6 +34,7 @@ from app.services.program.adaptation import FeedbackAction, _reselect_exercise, 
 from app.services.program.checkin import apply_check_in
 from app.services.program.drafting import build_draft
 from app.services.program.engine_config import EngineConfig, get_engine_config
+from app.services.program.explain import explain_slot, explain_template
 from app.services.program.matching import MatchInput, rank_templates
 from app.services.program.preview import derive_week
 from app.services.program.selection import (
@@ -202,6 +205,15 @@ async def draft(
         telemetry_sink=telemetry_sink,
         advisory_sink=advisory_sink,
     )
+    # Stashed for task 3.6's /explain/template - MatchInput reconstruction needs the
+    # user's original match-time inputs, and WorkoutProgram itself only stores
+    # `program.focus` (the template's own first goal, not the user's fitness_focus)
+    # and `program.days_per_week`.
+    program.constraints = {
+        **program.constraints,
+        "fitness_focus": data.fitness_focus,
+        "session_duration_min": data.session_duration_min,
+    }
     await save_program(db, program)
     for entry in telemetry_sink:
         await record_event(
@@ -370,3 +382,77 @@ async def list_check_ins_endpoint(
 ) -> list[CheckIn]:
     program, _definition = await _load(db, user, program_id)
     return await list_check_ins_for_program(db, user.id, program.id)
+
+
+@router.get("/{program_id}/explain/template", response_model=TemplateExplanationOut)
+async def explain_template_endpoint(
+    program_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> TemplateExplanationOut:
+    program, definition = await _load(db, user, program_id)
+    template = await get_template(db, program.template_id)
+    if template is None:
+        raise ProgramTemplateNotFoundError()
+    environment = await get_training_environment(db, user.id, program.environment_id)
+    if environment is None:
+        raise TrainingEnvironmentNotFoundError()
+    exercises = await list_exercises(db)
+    profile = user.profile
+    default_duration = (template.session_duration_min + template.session_duration_max) // 2
+    match_input = MatchInput(
+        fitness_focus=program.constraints.get("fitness_focus", program.focus or "general"),
+        experience_level=profile.experience_level.value if profile and profile.experience_level else "beginner",
+        days_per_week=program.days_per_week,
+        session_duration_min=program.constraints.get("session_duration_min", default_duration),
+        environment_equipment=list(environment.equipment_tags),
+        movement_preferences=program.constraints.get("movement_preferences", {}),
+        complementary_focus=program.constraints.get("complementary_focus", True),
+        progression_style=program.constraints.get("progression_style", "consistent"),
+        goal_vector=profile.goal_weights if profile else None,
+    )
+    match = explain_template(template, definition, exercises, match_input)
+    return TemplateExplanationOut(
+        template_id=match.template_id,
+        slug=match.slug,
+        name=match.name,
+        fit_pct=match.fit_pct,
+        factors=match.factors,
+        tier=match.tier,
+        advisories=match.advisories,
+    )
+
+
+@router.get("/{program_id}/explain/slot/{we_id}", response_model=SlotExplanationOut)
+async def explain_slot_endpoint(
+    program_id: int,
+    we_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> SlotExplanationOut:
+    program, _definition = await _load(db, user, program_id)
+    environment = await get_training_environment(db, user.id, program.environment_id)
+    if environment is None:
+        raise TrainingEnvironmentNotFoundError()
+    ctx = await _ctx_for(
+        db,
+        user,
+        environment,
+        movement_preferences=program.constraints.get("movement_preferences", {}),
+        complementary_focus=program.constraints.get("complementary_focus", True),
+        program=program,
+    )
+    exercises = await list_exercises(db)
+    explanation = explain_slot(program, we_id, ctx, exercises)
+    if explanation is None:
+        raise WorkoutExerciseNotFoundError()
+    return SlotExplanationOut(
+        workout_exercise_id=explanation.workout_exercise_id,
+        exercise_id=explanation.exercise_id,
+        exercise_name=explanation.exercise_name,
+        factors=explanation.factors,
+        score=explanation.score,
+        ledger_contributions=[
+            LedgerContributionOut(group=c.group, effective_sets=c.effective_sets)
+            for c in explanation.ledger_contributions
+        ],
+        safety_note=explanation.safety_note,
+    )
