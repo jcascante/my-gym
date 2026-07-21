@@ -189,20 +189,25 @@ async def test_match_uses_profile_goal_weights_to_score_templates(
 ):
     """profile.goal_weights must actually reach rank_templates via MatchInput.goal_vector.
 
-    "bodyweight-full-body-x3" has goals=["general"] (see app/db/seed/program_templates.py),
-    so its goal factor is 0.0 under the fitness_focus-only fallback ({"strength": 1.0}) but
-    becomes non-zero once goal_weights explicitly assigns weight to "general".
+    "bodyweight-full-body-x3" has goals=["general"] (see app/db/seed/program_templates.py). The
+    match request's `fitness_focus` ("general_fitness" - distinct from the profile's own
+    closed-vocabulary FitnessFocus enum, and deliberately not a goal any seeded template lists)
+    matches no seeded template's goals, so every template ties at a 0.0 goal factor under the
+    fallback vector - that keeps bodyweight-full-body-x3 competitive for a top-3 slot (on its
+    matching days/duration/beginner niche) regardless of how many other, differently-goaled
+    templates are seeded. Explicitly weighting "general" via profile.goal_weights should then
+    raise only its own goal factor.
     """
     body = {
         "environment_id": user_environment.id,
         "days_per_week": 3,
-        "session_duration_min": 60,
-        "fitness_focus": "strength",
+        "session_duration_min": 35,
+        "fitness_focus": "general_fitness",
         "weight_unit": "kg",
         "duration_weeks": 8,
     }
 
-    await authenticated_client.post("/api/v1/users/profile", json={"fitness_focus": "strength"})
+    await authenticated_client.post("/api/v1/users/profile", json={"fitness_focus": "general"})
     resp = await authenticated_client.post("/api/v1/programs/match", json=body)
     assert resp.status_code == 200
     without_vector = {m["slug"]: m["factors"]["goal"] for m in resp.json()}
@@ -211,7 +216,7 @@ async def test_match_uses_profile_goal_weights_to_score_templates(
 
     await authenticated_client.post(
         "/api/v1/users/profile",
-        json={"fitness_focus": "strength", "goal_weights": {"general": 0.9, "strength": 0.1}},
+        json={"fitness_focus": "general", "goal_weights": {"general": 0.9, "general_fitness": 0.1}},
     )
     resp = await authenticated_client.post("/api/v1/programs/match", json=body)
     assert resp.status_code == 200
