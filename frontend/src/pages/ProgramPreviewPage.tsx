@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, Spinner, WeekTabs, SlotRow } from '@/components';
+import { Card, Spinner, WeekTabs, SlotRow, CheckInWidget } from '@/components';
 import { useProgramPreview } from '@/hooks/usePrograms';
 
 export default function ProgramPreviewPage() {
@@ -13,8 +13,9 @@ export default function ProgramPreviewPage() {
     .map(Number)
     .sort((a, b) => a - b);
   return (
-    <div className="max-w-2xl mx-auto p-4">
+    <div className="max-w-2xl mx-auto p-4 space-y-4">
       <h1 className="text-2xl font-bold mb-4">{data.name}</h1>
+      {data.status === 'active' && <CheckInWidget programId={programId} />}
       <WeekTabs weeks={weeks} active={active} onSelect={setActive} />
       <div className="space-y-4">
         {(data.weeks[String(active)] ?? []).map((w) => (

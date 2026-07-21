@@ -64,4 +64,22 @@ describe('SlotRow', () => {
     render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
     expect(screen.queryByText(/🔁 rotates weekly/)).not.toBeInTheDocument();
   });
+
+  it('shows a friendly label for a deload note', () => {
+    const slot = { ...baseSlot, note: 'deload' };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText('Deload week')).toBeInTheDocument();
+  });
+
+  it('shows a friendly label for a ramp-capped note', () => {
+    const slot = { ...baseSlot, note: 'ramp_capped' };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText('Capped for safe progression')).toBeInTheDocument();
+  });
+
+  it('shows an unrecognized note as-is', () => {
+    const slot = { ...baseSlot, note: 'Go heavy' };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText('Go heavy')).toBeInTheDocument();
+  });
 });

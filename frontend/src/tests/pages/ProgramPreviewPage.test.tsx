@@ -1,15 +1,28 @@
-import { it, expect, vi } from 'vitest';
+import { it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ProgramPreviewPage from '@/pages/ProgramPreviewPage';
+
+vi.mock('@/hooks/useCheckIns', () => ({
+  useCreateCheckIn: () => ({ data: undefined, isPending: false, mutate: vi.fn(), reset: vi.fn() }),
+  useCheckIns: () => ({ data: [] }),
+}));
+
+vi.mock('@/hooks/useInjuries', () => ({
+  useCreateInjuryRecord: () => ({ isPending: false, isSuccess: false, mutate: vi.fn() }),
+}));
+
+let programStatus: 'draft' | 'active' | 'archived' = 'active';
 
 vi.mock('@/hooks/usePrograms', () => ({
   useProgramPreview: () => ({
     data: {
       program_id: 1,
       name: 'My Program',
-      status: 'active',
+      get status() {
+        return programStatus;
+      },
       duration_weeks: 1,
       weeks: {
         '1': [
@@ -59,6 +72,37 @@ vi.mock('@/hooks/usePrograms', () => ({
     isLoading: false,
   }),
 }));
+
+beforeEach(() => {
+  programStatus = 'active';
+});
+
+it('renders the check-in widget for an active program', () => {
+  render(
+    <MemoryRouter initialEntries={['/programs/1']}>
+      <QueryClientProvider client={new QueryClient()}>
+        <Routes>
+          <Route path="/programs/:id" element={<ProgramPreviewPage />} />
+        </Routes>
+      </QueryClientProvider>
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('How are you feeling?')).toBeInTheDocument();
+});
+
+it('does not render the check-in widget for a draft program', () => {
+  programStatus = 'draft';
+  render(
+    <MemoryRouter initialEntries={['/programs/1']}>
+      <QueryClientProvider client={new QueryClient()}>
+        <Routes>
+          <Route path="/programs/:id" element={<ProgramPreviewPage />} />
+        </Routes>
+      </QueryClientProvider>
+    </MemoryRouter>,
+  );
+  expect(screen.queryByText('How are you feeling?')).not.toBeInTheDocument();
+});
 
 it('renders an accepted program read-only', () => {
   render(

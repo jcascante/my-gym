@@ -41,3 +41,4 @@ export { ProgramWizard } from './ProgramWizard';
 export { ProgramWizardStep1 } from './ProgramWizardStep1';
 export { ExerciseSelection } from './ExerciseSelection';
 export { ExercisePreviewModal } from './ExercisePreviewModal';
+export { CheckInWidget } from './CheckInWidget';
