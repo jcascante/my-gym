@@ -7,6 +7,7 @@ import {
   DraftProgramView,
   Button,
   ProgramWizard,
+  Alert,
 } from '@/components';
 import { useAcceptProgram, useCreateDraft, useMatchTemplates } from '@/hooks/usePrograms';
 import { useAuthStore } from '@/store/auth';
@@ -79,6 +80,12 @@ export default function ProgramBuilderPage() {
     navigate(`/programs/${accepted.program_id}`);
   };
 
+  // Templates with no required_inputs skip the Details step entirely (onPick jumps
+  // straight to step 3) - without this, the Stepper would show "Details" as a normal
+  // completed step the user never saw, reading as a missed/glitched step rather than an
+  // intentional skip.
+  const detailsSkipped = step === 3 && chosen !== null && chosen.required_inputs.length === 0;
+
   const handleBack = () => {
     if (step === 3 && chosen && chosen.required_inputs.length === 0) {
       setStep(1);
@@ -92,7 +99,7 @@ export default function ProgramBuilderPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4">
-      <Stepper steps={STEPS} current={step} />
+      <Stepper steps={STEPS} current={step} skipped={detailsSkipped ? [2] : []} />
       {step === 0 && (
         <ProgramWizard
           environmentId={parseInt(environmentId || '1', 10)}
@@ -133,6 +140,11 @@ export default function ProgramBuilderPage() {
       )}
       {step === 3 && draft && (
         <div>
+          {detailsSkipped && (
+            <Alert type="info" className="mb-4">
+              This template needed no extra details, so we generated your draft directly.
+            </Alert>
+          )}
           <DraftProgramView program={draft} programId={draft.program_id} />
           <div className="mt-6 flex gap-3">
             <Button type="button" variant="secondary" onClick={handleBack} className="flex-1">
