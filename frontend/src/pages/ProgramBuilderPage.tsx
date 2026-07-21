@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Stepper,
@@ -8,8 +8,10 @@ import {
   Button,
   ProgramWizard,
   Alert,
+  Spinner,
 } from '@/components';
 import { useAcceptProgram, useCreateDraft, useMatchTemplates } from '@/hooks/usePrograms';
+import { useTrainingEnvironments } from '@/hooks/useTrainingEnvironments';
 import { useAuthStore } from '@/store/auth';
 import type {
   MatchRequest as ApiMatchRequest,
@@ -22,9 +24,20 @@ const STEPS = ['Preferences', 'Select', 'Details', 'Review'];
 
 export default function ProgramBuilderPage() {
   const navigate = useNavigate();
-  const { environmentId } = useParams<{ environmentId?: string }>();
+  const { environmentId: routeEnvironmentId } = useParams<{ environmentId?: string }>();
   const { userProfile } = useAuthStore();
   const [step, setStep] = useState(0);
+
+  // No route param means the caller (e.g. the dashboard's "Create Program" shortcut)
+  // didn't know which environment to use - resolve it from the user's own environments
+  // instead of guessing an id that may not exist or belong to someone else.
+  const environmentsQuery = useTrainingEnvironments({ enabled: !routeEnvironmentId });
+  const resolvedEnvironmentId = useMemo(() => {
+    if (routeEnvironmentId) return parseInt(routeEnvironmentId, 10);
+    const environments = environmentsQuery.data ?? [];
+    const defaultEnvironment = environments.find((environment) => environment.is_default);
+    return (defaultEnvironment ?? environments[0])?.id ?? null;
+  }, [routeEnvironmentId, environmentsQuery.data]);
   const [formPrefs, setFormPrefs] = useState<FormMatchRequest | null>(null);
   const [apiPrefs, setApiPrefs] = useState<ApiMatchRequest | null>(null);
   const [chosen, setChosen] = useState<TemplateMatch | null>(null);
@@ -100,9 +113,27 @@ export default function ProgramBuilderPage() {
   return (
     <div className="max-w-2xl mx-auto p-4">
       <Stepper steps={STEPS} current={step} skipped={detailsSkipped ? [2] : []} />
-      {step === 0 && (
+      {step === 0 && !routeEnvironmentId && environmentsQuery.isLoading && (
+        <div className="flex justify-center py-12">
+          <Spinner size="lg" />
+        </div>
+      )}
+      {step === 0 &&
+        !routeEnvironmentId &&
+        !environmentsQuery.isLoading &&
+        resolvedEnvironmentId === null && (
+          <div>
+            <Alert type="info" className="mb-4">
+              You need to add a training environment before generating a program.
+            </Alert>
+            <Button variant="primary" onClick={() => navigate('/environments')}>
+              Add a training environment
+            </Button>
+          </div>
+        )}
+      {step === 0 && resolvedEnvironmentId !== null && (
         <ProgramWizard
-          environmentId={parseInt(environmentId || '1', 10)}
+          environmentId={resolvedEnvironmentId}
           onComplete={onPrefs}
           onCancel={() => navigate(-1)}
         />

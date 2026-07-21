@@ -6,6 +6,7 @@ import { DraftProgramView } from '@/components/DraftProgramView';
 vi.mock('@/hooks/usePrograms', () => ({
   useSubmitFeedback: () => ({ mutate: vi.fn(), isPending: false }),
   useSlotAlternatives: () => ({ data: [], isLoading: false }),
+  useProgramPreview: (_id: number, initialData: unknown) => ({ data: initialData }),
   programKeys: { preview: (id: number) => ['program', id] },
 }));
 

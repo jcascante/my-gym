@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.exceptions import ValidationError
 from app.models.exercise import Exercise
@@ -94,8 +95,10 @@ def apply_feedback(
                 for ex in w.exercises:
                     ex.sets = max(1, ex.sets + action.delta)
 
-    # SQLAlchemy needs a new dict object to detect the JSON mutation
-    program.constraints = dict(c)
+    # c is program.constraints itself (mutated in place above, not a copy) so a plain
+    # reassignment is a same-content no-op that SQLAlchemy's change tracking ignores -
+    # flag_modified forces the JSON column into the next UPDATE regardless.
+    flag_modified(program, "constraints")
     return program
 
 

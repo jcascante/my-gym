@@ -1,4 +1,7 @@
+import json
+
 import pytest
+from sqlalchemy import text
 
 from app.core import hash_password
 from app.crud.program import get_program
@@ -43,6 +46,46 @@ async def test_full_flow(client, auth_headers, seeded_templates, seeded_exercise
     # 4. accept
     r = await client.post(f"/api/v1/programs/{pid}/accept", headers=auth_headers)
     assert r.status_code == 200 and r.json()["status"] == "active"
+
+
+@pytest.mark.asyncio
+async def test_exclude_persists_to_db_not_just_in_memory_response(
+    client, auth_headers, seeded_templates, seeded_exercises, user_environment, db_session
+):
+    """Regression: apply_feedback mutated program.constraints in place before
+    reassigning it, so the reassignment was a same-content no-op that SQLAlchemy's
+    JSON change-tracking silently dropped - the response and in-memory object looked
+    right, but excluded_exercise_ids never reached the database. Query raw SQL,
+    bypassing the session's identity map, so a masked write can't fake a pass."""
+    body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+    }
+    r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
+    template_id = r.json()[0]["template_id"]
+
+    draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80}}
+    r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
+    program = r.json()
+    pid = program["program_id"]
+    slot = program["weeks"]["1"][0]["slots"][0]
+    we_id = slot["workout_exercise_id"]
+    original_exercise_id = slot["exercise_id"]
+
+    r = await client.post(
+        f"/api/v1/programs/{pid}/feedback",
+        json={"type": "exclude", "workout_exercise_id": we_id},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+
+    row = await db_session.execute(text("SELECT constraints FROM workout_programs WHERE id = :pid"), {"pid": pid})
+    persisted_constraints = json.loads(row.scalar_one())
+    assert original_exercise_id in persisted_constraints["excluded_exercise_ids"]
 
 
 @pytest.mark.asyncio

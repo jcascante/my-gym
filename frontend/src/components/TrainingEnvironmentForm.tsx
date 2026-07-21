@@ -88,7 +88,7 @@ export function TrainingEnvironmentForm({
         environmentType={environmentType}
       />
 
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 border-t border-neutral-200 dark:border-neutral-700 pt-4">
         <input
           type="checkbox"
           checked={isDefault}

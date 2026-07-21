@@ -7,7 +7,7 @@ import {
   matchTemplates,
   submitFeedback,
 } from '@/api/programs';
-import type { DraftRequest, FeedbackAction, MatchRequest } from '@/types/program';
+import type { DraftRequest, FeedbackAction, MatchRequest, ProgramPreview } from '@/types/program';
 
 export const programKeys = { preview: (id: number) => ['program', id] as const };
 
@@ -19,11 +19,16 @@ export function useCreateDraft() {
   return useMutation({ mutationFn: (req: DraftRequest) => createDraft(req) });
 }
 
-export function useProgramPreview(id: number | null) {
+export function useProgramPreview(id: number | null, initialData?: ProgramPreview) {
   return useQuery({
     queryKey: id ? programKeys.preview(id) : ['program', 'none'],
     queryFn: () => getProgramPreview(id as number),
     enabled: id != null,
+    initialData,
+    // Seeded data is already fresh (just-created draft, or a feedback response written
+    // via setQueryData) - without this, the default staleTime of 0 triggers an immediate
+    // background refetch on every mount that just re-fetches what we already have.
+    ...(initialData ? { staleTime: Infinity } : {}),
   });
 }
 

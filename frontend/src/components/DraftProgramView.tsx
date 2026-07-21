@@ -5,7 +5,7 @@ import { ExerciseAlternativesModal } from './ExerciseAlternativesModal';
 import { ExercisePreviewModal } from './ExercisePreviewModal';
 import { Alert } from './Alert';
 import { TemplateExplanationPanel } from './TemplateExplanationPanel';
-import { useSubmitFeedback } from '@/hooks/usePrograms';
+import { useProgramPreview, useSubmitFeedback } from '@/hooks/usePrograms';
 import { useExercises } from '@/hooks/useExercises';
 import type { FeedbackAction, ProgramPreview } from '@/types/program';
 import type { Exercise, ExerciseResponse } from '@/types/exercise';
@@ -39,12 +39,18 @@ function mapExerciseResponse(response: ExerciseResponse): Exercise {
 }
 
 export function DraftProgramView({
-  program,
+  program: initialProgram,
   programId,
 }: {
   program: ProgramPreview;
   programId: number;
 }) {
+  // Feedback actions (swap/exclude/lock/regenerate) write their response into the
+  // programKeys.preview(programId) cache entry via useSubmitFeedback's onSuccess -
+  // reading through that same query (seeded with the caller's already-fetched draft)
+  // is what makes the UI pick up those updates, instead of rendering the draft prop
+  // frozen at the moment the draft was first created.
+  const { data: program = initialProgram } = useProgramPreview(programId, initialProgram);
   const weeks = Object.keys(program.weeks)
     .map(Number)
     .sort((a, b) => a - b);

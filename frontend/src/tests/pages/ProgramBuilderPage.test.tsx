@@ -4,21 +4,31 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ProgramBuilderPage from '@/pages/ProgramBuilderPage';
 import * as programsApi from '@/api/programs';
+import * as trainingEnvironmentsApi from '@/api/trainingEnvironments';
 import { useAuthStore } from '@/store/auth';
 import type { MatchRequest } from '@/types/programCreation';
 
 vi.mock('@/api/programs');
+vi.mock('@/api/trainingEnvironments');
 vi.mock('@/store/auth');
 
 // ProgramWizardStep1's "Days per Week" control is a decorative stepper (no labeled
 // input), which the tests below don't exercise - stub the whole wizard step so these
 // tests can drive step 0 -> 1 with one click, independent of that form's internals.
+// onComplete echoes back whatever environmentId the page resolved and passed down, so
+// tests can verify the resolution logic without exercising the real form.
 vi.mock('@/components/ProgramWizard', () => ({
-  ProgramWizard: ({ onComplete }: { onComplete: (values: MatchRequest) => void }) => (
+  ProgramWizard: ({
+    environmentId,
+    onComplete,
+  }: {
+    environmentId: number;
+    onComplete: (values: MatchRequest) => void;
+  }) => (
     <button
       onClick={() =>
         onComplete({
-          environment_id: 1,
+          environment_id: environmentId,
           days_per_week: 3,
           session_duration_min: 60,
           weight_unit: 'kg',
@@ -43,12 +53,13 @@ vi.mock('@/components/ProgramWizard', () => ({
 }));
 
 const mockNavigate = vi.fn();
+let mockParams: { environmentId?: string } = { environmentId: '1' };
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useParams: () => ({ environmentId: '1' }),
+    useParams: () => mockParams,
   };
 });
 
@@ -63,6 +74,7 @@ function wrap(ui: React.ReactNode) {
 describe('ProgramBuilderPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockParams = { environmentId: '1' };
   });
 
   it('should include user fitness_focus in match request instead of hardcoded value', async () => {
@@ -249,6 +261,78 @@ describe('ProgramBuilderPage', () => {
         expect(screen.getByLabelText('Comfortable squat weight')).toBeInTheDocument(),
       );
       expect(screen.queryByText(/\(skipped\)/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('resolving the environment when no route param is given', () => {
+    beforeEach(() => {
+      mockParams = {};
+      vi.mocked(useAuthStore).mockReturnValue({
+        user: { id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe' },
+        userProfile: { id: 1, fitness_focus: 'strength', age: 30, gender: 'male' },
+        isAuthenticated: true,
+        isLoading: false,
+        setAuth: vi.fn(),
+        setUserProfile: vi.fn(),
+        clearAuth: vi.fn(),
+        setLoading: vi.fn(),
+      });
+    });
+
+    it('shows a prompt to create an environment instead of guessing an id, when the user has none', async () => {
+      vi.mocked(trainingEnvironmentsApi.listTrainingEnvironments).mockResolvedValue([]);
+
+      render(wrap(<ProgramBuilderPage />));
+
+      await waitFor(() =>
+        expect(
+          screen.getByRole('button', { name: /add a training environment/i }),
+        ).toBeInTheDocument(),
+      );
+      expect(screen.queryByText('Submit prefs')).not.toBeInTheDocument();
+    });
+
+    it('auto-selects the only environment when exactly one exists', async () => {
+      vi.mocked(trainingEnvironmentsApi.listTrainingEnvironments).mockResolvedValue([
+        { id: 42, name: 'Home', environment_type: 'home', equipment_tags: [], is_default: false },
+      ]);
+      vi.mocked(programsApi.matchTemplates).mockResolvedValue([]);
+
+      render(wrap(<ProgramBuilderPage />));
+
+      await waitFor(() => expect(screen.getByText('Submit prefs')).toBeInTheDocument());
+      fireEvent.click(screen.getByText('Submit prefs'));
+
+      await waitFor(() =>
+        expect(programsApi.matchTemplates).toHaveBeenCalledWith(
+          expect.objectContaining({ environment_id: 42 }),
+        ),
+      );
+    });
+
+    it('prefers the default environment when several exist', async () => {
+      vi.mocked(trainingEnvironmentsApi.listTrainingEnvironments).mockResolvedValue([
+        {
+          id: 5,
+          name: 'Gym',
+          environment_type: 'commercial_gym',
+          equipment_tags: [],
+          is_default: false,
+        },
+        { id: 9, name: 'Home', environment_type: 'home', equipment_tags: [], is_default: true },
+      ]);
+      vi.mocked(programsApi.matchTemplates).mockResolvedValue([]);
+
+      render(wrap(<ProgramBuilderPage />));
+
+      await waitFor(() => expect(screen.getByText('Submit prefs')).toBeInTheDocument());
+      fireEvent.click(screen.getByText('Submit prefs'));
+
+      await waitFor(() =>
+        expect(programsApi.matchTemplates).toHaveBeenCalledWith(
+          expect.objectContaining({ environment_id: 9 }),
+        ),
+      );
     });
   });
 });
