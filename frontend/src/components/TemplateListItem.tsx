@@ -15,9 +15,20 @@ export default function TemplateListItem({
   const chevron = isExpanded ? '▼' : '▶';
 
   return (
-    <Card className="mb-4 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+    <Card className="mb-4">
       {/* Compact Row */}
-      <div onClick={onToggle} className="p-4">
+      <button
+        type="button"
+        onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
+        aria-expanded={isExpanded}
+        className="w-full text-left p-4 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
+      >
         <div className="flex items-start gap-3">
           <span className="text-lg flex-shrink-0 mt-0.5">{chevron}</span>
           <div className="flex-1">
@@ -31,7 +42,7 @@ export default function TemplateListItem({
             </p>
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Expanded Details */}
       {isExpanded && (
