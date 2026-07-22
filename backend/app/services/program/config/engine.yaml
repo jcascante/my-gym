@@ -20,6 +20,7 @@ match:
   beta: 1.0
   sigma_days: 1.0
   sigma_duration: 15.0
+  default_match_limit: 4
 
 selection:
   variety: 1.0

@@ -41,6 +41,9 @@ class MatchConfig(BaseModel):
     sigma_days: float = 1.0
     sigma_duration: float = 15.0
 
+    # Default page size for paginated match results.
+    default_match_limit: int = 4
+
 
 class SelectionConfig(BaseModel):
     """Exercise-selection weights (`selection.HeuristicExerciseScorer`).

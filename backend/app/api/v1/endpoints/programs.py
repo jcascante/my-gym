@@ -146,7 +146,9 @@ async def match(
     )
     total_count = len(ranked)
 
-    # Record telemetry for all matches
+    # Record telemetry for all matches (necessary for pagination: templates beyond the top 3
+    # must be ranked and scored for full result set, so we capture telemetry for all ranked
+    # candidates, not just the returned batch). This increases DB writes per /match call.
     for m in ranked:
         await record_event(
             db,
@@ -164,7 +166,7 @@ async def match(
         )
 
     # Apply pagination
-    effective_limit = limit if limit is not None else 4
+    effective_limit = limit if limit is not None else engine_config.match.default_match_limit
     paginated = ranked[offset : offset + effective_limit]
 
     return TemplateMatchResponse(
