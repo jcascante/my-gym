@@ -7,6 +7,7 @@ from app.api.v1 import (
     auth_router,
     exercises_router,
     injuries_router,
+    logging_router,
     programs_router,
     templates_router,
     training_environments_router,
@@ -88,6 +89,7 @@ app.include_router(exercises_router, prefix=settings.API_V1_STR)
 app.include_router(templates_router, prefix=settings.API_V1_STR)
 app.include_router(programs_router, prefix=settings.API_V1_STR)
 app.include_router(injuries_router, prefix=settings.API_V1_STR)
+app.include_router(logging_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
