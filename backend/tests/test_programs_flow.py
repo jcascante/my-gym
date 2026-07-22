@@ -490,3 +490,71 @@ async def test_explain_slot_404_for_unknown_slot(
 
     r = await authenticated_client.get(f"/api/v1/programs/{pid}/explain/slot/999999")
     assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_match_endpoint_returns_default_batch_size(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    """Match endpoint without limit/offset returns default batch size."""
+    response = await authenticated_client.post(
+        "/api/v1/programs/match",
+        json={
+            "environment_id": user_environment.id,
+            "days_per_week": 3,
+            "session_duration_min": 60,
+            "fitness_focus": "general",
+            "duration_weeks": 8,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "matches" in data
+    assert "total_count" in data
+    assert "offset" in data
+    assert "limit" in data
+    assert data["offset"] == 0
+    assert data["limit"] == 4  # Default batch size
+    assert len(data["matches"]) <= 4
+
+
+@pytest.mark.asyncio
+async def test_match_endpoint_with_limit_and_offset(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    """Match endpoint accepts limit and offset query params."""
+    response = await authenticated_client.post(
+        "/api/v1/programs/match?limit=3&offset=4",
+        json={
+            "environment_id": user_environment.id,
+            "days_per_week": 3,
+            "session_duration_min": 60,
+            "fitness_focus": "general",
+            "duration_weeks": 8,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["offset"] == 4
+    assert data["limit"] == 3
+    assert len(data["matches"]) <= 3
+    # Verify it's a slice, not all results
+    assert data["total_count"] >= len(data["matches"])
+
+
+@pytest.mark.asyncio
+async def test_match_endpoint_rejects_negative_limit(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    """Match endpoint rejects negative limit."""
+    response = await authenticated_client.post(
+        "/api/v1/programs/match?limit=-1&offset=0",
+        json={
+            "environment_id": user_environment.id,
+            "days_per_week": 3,
+            "session_duration_min": 60,
+            "fitness_focus": "general",
+            "duration_weeks": 8,
+        },
+    )
+    assert response.status_code == 422  # Validation error
