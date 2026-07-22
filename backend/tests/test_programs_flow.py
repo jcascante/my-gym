@@ -23,7 +23,8 @@ async def test_full_flow(client, auth_headers, seeded_templates, seeded_exercise
     }
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
     assert r.status_code == 200
-    matches = r.json()
+    data = r.json()
+    matches = data["matches"]
     assert matches and "fit_pct" in matches[0]
 
     # 2. draft
@@ -66,7 +67,7 @@ async def test_exclude_persists_to_db_not_just_in_memory_response(
         "duration_weeks": 8,
     }
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
-    template_id = r.json()[0]["template_id"]
+    template_id = r.json()["matches"][0]["template_id"]
 
     draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80}}
     r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
@@ -101,7 +102,7 @@ async def test_draft_stores_engine_config_version_in_constraints(
         "duration_weeks": 8,
     }
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
-    template_id = r.json()[0]["template_id"]
+    template_id = r.json()["matches"][0]["template_id"]
 
     draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80}}
     r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
@@ -126,7 +127,7 @@ async def test_draft_malformed_required_inputs_returns_422(
         "duration_weeks": 8,
     }
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
-    template_id = r.json()[0]["template_id"]
+    template_id = r.json()["matches"][0]["template_id"]
 
     draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": "not-a-number"}}
     r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
@@ -220,10 +221,10 @@ async def test_match_returns_new_factor_keys(
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert body
-    assert "movement_preference" in body[0]["factors"]
-    assert "focus_complement" in body[0]["factors"]
-    assert "periodization" in body[0]["factors"]
+    assert body["matches"]
+    assert "movement_preference" in body["matches"][0]["factors"]
+    assert "focus_complement" in body["matches"][0]["factors"]
+    assert "periodization" in body["matches"][0]["factors"]
 
 
 @pytest.mark.asyncio
@@ -253,7 +254,7 @@ async def test_match_uses_profile_goal_weights_to_score_templates(
     await authenticated_client.post("/api/v1/users/profile", json={"fitness_focus": "general"})
     resp = await authenticated_client.post("/api/v1/programs/match", json=body)
     assert resp.status_code == 200
-    without_vector = {m["slug"]: m["factors"]["goal"] for m in resp.json()}
+    without_vector = {m["slug"]: m["factors"]["goal"] for m in resp.json()["matches"]}
     assert "bodyweight-full-body-x3" in without_vector
     assert without_vector["bodyweight-full-body-x3"] == 0.0
 
@@ -263,7 +264,7 @@ async def test_match_uses_profile_goal_weights_to_score_templates(
     )
     resp = await authenticated_client.post("/api/v1/programs/match", json=body)
     assert resp.status_code == 200
-    with_vector = {m["slug"]: m["factors"]["goal"] for m in resp.json()}
+    with_vector = {m["slug"]: m["factors"]["goal"] for m in resp.json()["matches"]}
     assert with_vector["bodyweight-full-body-x3"] == pytest.approx(0.9)
     assert with_vector["bodyweight-full-body-x3"] != without_vector["bodyweight-full-body-x3"]
 
@@ -278,7 +279,7 @@ async def _drafted_program_id(authenticated_client, user_environment) -> int:
         "duration_weeks": 8,
     }
     r = await authenticated_client.post("/api/v1/programs/match", json=body)
-    template_id = r.json()[0]["template_id"]
+    template_id = r.json()["matches"][0]["template_id"]
     draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80, "bench_start": 60}}
     r = await authenticated_client.post("/api/v1/programs/draft", json=draft_body)
     assert r.status_code == 201

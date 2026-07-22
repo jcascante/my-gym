@@ -1,6 +1,6 @@
 from typing import Any, cast
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.dependencies import get_current_user
@@ -27,6 +27,7 @@ from app.schemas.program_api import (
     MatchRequest,
     ProgramPreviewOut,
     TemplateMatchOut,
+    TemplateMatchResponse,
     WorkoutPreviewOut,
 )
 from app.schemas.template import TemplateDefinition
@@ -106,13 +107,15 @@ async def _preview_out(
     )
 
 
-@router.post("/match", response_model=list[TemplateMatchOut])
+@router.post("/match", response_model=TemplateMatchResponse)
 async def match(
     data: MatchRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     engine_config: EngineConfig = Depends(get_engine_config),
-) -> list[TemplateMatchOut]:
+    limit: int | None = Query(None, ge=0),
+    offset: int = Query(0, ge=0),
+) -> TemplateMatchResponse:
     environment = await get_training_environment(db, user.id, data.environment_id)
     if environment is None:
         raise TrainingEnvironmentNotFoundError()
@@ -138,7 +141,12 @@ async def match(
         progression_style=data.progression_style.value,
         goal_vector=profile.goal_weights if profile else None,
     )
-    ranked = rank_templates(templates, inp, feasibility, definitions=definitions, all_exercises=exercises)
+    ranked = rank_templates(
+        templates, inp, feasibility, definitions=definitions, all_exercises=exercises, config=engine_config
+    )
+    total_count = len(ranked)
+
+    # Record telemetry for all matches
     for m in ranked:
         await record_event(
             db,
@@ -154,13 +162,23 @@ async def match(
             },
             config_version=engine_config.config_version,
         )
-    return [
-        TemplateMatchOut(
-            **m.__dict__,
-            required_inputs=[r.model_dump() for r in definitions[m.template_id].required_inputs],
-        )
-        for m in ranked
-    ]
+
+    # Apply pagination
+    effective_limit = limit if limit is not None else 4
+    paginated = ranked[offset : offset + effective_limit]
+
+    return TemplateMatchResponse(
+        matches=[
+            TemplateMatchOut(
+                **m.__dict__,
+                required_inputs=[r.model_dump() for r in definitions[m.template_id].required_inputs],
+            )
+            for m in paginated
+        ],
+        total_count=total_count,
+        offset=offset,
+        limit=effective_limit,
+    )
 
 
 @router.post("/draft", response_model=ProgramPreviewOut, status_code=status.HTTP_201_CREATED)

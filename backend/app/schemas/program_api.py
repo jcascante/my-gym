@@ -61,6 +61,13 @@ class TemplateMatchOut(BaseModel):
     advisories: list[Advisory] = []
 
 
+class TemplateMatchResponse(BaseModel):
+    matches: list[TemplateMatchOut]
+    total_count: int
+    offset: int
+    limit: int
+
+
 class DraftRequest(MatchRequest):
     template_id: int
     required_inputs: dict[str, float] = {}

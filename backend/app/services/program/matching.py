@@ -358,15 +358,14 @@ def rank_templates(
     all_infeasible = bool(matches) and not feasible_matches
     candidates = matches if all_infeasible else feasible_matches
     candidates = sorted(candidates, key=lambda m: m.fit_pct, reverse=True)
-    top_3 = candidates[:3]
 
-    # Compute tiers for the returned list
-    if top_3:
-        top_fit_pct = top_3[0].fit_pct
-        top_3 = [replace(m, tier=_tier_for(m.fit_pct, top_fit_pct)) for m in top_3]
+    # Compute tiers based on global top fit_pct for consistency
+    top_fit_pct = candidates[0].fit_pct if candidates else 0
+    candidates = [replace(m, tier=_tier_for(m.fit_pct, top_fit_pct)) for m in candidates]
 
     if all_infeasible:
-        top_3 = [replace(m, all_infeasible=True) for m in top_3]
-        logger.warning(f"All templates infeasible; returning best-effort matches: {[m.slug for m in top_3]}")
-    logger.info(f"Top 3 matches: {[(m.slug, m.fit_pct) for m in top_3]}")
-    return top_3
+        candidates = [replace(m, all_infeasible=True) for m in candidates]
+        logger.warning(f"All templates infeasible; returning best-effort matches: {[m.slug for m in candidates[:3]]}")
+
+    logger.info(f"Returning all {len(candidates)} ranked matches")
+    return candidates

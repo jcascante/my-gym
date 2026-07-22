@@ -33,10 +33,10 @@ async def test_match_logs_events_when_consent_given(
 
     r = await client.post("/api/v1/programs/match", json=_match_body(user_environment.id), headers=auth_headers)
     assert r.status_code == 200
-    matches = r.json()
+    data = r.json()
 
     rows = (await db_session.execute(select(EngineEvent))).scalars().all()
-    assert len(rows) == len(matches)
+    assert len(rows) == data["total_count"]
     for row in rows:
         assert row.event_type == "match_score"
         assert row.user_id == test_user.id
@@ -63,7 +63,7 @@ async def test_draft_logs_slot_selection_events_when_consent_given(
 
     body = _match_body(user_environment.id)
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
-    template_id = r.json()[0]["template_id"]
+    template_id = r.json()["matches"][0]["template_id"]
 
     draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80}}
     r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
@@ -87,7 +87,7 @@ async def test_draft_logs_nothing_without_consent(
 ):
     body = _match_body(user_environment.id)
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
-    template_id = r.json()[0]["template_id"]
+    template_id = r.json()["matches"][0]["template_id"]
 
     draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80}}
     r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
@@ -105,7 +105,7 @@ async def test_feedback_logs_event_when_consent_given(
 
     body = _match_body(user_environment.id)
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
-    template_id = r.json()[0]["template_id"]
+    template_id = r.json()["matches"][0]["template_id"]
     draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80}}
     r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
     program = r.json()
@@ -139,7 +139,7 @@ async def test_feedback_logs_nothing_without_consent(
 ):
     body = _match_body(user_environment.id)
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
-    template_id = r.json()[0]["template_id"]
+    template_id = r.json()["matches"][0]["template_id"]
     draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80}}
     r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
     program = r.json()
