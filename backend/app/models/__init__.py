@@ -3,6 +3,7 @@ from app.core.database import Base
 from .checkin import CheckIn, CheckInStatus
 from .exercise import BodyRegion, Contraindication, Equipment, Exercise, MovementPattern, Muscle, Provocation
 from .injury import InjuryCondition, InjuryPhase, InjuryRecord, InjuryRegion, InjurySource
+from .logging import UserWorkoutLog, WorkoutSetLog
 from .program import (  # noqa: F401
     ProgramStatus,
     ProgramTemplate,
@@ -49,4 +50,6 @@ __all__ = [
     "InjurySource",
     "CheckIn",
     "CheckInStatus",
+    "UserWorkoutLog",
+    "WorkoutSetLog",
 ]
