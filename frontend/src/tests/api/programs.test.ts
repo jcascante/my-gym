@@ -43,7 +43,7 @@ describe('programs api', () => {
       weight_unit: 'kg',
       duration_weeks: 8,
     });
-    expect(mockPost).toHaveBeenCalledWith('/programs/match', expect.any(Object));
+    expect(mockPost).toHaveBeenCalledWith('/programs/match', expect.any(Object), { params: {} });
     expect(res.matches[0].template_id).toBe(1);
   });
 
