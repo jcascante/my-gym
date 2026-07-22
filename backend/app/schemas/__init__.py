@@ -8,6 +8,12 @@ from .checkin import CheckInCreate, CheckInResponse, CheckInResultResponse
 from .exercise import ExerciseResponse
 from .explain import LedgerContributionOut, SlotExplanationOut, TemplateExplanationOut
 from .injury import InjuryRecordCreate, InjuryRecordResponse, InjuryRecordUpdate
+from .logging import (
+    UserWorkoutLogCreate,
+    UserWorkoutLogOut,
+    WorkoutSetLogCreate,
+    WorkoutSetLogOut,
+)
 from .program import (
     DayOfWeek,
     FocusArea,
@@ -86,4 +92,8 @@ __all__ = [
     "TemplateExplanationOut",
     "LedgerContributionOut",
     "SlotExplanationOut",
+    "UserWorkoutLogCreate",
+    "UserWorkoutLogOut",
+    "WorkoutSetLogCreate",
+    "WorkoutSetLogOut",
 ]
