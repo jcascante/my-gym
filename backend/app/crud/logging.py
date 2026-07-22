@@ -19,6 +19,8 @@ async def create_workout_log(db: AsyncSession, user_id: int, data: UserWorkoutLo
     )
     db.add(log)
     await db.flush()
+    await db.commit()
+    await db.refresh(log)
     return log
 
 
@@ -57,6 +59,8 @@ async def append_set_log(db: AsyncSession, user_id: int, data: WorkoutSetLogCrea
     )
     db.add(log)
     await db.flush()
+    await db.commit()
+    await db.refresh(log)
     return log
 
 

@@ -29,8 +29,6 @@ async def create_session_log(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="workout_id mismatch")
 
     log = await crud_logging.create_workout_log(db, user.id, data)
-    await db.commit()
-    await db.refresh(log)
     return log
 
 
@@ -72,8 +70,6 @@ async def append_set_log(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="workout_id mismatch")
 
     log = await crud_logging.append_set_log(db, user.id, data)
-    await db.commit()
-    await db.refresh(log)
     return log
 
 
