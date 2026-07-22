@@ -71,6 +71,13 @@ function wrap(ui: React.ReactNode) {
   );
 }
 
+const mockTemplateMatchResponse = (matches: any[] = []) => ({
+  matches,
+  total_count: matches.length,
+  offset: 0,
+  limit: 10,
+});
+
 describe('ProgramBuilderPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -96,7 +103,7 @@ describe('ProgramBuilderPage', () => {
       setLoading: vi.fn(),
     });
 
-    vi.mocked(programsApi.matchTemplates).mockResolvedValue([]);
+    vi.mocked(programsApi.matchTemplates).mockResolvedValue(mockTemplateMatchResponse());
 
     render(wrap(<ProgramBuilderPage />));
 
@@ -129,7 +136,7 @@ describe('ProgramBuilderPage', () => {
       setLoading: vi.fn(),
     });
 
-    vi.mocked(programsApi.matchTemplates).mockResolvedValue([]);
+    vi.mocked(programsApi.matchTemplates).mockResolvedValue(mockTemplateMatchResponse());
 
     render(wrap(<ProgramBuilderPage />));
 
@@ -164,7 +171,7 @@ describe('ProgramBuilderPage', () => {
       setLoading: vi.fn(),
     });
 
-    vi.mocked(programsApi.matchTemplates).mockResolvedValue([]);
+    vi.mocked(programsApi.matchTemplates).mockResolvedValue(mockTemplateMatchResponse());
 
     render(wrap(<ProgramBuilderPage />));
 
@@ -195,19 +202,21 @@ describe('ProgramBuilderPage', () => {
     });
 
     it('marks Details as skipped and shows an info banner when the picked template has no required inputs', async () => {
-      vi.mocked(programsApi.matchTemplates).mockResolvedValue([
-        {
-          template_id: 1,
-          slug: 'bodyweight-full-body-x3',
-          name: 'Bodyweight Full Body',
-          fit_pct: 80,
-          factors: {},
-          required_inputs: [],
-          tier: 'best',
-          all_infeasible: false,
-          advisories: [],
-        },
-      ]);
+      vi.mocked(programsApi.matchTemplates).mockResolvedValue(
+        mockTemplateMatchResponse([
+          {
+            template_id: 1,
+            slug: 'bodyweight-full-body-x3',
+            name: 'Bodyweight Full Body',
+            fit_pct: 80,
+            factors: {},
+            required_inputs: [],
+            tier: 'best',
+            all_infeasible: false,
+            advisories: [],
+          },
+        ]),
+      );
       vi.mocked(programsApi.createDraft).mockResolvedValue({
         program_id: 1,
         name: 'Bodyweight Full Body',
@@ -230,26 +239,28 @@ describe('ProgramBuilderPage', () => {
     });
 
     it('does not mark Details as skipped when the picked template has required inputs', async () => {
-      vi.mocked(programsApi.matchTemplates).mockResolvedValue([
-        {
-          template_id: 2,
-          slug: 'full-body-x3',
-          name: 'Full Body',
-          fit_pct: 90,
-          factors: {},
-          required_inputs: [
-            {
-              key: 'squat_start',
-              label: 'Comfortable squat weight',
-              type: 'number',
-              applies_to: 'squat',
-            },
-          ],
-          tier: 'best',
-          all_infeasible: false,
-          advisories: [],
-        },
-      ]);
+      vi.mocked(programsApi.matchTemplates).mockResolvedValue(
+        mockTemplateMatchResponse([
+          {
+            template_id: 2,
+            slug: 'full-body-x3',
+            name: 'Full Body',
+            fit_pct: 90,
+            factors: {},
+            required_inputs: [
+              {
+                key: 'squat_start',
+                label: 'Comfortable squat weight',
+                type: 'number',
+                applies_to: 'squat',
+              },
+            ],
+            tier: 'best',
+            all_infeasible: false,
+            advisories: [],
+          },
+        ]),
+      );
 
       render(wrap(<ProgramBuilderPage />));
       fireEvent.click(screen.getByText('Submit prefs'));
@@ -296,7 +307,7 @@ describe('ProgramBuilderPage', () => {
       vi.mocked(trainingEnvironmentsApi.listTrainingEnvironments).mockResolvedValue([
         { id: 42, name: 'Home', environment_type: 'home', equipment_tags: [], is_default: false },
       ]);
-      vi.mocked(programsApi.matchTemplates).mockResolvedValue([]);
+      vi.mocked(programsApi.matchTemplates).mockResolvedValue(mockTemplateMatchResponse());
 
       render(wrap(<ProgramBuilderPage />));
 
@@ -321,7 +332,7 @@ describe('ProgramBuilderPage', () => {
         },
         { id: 9, name: 'Home', environment_type: 'home', equipment_tags: [], is_default: true },
       ]);
-      vi.mocked(programsApi.matchTemplates).mockResolvedValue([]);
+      vi.mocked(programsApi.matchTemplates).mockResolvedValue(mockTemplateMatchResponse());
 
       render(wrap(<ProgramBuilderPage />));
 

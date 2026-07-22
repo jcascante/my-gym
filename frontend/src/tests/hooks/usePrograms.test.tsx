@@ -23,19 +23,24 @@ describe('usePrograms hooks', () => {
 
   describe('useMatchTemplates', () => {
     it('returns matches on mutate', async () => {
-      vi.spyOn(api, 'matchTemplates').mockResolvedValue([
-        {
-          template_id: 1,
-          slug: 's',
-          name: 'n',
-          fit_pct: 90,
-          factors: {},
-          required_inputs: [],
-          tier: 'best',
-          all_infeasible: false,
-          advisories: [],
-        },
-      ]);
+      vi.spyOn(api, 'matchTemplates').mockResolvedValue({
+        matches: [
+          {
+            template_id: 1,
+            slug: 's',
+            name: 'n',
+            fit_pct: 90,
+            factors: {},
+            required_inputs: [],
+            tier: 'best',
+            all_infeasible: false,
+            advisories: [],
+          },
+        ],
+        total_count: 1,
+        offset: 0,
+        limit: 10,
+      });
       const { result } = renderHook(() => useMatchTemplates(), { wrapper });
       result.current.mutate({
         environment_id: 1,
@@ -45,7 +50,7 @@ describe('usePrograms hooks', () => {
         weight_unit: 'kg',
         duration_weeks: 8,
       });
-      await waitFor(() => expect(result.current.data?.[0].template_id).toBe(1));
+      await waitFor(() => expect(result.current.data?.matches[0].template_id).toBe(1));
     });
   });
 

@@ -13,7 +13,6 @@ export async function matchTemplates(
   limit?: number,
   offset?: number,
 ): Promise<TemplateMatchResponse> {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { data } = await apiClient.post<TemplateMatchResponse>('/programs/match', req, {
     params: { ...(limit !== undefined && { limit }), ...(offset !== undefined && { offset }) },
   });

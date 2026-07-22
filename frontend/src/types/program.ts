@@ -32,6 +32,13 @@ export interface TemplateMatch {
   advisories: Advisory[];
 }
 
+export interface TemplateMatchResponse {
+  matches: TemplateMatch[];
+  total_count: number;
+  offset: number;
+  limit: number;
+}
+
 export interface EffortTarget {
   method: 'rpe' | 'rir' | 'borg' | 'percent_1rm';
   value?: number;

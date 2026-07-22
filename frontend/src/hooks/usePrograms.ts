@@ -7,12 +7,20 @@ import {
   matchTemplates,
   submitFeedback,
 } from '@/api/programs';
-import type { DraftRequest, FeedbackAction, MatchRequest, ProgramPreview } from '@/types/program';
+import type {
+  DraftRequest,
+  FeedbackAction,
+  MatchRequest,
+  ProgramPreview,
+  TemplateMatchResponse,
+} from '@/types/program';
 
 export const programKeys = { preview: (id: number) => ['program', id] as const };
 
 export function useMatchTemplates() {
-  return useMutation({ mutationFn: (req: MatchRequest) => matchTemplates(req) });
+  return useMutation<TemplateMatchResponse, Error, MatchRequest>({
+    mutationFn: (req: MatchRequest) => matchTemplates(req),
+  });
 }
 
 export function useCreateDraft() {
