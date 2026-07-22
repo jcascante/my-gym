@@ -110,8 +110,10 @@ describe('ProgramBuilderPage', () => {
     fireEvent.click(screen.getByText('Submit prefs'));
 
     // Verify that matchTemplates was called with the user's actual fitness_focus
+    // (2nd call; 1st call is with empty request on mount)
     await waitFor(() => {
-      expect(programsApi.matchTemplates).toHaveBeenCalledWith(
+      expect(programsApi.matchTemplates).toHaveBeenNthCalledWith(
+        2,
         expect.objectContaining({
           fitness_focus: 'strength_training',
           environment_id: 1,
@@ -120,6 +122,8 @@ describe('ProgramBuilderPage', () => {
           weight_unit: 'kg',
           duration_weeks: 8,
         }),
+        4,
+        0,
       );
     });
   });
@@ -143,11 +147,15 @@ describe('ProgramBuilderPage', () => {
     fireEvent.click(screen.getByText('Submit prefs'));
 
     // Verify that matchTemplates was called with 'general' as fallback
+    // (2nd call; 1st call is with empty request on mount)
     await waitFor(() => {
-      expect(programsApi.matchTemplates).toHaveBeenCalledWith(
+      expect(programsApi.matchTemplates).toHaveBeenNthCalledWith(
+        2,
         expect.objectContaining({
           fitness_focus: 'general',
         }),
+        4,
+        0,
       );
     });
   });
@@ -178,11 +186,15 @@ describe('ProgramBuilderPage', () => {
     fireEvent.click(screen.getByText('Submit prefs'));
 
     // Verify that matchTemplates was called with 'general' as fallback
+    // (2nd call; 1st call is with empty request on mount)
     await waitFor(() => {
-      expect(programsApi.matchTemplates).toHaveBeenCalledWith(
+      expect(programsApi.matchTemplates).toHaveBeenNthCalledWith(
+        2,
         expect.objectContaining({
           fitness_focus: 'general',
         }),
+        4,
+        0,
       );
     });
   });
@@ -314,9 +326,13 @@ describe('ProgramBuilderPage', () => {
       await waitFor(() => expect(screen.getByText('Submit prefs')).toBeInTheDocument());
       fireEvent.click(screen.getByText('Submit prefs'));
 
+      // The 2nd call has the actual environment ID (1st call is empty on mount)
       await waitFor(() =>
-        expect(programsApi.matchTemplates).toHaveBeenCalledWith(
+        expect(programsApi.matchTemplates).toHaveBeenNthCalledWith(
+          2,
           expect.objectContaining({ environment_id: 42 }),
+          4,
+          0,
         ),
       );
     });
@@ -339,11 +355,263 @@ describe('ProgramBuilderPage', () => {
       await waitFor(() => expect(screen.getByText('Submit prefs')).toBeInTheDocument());
       fireEvent.click(screen.getByText('Submit prefs'));
 
+      // The 2nd call has the actual environment ID (1st call is empty on mount)
       await waitFor(() =>
-        expect(programsApi.matchTemplates).toHaveBeenCalledWith(
+        expect(programsApi.matchTemplates).toHaveBeenNthCalledWith(
+          2,
           expect.objectContaining({ environment_id: 9 }),
+          4,
+          0,
         ),
       );
+    });
+  });
+
+  describe('Infinite scroll integration', () => {
+    beforeEach(() => {
+      vi.mocked(useAuthStore).mockReturnValue({
+        user: { id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe' },
+        userProfile: { id: 1, fitness_focus: 'strength', age: 30, gender: 'male' },
+        isAuthenticated: true,
+        isLoading: false,
+        setAuth: vi.fn(),
+        setUserProfile: vi.fn(),
+        clearAuth: vi.fn(),
+        setLoading: vi.fn(),
+      });
+    });
+
+    it('should load initial batch and allow selection, verifying offset parameters', async () => {
+      const createTemplateMatch = (id: number) => ({
+        template_id: id,
+        slug: `template-${id}`,
+        name: `Template ${id}`,
+        fit_pct: 80 + id,
+        factors: {},
+        required_inputs: [],
+        tier: 'best' as const,
+        all_infeasible: false,
+        advisories: [],
+      });
+
+      // Initial batch: 4 templates
+      const initialMatches = [1, 2, 3, 4].map(createTemplateMatch);
+
+      // First call returns empty (initial empty request)
+      // Subsequent calls return matched templates
+      vi.mocked(programsApi.matchTemplates)
+        .mockResolvedValueOnce({
+          matches: [],
+          total_count: 0,
+          offset: 0,
+          limit: 4,
+        })
+        .mockResolvedValue({
+          matches: initialMatches,
+          total_count: 4,
+          offset: 0,
+          limit: 4,
+        });
+
+      vi.mocked(programsApi.createDraft).mockResolvedValue({
+        program_id: 100,
+        name: 'Template 1',
+        status: 'draft',
+        duration_weeks: 8,
+        weeks: { '1': [] },
+        advisories: [],
+      });
+
+      render(wrap(<ProgramBuilderPage />));
+
+      // Step 0: Submit preferences
+      fireEvent.click(screen.getByText('Submit prefs'));
+
+      // Step 1: Verify initial batch renders
+      await waitFor(() => {
+        expect(screen.getByText('Template 1')).toBeInTheDocument();
+        expect(screen.getByText('Template 2')).toBeInTheDocument();
+        expect(screen.getByText('Template 3')).toBeInTheDocument();
+        expect(screen.getByText('Template 4')).toBeInTheDocument();
+      });
+
+      // Verify second API call (after prefs) has correct offset=0, limit=4
+      expect(programsApi.matchTemplates).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          environment_id: 1,
+          days_per_week: 3,
+          session_duration_min: 60,
+        }),
+        4,
+        0,
+      );
+
+      // Select first template
+      fireEvent.click(screen.getByText('Template 1'));
+
+      // Verify navigation to next step
+      await waitFor(() => {
+        expect(programsApi.createDraft).toHaveBeenCalledWith(
+          expect.objectContaining({
+            template_id: 1,
+            environment_id: 1,
+          }),
+        );
+      });
+    });
+
+    it('should handle edge case: few matches (< 4), show "No more" message', async () => {
+      const createTemplateMatch = (id: number) => ({
+        template_id: id,
+        slug: `template-${id}`,
+        name: `Template ${id}`,
+        fit_pct: 80 + id,
+        factors: {},
+        required_inputs: [],
+        tier: 'best' as const,
+        all_infeasible: false,
+        advisories: [],
+      });
+
+      const fewMatches = [1, 2].map(createTemplateMatch);
+
+      // First call returns empty (initial empty request)
+      // Second call returns few matches (actual request after prefs)
+      vi.mocked(programsApi.matchTemplates)
+        .mockResolvedValueOnce({
+          matches: [],
+          total_count: 0,
+          offset: 0,
+          limit: 4,
+        })
+        .mockResolvedValue({
+          matches: fewMatches,
+          total_count: 2,
+          offset: 0,
+          limit: 4,
+        });
+
+      render(wrap(<ProgramBuilderPage />));
+
+      fireEvent.click(screen.getByText('Submit prefs'));
+
+      // Verify few matches render
+      await waitFor(() => {
+        expect(screen.getByText('Template 1')).toBeInTheDocument();
+        expect(screen.getByText('Template 2')).toBeInTheDocument();
+      });
+
+      // Verify "No more matches available" shows (hasMore=false when loaded == total)
+      await waitFor(() => {
+        expect(screen.getByText('No more matches available')).toBeInTheDocument();
+      });
+    });
+
+    it('should support template selection from paginated list', async () => {
+      const createTemplateMatch = (id: number, required_inputs: any[] = []) => ({
+        template_id: id,
+        slug: `template-${id}`,
+        name: `Template ${id}`,
+        fit_pct: 80 + id,
+        factors: {},
+        required_inputs,
+        tier: 'best' as const,
+        all_infeasible: false,
+        advisories: [],
+      });
+
+      // Two templates with no required inputs
+      const matches = [1, 2].map((id) => createTemplateMatch(id));
+
+      // First call returns empty (initial empty request)
+      // Subsequent calls return matched templates
+      vi.mocked(programsApi.matchTemplates)
+        .mockResolvedValueOnce({
+          matches: [],
+          total_count: 0,
+          offset: 0,
+          limit: 4,
+        })
+        .mockResolvedValue({
+          matches,
+          total_count: 2,
+          offset: 0,
+          limit: 4,
+        });
+
+      vi.mocked(programsApi.createDraft).mockResolvedValue({
+        program_id: 100,
+        name: 'Draft Program',
+        status: 'draft',
+        duration_weeks: 8,
+        weeks: { '1': [] },
+        advisories: [],
+      });
+
+      render(wrap(<ProgramBuilderPage />));
+
+      fireEvent.click(screen.getByText('Submit prefs'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Template 2')).toBeInTheDocument();
+      });
+
+      // Select second template (from matched list)
+      fireEvent.click(screen.getByText('Template 2'));
+
+      // Verify draft created for selected template
+      await waitFor(() => {
+        expect(programsApi.createDraft).toHaveBeenCalledWith(
+          expect.objectContaining({
+            template_id: 2,
+          }),
+        );
+      });
+    });
+
+    it('should verify loading spinner appears during pagination', async () => {
+      const createTemplateMatch = (id: number) => ({
+        template_id: id,
+        slug: `template-${id}`,
+        name: `Template ${id}`,
+        fit_pct: 80 + id,
+        factors: {},
+        required_inputs: [],
+        tier: 'best' as const,
+        all_infeasible: false,
+        advisories: [],
+      });
+
+      const initialMatches = [1, 2, 3, 4].map(createTemplateMatch);
+
+      // First call returns empty (initial empty request)
+      // Subsequent calls return matched templates
+      vi.mocked(programsApi.matchTemplates)
+        .mockResolvedValueOnce({
+          matches: [],
+          total_count: 0,
+          offset: 0,
+          limit: 4,
+        })
+        .mockResolvedValue({
+          matches: initialMatches,
+          total_count: 7,
+          offset: 0,
+          limit: 4,
+        });
+
+      render(wrap(<ProgramBuilderPage />));
+
+      fireEvent.click(screen.getByText('Submit prefs'));
+
+      // Initial load completes
+      await waitFor(() => {
+        expect(screen.getByText('Template 1')).toBeInTheDocument();
+      });
+
+      // No loading spinner when not loading
+      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
     });
   });
 });
