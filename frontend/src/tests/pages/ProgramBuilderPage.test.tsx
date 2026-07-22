@@ -613,5 +613,247 @@ describe('ProgramBuilderPage', () => {
       // No loading spinner when not loading
       expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
     });
+
+    it('should support infinite scroll pagination with correct offsets', async () => {
+      const createTemplateMatch = (id: number) => ({
+        template_id: id,
+        slug: `template-${id}`,
+        name: `Template ${id}`,
+        fit_pct: 80 + id,
+        factors: {},
+        required_inputs: [],
+        tier: 'best' as const,
+        all_infeasible: false,
+        advisories: [],
+      });
+
+      // Batch 1: templates 1-4 (offset=0, limit=4)
+      const batch1 = [1, 2, 3, 4].map(createTemplateMatch);
+      // Batch 2: templates 5-7 (offset=4, limit=3)
+      const batch2 = [5, 6, 7].map(createTemplateMatch);
+      // Batch 3: templates 8-10 (offset=7, limit=3)
+      const batch3 = [8, 9, 10].map(createTemplateMatch);
+
+      // First call returns empty (initial empty request on mount)
+      // Then setup responses for: initial load, first scroll, second scroll
+      vi.mocked(programsApi.matchTemplates)
+        .mockResolvedValueOnce({
+          matches: [],
+          total_count: 0,
+          offset: 0,
+          limit: 4,
+        })
+        .mockResolvedValueOnce({
+          matches: batch1,
+          total_count: 10,
+          offset: 0,
+          limit: 4,
+        })
+        .mockResolvedValueOnce({
+          matches: batch2,
+          total_count: 10,
+          offset: 4,
+          limit: 3,
+        })
+        .mockResolvedValueOnce({
+          matches: batch3,
+          total_count: 10,
+          offset: 7,
+          limit: 3,
+        });
+
+      let observerCallback: IntersectionObserverCallback | null = null;
+
+      // Mock IntersectionObserver to capture callback
+      (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = vi.fn(
+        function (callback: IntersectionObserverCallback) {
+          observerCallback = callback;
+          return {
+            observe: vi.fn(),
+            unobserve: vi.fn(),
+            disconnect: vi.fn(),
+          } as unknown as IntersectionObserver;
+        },
+      );
+
+      render(wrap(<ProgramBuilderPage />));
+
+      // Step 1: Submit preferences to trigger initial load
+      fireEvent.click(screen.getByText('Submit prefs'));
+
+      // Step 2: Wait for initial batch to load (4 items)
+      await waitFor(() => {
+        expect(screen.getByText('Template 1')).toBeInTheDocument();
+        expect(screen.getByText('Template 4')).toBeInTheDocument();
+      });
+
+      // Verify second API call (after prefs) has offset=0, limit=4
+      expect(programsApi.matchTemplates).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ environment_id: 1 }),
+        4,
+        0,
+      );
+
+      // Step 3: Simulate scroll to bottom by calling observer callback
+      expect(observerCallback).not.toBeNull();
+      const scrollCallback = observerCallback as unknown as IntersectionObserverCallback;
+      scrollCallback(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+
+      // Step 4: Wait for second batch to load (next 3 items)
+      await waitFor(() => {
+        expect(screen.getByText('Template 5')).toBeInTheDocument();
+        expect(screen.getByText('Template 7')).toBeInTheDocument();
+      });
+
+      // Verify third API call has offset=4, limit=3
+      expect(programsApi.matchTemplates).toHaveBeenNthCalledWith(
+        3,
+        expect.objectContaining({ environment_id: 1 }),
+        3,
+        4,
+      );
+
+      // Step 5: Simulate another scroll to bottom
+      const scrollCallback2 = observerCallback as unknown as IntersectionObserverCallback;
+      scrollCallback2(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+
+      // Step 6: Wait for third batch to load (final 3 items)
+      await waitFor(() => {
+        expect(screen.getByText('Template 8')).toBeInTheDocument();
+        expect(screen.getByText('Template 10')).toBeInTheDocument();
+      });
+
+      // Verify fourth API call has offset=7, limit=3
+      expect(programsApi.matchTemplates).toHaveBeenNthCalledWith(
+        4,
+        expect.objectContaining({ environment_id: 1 }),
+        3,
+        7,
+      );
+
+      // Verify "No more matches" message appears after final batch
+      await waitFor(() => {
+        expect(screen.getByText('No more matches available')).toBeInTheDocument();
+      });
+    });
+
+    it('should demonstrate correct offset progression during multi-page scroll', async () => {
+      const createTemplateMatch = (id: number) => ({
+        template_id: id,
+        slug: `template-${id}`,
+        name: `Template ${id}`,
+        fit_pct: 80 + id,
+        factors: {},
+        required_inputs: [],
+        tier: 'best' as const,
+        all_infeasible: false,
+        advisories: [],
+      });
+
+      // Batch 1: templates 1-4 (offset=0, limit=4)
+      const batch1 = [1, 2, 3, 4].map(createTemplateMatch);
+      // Batch 2: templates 5-7 (offset=4, limit=3)
+      const batch2 = [5, 6, 7].map(createTemplateMatch);
+      // Batch 3: templates 8-10 (offset=7, limit=3)
+      const batch3 = [8, 9, 10].map(createTemplateMatch);
+
+      // Track API calls with their offset to verify pagination progression
+      const apiCalls: Array<{ limit: number; offset: number }> = [];
+      vi.mocked(programsApi.matchTemplates).mockImplementation((_req, limit = 4, offset = 0) => {
+        apiCalls.push({ limit, offset });
+
+        if (offset === 0 && limit === 4) {
+          return Promise.resolve({
+            matches: batch1,
+            total_count: 10,
+            offset: 0,
+            limit: 4,
+          });
+        }
+        if (offset === 4 && limit === 3) {
+          return Promise.resolve({
+            matches: batch2,
+            total_count: 10,
+            offset: 4,
+            limit: 3,
+          });
+        }
+        if (offset === 7 && limit === 3) {
+          return Promise.resolve({
+            matches: batch3,
+            total_count: 10,
+            offset: 7,
+            limit: 3,
+          });
+        }
+        return Promise.resolve({
+          matches: [],
+          total_count: 10,
+          offset,
+          limit,
+        });
+      });
+
+      let observerCallback: IntersectionObserverCallback | null = null;
+
+      (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = vi.fn(
+        function (callback: IntersectionObserverCallback) {
+          observerCallback = callback;
+          return {
+            observe: vi.fn(),
+            unobserve: vi.fn(),
+            disconnect: vi.fn(),
+          } as unknown as IntersectionObserver;
+        },
+      );
+
+      render(wrap(<ProgramBuilderPage />));
+
+      fireEvent.click(screen.getByText('Submit prefs'));
+
+      // Wait for initial load
+      await waitFor(() => {
+        expect(screen.getByText('Template 1')).toBeInTheDocument();
+      });
+
+      // Verify initial call used offset=0, limit=4
+      const initialCallIndex = apiCalls.findIndex((call) => call.offset === 0 && call.limit === 4);
+      expect(initialCallIndex).toBeGreaterThanOrEqual(0);
+
+      // Simulate scroll to load next page
+      const scrollCallback3 = observerCallback as unknown as IntersectionObserverCallback;
+      scrollCallback3(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Template 5')).toBeInTheDocument();
+      });
+
+      // Verify second call used offset=4, limit=3
+      expect(apiCalls).toContainEqual({ limit: 3, offset: 4 });
+
+      // Simulate another scroll to load third page
+      const scrollCallback4 = observerCallback as unknown as IntersectionObserverCallback;
+      scrollCallback4(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Template 8')).toBeInTheDocument();
+      });
+
+      // Verify third call used offset=7, limit=3
+      expect(apiCalls).toContainEqual({ limit: 3, offset: 7 });
+    });
   });
 });
