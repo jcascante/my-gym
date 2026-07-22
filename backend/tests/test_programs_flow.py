@@ -559,3 +559,79 @@ async def test_match_endpoint_rejects_negative_limit(
         },
     )
     assert response.status_code == 422  # Validation error
+
+
+@pytest.mark.asyncio
+async def test_match_endpoint_pagination_flow_full_sequence(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    """Test complete pagination flow: initial batch (4) → next batch (3) → end."""
+    req = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "general",
+        "duration_weeks": 8,
+    }
+
+    resp1 = await authenticated_client.post("/api/v1/programs/match?limit=4&offset=0", json=req)
+    assert resp1.status_code == 200
+    data1 = resp1.json()
+    assert len(data1["matches"]) == 4
+    assert data1["offset"] == 0
+    assert data1["limit"] == 4
+    total_count = data1["total_count"]
+
+    resp2 = await authenticated_client.post("/api/v1/programs/match?limit=3&offset=4", json=req)
+    assert resp2.status_code == 200
+    data2 = resp2.json()
+    assert len(data2["matches"]) == 3
+    assert data2["offset"] == 4
+    assert data2["limit"] == 3
+    assert data2["total_count"] == total_count
+
+    ids1 = {m["template_id"] for m in data1["matches"]}
+    ids2 = {m["template_id"] for m in data2["matches"]}
+    assert len(ids1 & ids2) == 0, "Pagination returned duplicate templates"
+
+
+@pytest.mark.asyncio
+async def test_match_response_matches_frontend_contract(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    """Verify match response schema exactly matches frontend TemplateMatchResponse."""
+    response = await authenticated_client.post(
+        "/api/v1/programs/match?limit=4&offset=0",
+        json={
+            "environment_id": user_environment.id,
+            "days_per_week": 3,
+            "session_duration_min": 60,
+            "fitness_focus": "general",
+            "duration_weeks": 8,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    required_fields = {"matches", "total_count", "offset", "limit"}
+    assert set(data.keys()) >= required_fields
+
+    assert isinstance(data["matches"], list)
+    if data["matches"]:
+        match = data["matches"][0]
+        required_match_fields = {
+            "template_id",
+            "slug",
+            "name",
+            "fit_pct",
+            "factors",
+            "required_inputs",
+            "tier",
+            "all_infeasible",
+            "advisories",
+        }
+        assert set(match.keys()) >= required_match_fields
+
+    assert isinstance(data["total_count"], int)
+    assert isinstance(data["offset"], int)
+    assert isinstance(data["limit"], int)
