@@ -10,7 +10,7 @@ import {
   Alert,
   Spinner,
 } from '@/components';
-import { useAcceptProgram, useCreateDraft, useMatchTemplates } from '@/hooks/usePrograms';
+import { useAcceptProgram, useCreateDraft, useInfiniteTemplateMatches } from '@/hooks/usePrograms';
 import { useTrainingEnvironments } from '@/hooks/useTrainingEnvironments';
 import { useAuthStore } from '@/store/auth';
 import type {
@@ -46,7 +46,8 @@ export default function ProgramBuilderPage() {
     {},
   );
 
-  const match = useMatchTemplates();
+  const emptyRequest = useMemo(() => ({}) as ApiMatchRequest, []);
+  const infiniteMatches = useInfiniteTemplateMatches(apiPrefs || emptyRequest);
   const createDraft = useCreateDraft();
   const accept = useAcceptProgram(draft?.program_id ?? 0);
 
@@ -62,7 +63,7 @@ export default function ProgramBuilderPage() {
       duration_weeks: 8,
     };
     setApiPrefs(apiRequest);
-    match.mutate(apiRequest, { onSuccess: () => setStep(1) });
+    setStep(1);
   };
 
   const onPick = (m: TemplateMatch) => {
@@ -141,9 +142,12 @@ export default function ProgramBuilderPage() {
       {step === 1 && (
         <div>
           <TemplateMatchList
-            matches={match.data?.matches ?? []}
+            matches={infiniteMatches.matches}
             selectedId={chosen?.template_id ?? null}
             onSelect={onPick}
+            isLoading={infiniteMatches.isLoading}
+            hasMore={infiniteMatches.hasMore}
+            onLoadMore={infiniteMatches.fetchMore}
           />
           <div className="mt-6 flex gap-3">
             <Button type="button" variant="secondary" onClick={handleBack} className="flex-1">
