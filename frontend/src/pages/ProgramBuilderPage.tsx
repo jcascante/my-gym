@@ -141,7 +141,10 @@ export default function ProgramBuilderPage() {
       {step === 1 && (
         <div>
           <TemplateMatchList
-            matches={match.data ?? []}
+            matches={
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+              match.data?.matches ?? []
+            }
             selectedId={chosen?.template_id ?? null}
             onSelect={onPick}
           />

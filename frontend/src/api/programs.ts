@@ -5,11 +5,18 @@ import type {
   FeedbackAction,
   MatchRequest,
   ProgramPreview,
-  TemplateMatch,
+  TemplateMatchResponse,
 } from '@/types/program';
 
-export async function matchTemplates(req: MatchRequest): Promise<TemplateMatch[]> {
-  const { data } = await apiClient.post<TemplateMatch[]>('/programs/match', req);
+export async function matchTemplates(
+  req: MatchRequest,
+  limit?: number,
+  offset?: number,
+): Promise<TemplateMatchResponse> {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { data } = await apiClient.post<TemplateMatchResponse>('/programs/match', req, {
+    params: { ...(limit !== undefined && { limit }), ...(offset !== undefined && { offset }) },
+  });
   return data;
 }
 
