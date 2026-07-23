@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 import pytest
 
-from app.models import WorkoutSetLog
+from app.models import UserWorkoutLog, WorkoutSetLog
 from app.schemas.template import TemplateDefinition
 from app.services.program.drafting import build_draft
 from app.services.program.preview import derive_week
@@ -858,3 +858,134 @@ async def test_derive_week_ramp_guard_uses_deloaded_autoregulated_prior_scheme(s
     assert expected_cap < nominal_deloaded_cap  # the fix tightens, never loosens, the cap
     assert slot["load"] == expected_cap
     assert slot["load"] < nominal_autoregulated_week5  # the ramp cap actually engaged
+
+
+_REACTIVE_DELOAD_REFERENCE = date(2026, 7, 23)
+
+
+def _readiness_log(days_before_reference: int, readiness: int | None) -> UserWorkoutLog:
+    session_date = datetime.combine(
+        _REACTIVE_DELOAD_REFERENCE - timedelta(days=days_before_reference), datetime.min.time()
+    )
+    return UserWorkoutLog(user_id=1, workout_id=1, session_date=session_date, readiness=readiness)
+
+
+def _intermediate_program(sample_template_orm, sample_exercises):
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(["barbell", "bench", "squat_rack"], "intermediate", [], set())
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80},
+        effort_method="rpe",
+    )
+    for w in program.workouts:
+        w.id = w.order
+        for j, ex in enumerate(w.exercises, 1):
+            ex.id = j
+    exercise_map = {e.id: e for e in sample_exercises}
+    return definition, program, exercise_map
+
+
+@pytest.mark.asyncio
+async def test_derive_week_without_readiness_logs_is_unaffected(sample_template_orm, sample_exercises):
+    """Omitting readiness_logs (the default) leaves derive_week's output unchanged -
+    backward compatible with callers that don't pass readiness history (Task 4.3)."""
+    definition, program, exercise_map = _intermediate_program(sample_template_orm, sample_exercises)
+
+    without_logs = derive_week(program, definition, 1, exercise_map)
+    with_empty_logs = derive_week(program, definition, 1, exercise_map, readiness_logs=[])
+
+    assert without_logs == with_empty_logs
+
+
+@pytest.mark.asyncio
+async def test_derive_week_reactive_deload_no_op_with_single_low_readiness_session(
+    sample_template_orm, sample_exercises
+):
+    """A single low-readiness session in the lookback window is insufficient signal -
+    the load is left unadjusted."""
+    definition, program, exercise_map = _intermediate_program(sample_template_orm, sample_exercises)
+
+    baseline = derive_week(program, definition, 1, exercise_map)
+    logs = [_readiness_log(1, 2)]
+    adjusted = derive_week(
+        program, definition, 1, exercise_map, readiness_logs=logs, reference_date=_REACTIVE_DELOAD_REFERENCE
+    )
+
+    assert baseline == adjusted
+
+
+@pytest.mark.asyncio
+async def test_derive_week_reactive_deload_reduces_load_when_readiness_low_twice_in_window(
+    sample_template_orm, sample_exercises
+):
+    """Readiness <= 2 on 2+ workouts within the last 14 days fires the reactive deload,
+    cutting load by the configured DELOAD_LOAD_FACTOR (Task 4.3)."""
+    definition, program, exercise_map = _intermediate_program(sample_template_orm, sample_exercises)
+
+    baseline = derive_week(program, definition, 1, exercise_map)
+    baseline_load = next(s["load"] for d in baseline for s in d["slots"] if s["load"] is not None)
+
+    logs = [_readiness_log(1, 2), _readiness_log(5, 1)]
+    adjusted = derive_week(
+        program, definition, 1, exercise_map, readiness_logs=logs, reference_date=_REACTIVE_DELOAD_REFERENCE
+    )
+    adjusted_slot = next(s for d in adjusted for s in d["slots"] if s["load"] is not None)
+
+    assert adjusted_slot["load"] == round(baseline_load * 0.6, 2)
+    assert adjusted_slot["note"] == "reactive_deload"
+
+
+@pytest.mark.asyncio
+async def test_derive_week_reactive_deload_and_autoregulation_apply_together(sample_template_orm, sample_exercises):
+    """Deload and autoregulation are independent triggers that both apply to the same
+    week - deload's load cut first, then the autoregulation factor on top (Task 4.3
+    assumption)."""
+    definition, program, exercise_map = _intermediate_program(sample_template_orm, sample_exercises)
+
+    baseline = derive_week(program, definition, 1, exercise_map)
+    target_we = next(ex for w in program.workouts for ex in w.exercises if ex.target_rpe is not None)
+    baseline_load = next(s["load"] for d in baseline for s in d["slots"] if s["workout_exercise_id"] == target_we.id)
+
+    overshoot_rpe = target_we.target_rpe + 2.0
+    set_logs = {target_we.id: [_set_log(target_we.id, 1, overshoot_rpe), _set_log(target_we.id, 2, overshoot_rpe)]}
+    readiness_logs = [_readiness_log(1, 2), _readiness_log(5, 1)]
+
+    adjusted = derive_week(
+        program,
+        definition,
+        1,
+        exercise_map,
+        set_logs_by_exercise=set_logs,
+        readiness_logs=readiness_logs,
+        reference_date=_REACTIVE_DELOAD_REFERENCE,
+    )
+    slot = next(s for d in adjusted for s in d["slots"] if s["workout_exercise_id"] == target_we.id)
+
+    expected = round(round(baseline_load * 0.6, 2) * 0.925, 2)  # deload first, then autoregulation floor
+    assert slot["load"] == expected
+
+
+@pytest.mark.asyncio
+async def test_derive_week_reactive_deload_determinism_same_history_byte_identical(
+    sample_template_orm, sample_exercises
+):
+    definition, program, exercise_map = _intermediate_program(sample_template_orm, sample_exercises)
+    logs = [_readiness_log(1, 2), _readiness_log(5, 1)]
+
+    result_a = derive_week(
+        program, definition, 1, exercise_map, readiness_logs=logs, reference_date=_REACTIVE_DELOAD_REFERENCE
+    )
+    result_b = derive_week(
+        program, definition, 1, exercise_map, readiness_logs=logs, reference_date=_REACTIVE_DELOAD_REFERENCE
+    )
+
+    assert result_a == result_b

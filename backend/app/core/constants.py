@@ -166,3 +166,12 @@ ALLOWED_PROVOCATION_TAGS: list[str] = [
     "wrist_extension_load",
     "unilateral_loading",
 ]
+
+# Reactive deload trigger (Phase 4 plan, Task 4.3) - readiness-based, independent of the
+# template's scheduled every-N-weeks deload (app.services.program.progression.deload)
+# and of the EWMA autoregulation controller (app.services.progression.autoregulation).
+# See app.services.progression.deload.compute_deload_trigger.
+DELOAD_READINESS_THRESHOLD = 2  # readiness (1-5 scale) at/below this counts as "low"
+DELOAD_MIN_LOW_READINESS_SESSIONS = 2  # occurrences within the lookback window to trigger
+DELOAD_LOOKBACK_DAYS = 14
+DELOAD_LOAD_FACTOR = 0.6  # matches apply_deload's existing scheduled-deload reduction

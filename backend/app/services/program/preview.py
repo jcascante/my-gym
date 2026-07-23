@@ -1,12 +1,15 @@
+from datetime import date
 from typing import Any
 
+from app.core.constants import DELOAD_LOAD_FACTOR
 from app.models import Exercise, WorkoutExercise, WorkoutProgram
-from app.models.logging import WorkoutSetLog
+from app.models.logging import UserWorkoutLog, WorkoutSetLog
 from app.schemas.template import TemplateDefinition
 from app.services.program.progression.base import SetScheme, SlotBase, get_model
 from app.services.program.progression.deload import apply_deload
 from app.services.program.progression.ramp_guard import apply_ramp_guard, population_for
 from app.services.progression.autoregulation import compute_adjustment
+from app.services.progression.deload import compute_deload_trigger
 
 _STRENGTH_REST_SECONDS = 195
 _HYPERTROPHY_REST_SECONDS = 120
@@ -45,6 +48,24 @@ def _effort_target(
     return None
 
 
+def _apply_reactive_deload(scheme: SetScheme, triggered: bool) -> SetScheme:
+    """Wraps a resolved (and possibly scheduled-deloaded) scheme with the readiness-
+    triggered load reduction (Task 4.3), before `_apply_autoregulation` and
+    `apply_ramp_guard` run - same "wrap model.resolve() output" shape `apply_deload`
+    already uses. A no-op when the trigger hasn't fired or the slot has no load
+    (bodyweight). `apply_ramp_guard` only caps growth (`min(scheme.load, max_load)`),
+    never decreases, so this reduction always passes through it unclamped."""
+    if not triggered or scheme.load is None:
+        return scheme
+    return SetScheme(
+        sets=scheme.sets,
+        reps=scheme.reps,
+        load=round(scheme.load * DELOAD_LOAD_FACTOR, 2),
+        rest_seconds=scheme.rest_seconds,
+        note="reactive_deload",
+    )
+
+
 def _apply_autoregulation(scheme: SetScheme, factor: float) -> SetScheme:
     """Wraps a resolved+deloaded scheme with the EWMA autoregulation factor, before
     `apply_ramp_guard` runs (plan Task 4.2) - same "wrap model.resolve() output" shape
@@ -74,6 +95,8 @@ def derive_week(
     week: int,
     exercises: dict[int, Exercise] | None = None,
     set_logs_by_exercise: dict[int, list[WorkoutSetLog]] | None = None,
+    readiness_logs: list[UserWorkoutLog] | None = None,
+    reference_date: date | None = None,
 ) -> list[dict[str, Any]]:
     model = get_model(definition.progression.model_key)
     every = definition.progression.deload_every
@@ -82,6 +105,11 @@ def derive_week(
     check_in_load_adjustments = program.constraints.get("check_in_load_adjustments", {})
     experience = program.constraints.get("experience_level", "intermediate")
     exercise_map = exercises or {}
+    reactive_deload_triggered = False
+    if readiness_logs:
+        reactive_deload_triggered, _reactive_deload_reason = compute_deload_trigger(
+            readiness_logs, reference_date or date.today()
+        )
     days: list[dict[str, Any]] = []
     for workout in program.workouts:
         slots = []
@@ -114,9 +142,9 @@ def derive_week(
                 prior_scheme = _apply_autoregulation(
                     apply_deload(model.resolve(base, week - 1, params), week - 1, every), autoreg_factor
                 )
-            resolved_scheme = _apply_autoregulation(
-                apply_deload(model.resolve(base, week, params), week, every), autoreg_factor
-            )
+            scheduled_scheme = apply_deload(model.resolve(base, week, params), week, every)
+            deloaded_scheme = _apply_reactive_deload(scheduled_scheme, reactive_deload_triggered)
+            resolved_scheme = _apply_autoregulation(deloaded_scheme, autoreg_factor)
             scheme = apply_ramp_guard(resolved_scheme, prior_scheme, population)
             exercise_name = exercise.name if exercise else f"Exercise #{resolved_exercise_id}"
             rest_seconds = _rest_seconds_for_intent(scheme.reps, ex.intensity_pct)
