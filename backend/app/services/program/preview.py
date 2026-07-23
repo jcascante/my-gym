@@ -99,17 +99,24 @@ def derive_week(
             population = population_for(
                 exercise.contraindications if exercise else [], check_in_load_adjustments, experience
             )
-            prior_scheme = None
-            if population != "unrestricted" and week > 1:
-                prior_scheme = apply_deload(model.resolve(base, week - 1, params), week - 1, every)
-            resolved_scheme = apply_deload(model.resolve(base, week, params), week, every)
+            autoreg_factor = 1.0
             if ex.target_rpe is not None and set_logs_by_exercise:
                 logs_for_slot = set_logs_by_exercise.get(ex.id, [])
                 if logs_for_slot:
-                    factor, _reason = compute_adjustment(
+                    autoreg_factor, _reason = compute_adjustment(
                         logs_for_slot, ex.id, definition.progression.model_key, ex.target_rpe
                     )
-                    resolved_scheme = _apply_autoregulation(resolved_scheme, factor)
+            prior_scheme = None
+            if population != "unrestricted" and week > 1:
+                # Autoregulated, not nominal: the ramp cap must bound against what was
+                # *actually* prescribed last week, or a load cut from autoregulation
+                # silently widens this week's allowed ramp (see task 4.2 review).
+                prior_scheme = _apply_autoregulation(
+                    apply_deload(model.resolve(base, week - 1, params), week - 1, every), autoreg_factor
+                )
+            resolved_scheme = _apply_autoregulation(
+                apply_deload(model.resolve(base, week, params), week, every), autoreg_factor
+            )
             scheme = apply_ramp_guard(resolved_scheme, prior_scheme, population)
             exercise_name = exercise.name if exercise else f"Exercise #{resolved_exercise_id}"
             rest_seconds = _rest_seconds_for_intent(scheme.reps, ex.intensity_pct)

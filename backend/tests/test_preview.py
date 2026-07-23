@@ -807,3 +807,54 @@ async def test_derive_week_autoregulation_no_op_with_insufficient_history(sample
     adjusted = derive_week(program, definition, 1, exercise_map, logs)
 
     assert baseline == adjusted
+
+
+@pytest.mark.asyncio
+async def test_derive_week_ramp_guard_uses_deloaded_autoregulated_prior_scheme(sample_template_orm, sample_exercises):
+    """Regression: the prior-week scheme fed to apply_ramp_guard must reflect what was
+    *actually* prescribed (deload + autoregulation both applied), not the nominal
+    progression-model output - otherwise a load cut from autoregulation silently widens
+    this week's allowed ramp for beginner/post-amber populations.
+
+    full-body-x3's deload_every=4, so week 4 is a deload week: nominal 17.5 ->
+    deloaded 10.5. Two overshooting logged sessions autoregulate that further down to
+    9.71 (10.5 * 0.925, floor-clamped). Week 5's nominal 20.0 must be capped against
+    that 9.71 autoregulated-deloaded baseline (+20% beginner cap -> 11.65), not the
+    nominal-deloaded 10.5 (which would only cap to 12.6)."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(["barbell", "bench", "squat_rack"], "beginner", [], set())
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 10, "bench_start": 10},
+        effort_method="rpe",
+    )
+    assert program.constraints["experience_level"] == "beginner"
+    for w in program.workouts:
+        w.id = w.order
+        for j, ex in enumerate(w.exercises, 1):
+            ex.id = j
+    exercise_map = {e.id: e for e in sample_exercises}
+
+    target_we = next(ex for w in program.workouts for ex in w.exercises if ex.target_rpe is not None)
+    overshoot_rpe = target_we.target_rpe + 2.0
+    logs = {target_we.id: [_set_log(target_we.id, 1, overshoot_rpe), _set_log(target_we.id, 2, overshoot_rpe)]}
+
+    week5 = derive_week(program, definition, 5, exercise_map, logs)
+    slot = next(s for d in week5 for s in d["slots"] if s["workout_exercise_id"] == target_we.id)
+
+    expected_prior = round(10.5 * 0.925, 2)  # week 4 deloaded, then autoregulated
+    expected_cap = round(expected_prior * 1.20, 2)
+    nominal_deloaded_cap = round(10.5 * 1.20, 2)
+    nominal_autoregulated_week5 = round(20.0 * 0.925, 2)
+
+    assert expected_cap < nominal_deloaded_cap  # the fix tightens, never loosens, the cap
+    assert slot["load"] == expected_cap
+    assert slot["load"] < nominal_autoregulated_week5  # the ramp cap actually engaged
