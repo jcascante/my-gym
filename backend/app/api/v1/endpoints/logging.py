@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.crud import logging as crud_logging
 from app.models.logging import UserWorkoutLog, WorkoutSetLog
 from app.models.program import Workout, WorkoutProgram
-from app.models.user import User, _utcnow
+from app.models.user import User
 from app.schemas.logging import (
     UserWorkoutLogCreate,
     UserWorkoutLogOut,
@@ -116,14 +116,16 @@ async def create_set_log(
     return log
 
 
-@users_workout_router.patch("/{workout_id}/readiness", response_model=UserWorkoutLogOut, status_code=status.HTTP_200_OK)
-async def update_readiness(
+@users_workout_router.post(
+    "/{workout_id}/readiness", response_model=UserWorkoutLogOut, status_code=status.HTTP_201_CREATED
+)
+async def create_readiness(
     workout_id: int,
     data: UserWorkoutLogCreate,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> UserWorkoutLog:
-    """Create or update readiness for a workout session."""
+    """Create a new readiness log entry for a workout session (append-only)."""
     if data.workout_id != workout_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="workout_id mismatch")
 
@@ -139,30 +141,5 @@ async def update_readiness(
     if not workout:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workout not found")
 
-    log_stmt = select(UserWorkoutLog).where(
-        and_(
-            UserWorkoutLog.user_id == user.id,
-            UserWorkoutLog.workout_id == workout_id,
-        )
-    )
-    log_result = await db.execute(log_stmt)
-    log = log_result.scalar_one_or_none()
-
-    if log:
-        log.readiness = data.readiness
-        log.notes = data.notes
-        db.add(log)
-    else:
-        log = UserWorkoutLog(
-            user_id=user.id,
-            workout_id=workout_id,
-            session_date=_utcnow(),
-            readiness=data.readiness,
-            notes=data.notes,
-        )
-        db.add(log)
-
-    await db.flush()
-    await db.commit()
-    await db.refresh(log)
+    log = await crud_logging.create_workout_log(db, user.id, data)
     return log

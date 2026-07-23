@@ -56,6 +56,7 @@ async def append_set_log(db: AsyncSession, user_id: int, data: WorkoutSetLogCrea
         actual_weight=data.actual_weight,
         actual_reps=data.actual_reps,
         actual_rpe=data.actual_rpe,
+        effort_method=data.effort_method,
     )
     db.add(log)
     await db.flush()

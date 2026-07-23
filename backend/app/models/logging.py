@@ -6,6 +6,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    String,
     Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -49,5 +50,6 @@ class WorkoutSetLog(Base):
     set_number: Mapped[int] = mapped_column(Integer, nullable=False)
     actual_weight: Mapped[float | None] = mapped_column(Float)
     actual_reps: Mapped[int | None] = mapped_column(Integer)
-    actual_rpe: Mapped[float | None] = mapped_column(Float)  # 1-10 scale
+    actual_rpe: Mapped[float | None] = mapped_column(Float)  # range depends on effort_method
+    effort_method: Mapped[str] = mapped_column(String(20), default="rpe", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
