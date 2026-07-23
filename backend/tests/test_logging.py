@@ -95,12 +95,11 @@ async def test_create_workout_log(db_session: AsyncSession, test_user: User, tes
     _, workout, _ = test_program_with_workout
 
     data = UserWorkoutLogCreate(
-        workout_id=workout.id,
         readiness=4,
         notes="Feeling strong today",
     )
 
-    log = await crud_logging.create_workout_log(db_session, test_user.id, data)
+    log = await crud_logging.create_workout_log(db_session, test_user.id, workout.id, data)
     await db_session.commit()
 
     assert log.id is not None
@@ -119,12 +118,11 @@ async def test_create_workout_log_without_readiness(
     _, workout, _ = test_program_with_workout
 
     data = UserWorkoutLogCreate(
-        workout_id=workout.id,
         readiness=None,
         notes="Just checking in",
     )
 
-    log = await crud_logging.create_workout_log(db_session, test_user.id, data)
+    log = await crud_logging.create_workout_log(db_session, test_user.id, workout.id, data)
     await db_session.commit()
 
     assert log.id is not None
@@ -138,8 +136,8 @@ async def test_get_workout_log(db_session: AsyncSession, test_user: User, test_p
     """Test retrieving a specific workout log."""
     _, workout, _ = test_program_with_workout
 
-    data = UserWorkoutLogCreate(workout_id=workout.id, readiness=3)
-    log = await crud_logging.create_workout_log(db_session, test_user.id, data)
+    data = UserWorkoutLogCreate(readiness=3)
+    log = await crud_logging.create_workout_log(db_session, test_user.id, workout.id, data)
     await db_session.commit()
 
     retrieved = await crud_logging.get_workout_log(db_session, log.id, test_user.id)
@@ -157,8 +155,8 @@ async def test_get_workout_log_wrong_user(
     """Test that users cannot access other users' workout logs."""
     _, workout, _ = test_program_with_workout
 
-    data = UserWorkoutLogCreate(workout_id=workout.id, readiness=4)
-    log = await crud_logging.create_workout_log(db_session, test_user.id, data)
+    data = UserWorkoutLogCreate(readiness=4)
+    log = await crud_logging.create_workout_log(db_session, test_user.id, workout.id, data)
     await db_session.commit()
 
     # Attempt to retrieve as other user
@@ -174,8 +172,8 @@ async def test_get_user_workout_logs(db_session: AsyncSession, test_user: User, 
 
     # Create multiple logs
     for i in range(3):
-        data = UserWorkoutLogCreate(workout_id=workout.id, readiness=i + 1)
-        await crud_logging.create_workout_log(db_session, test_user.id, data)
+        data = UserWorkoutLogCreate(readiness=i + 1)
+        await crud_logging.create_workout_log(db_session, test_user.id, workout.id, data)
 
     await db_session.commit()
 
@@ -196,8 +194,8 @@ async def test_get_user_workout_logs_pagination(
 
     # Create 5 logs
     for i in range(5):
-        data = UserWorkoutLogCreate(workout_id=workout.id, readiness=1)
-        await crud_logging.create_workout_log(db_session, test_user.id, data)
+        data = UserWorkoutLogCreate(readiness=1)
+        await crud_logging.create_workout_log(db_session, test_user.id, workout.id, data)
 
     await db_session.commit()
 
@@ -309,7 +307,6 @@ async def test_endpoint_create_session_log(authenticated_client: AsyncClient, te
     response = await authenticated_client.post(
         f"/api/v1/workouts/{workout.id}/logs",
         json={
-            "workout_id": workout.id,
             "readiness": 4,
             "notes": "Felt good",
         },
@@ -331,31 +328,11 @@ async def test_endpoint_create_session_log_unauthorized(client: AsyncClient, tes
     response = await client.post(
         f"/api/v1/workouts/{workout.id}/logs",
         json={
-            "workout_id": workout.id,
             "readiness": 4,
         },
     )
 
     assert response.status_code == 401
-
-
-@pytest.mark.asyncio
-async def test_endpoint_create_session_log_workout_id_mismatch(
-    authenticated_client: AsyncClient, test_program_with_workout: tuple
-):
-    """Test that workout_id in body must match route parameter."""
-    _, workout, _ = test_program_with_workout
-
-    response = await authenticated_client.post(
-        f"/api/v1/workouts/{workout.id}/logs",
-        json={
-            "workout_id": 999,  # Mismatch
-            "readiness": 4,
-        },
-    )
-
-    assert response.status_code == 400
-    assert "mismatch" in response.json()["detail"].lower()
 
 
 @pytest.mark.asyncio
@@ -367,8 +344,8 @@ async def test_endpoint_list_session_logs(
 
     # Create multiple logs
     for i in range(3):
-        data = UserWorkoutLogCreate(workout_id=workout.id, readiness=i + 1)
-        await crud_logging.create_workout_log(db_session, test_user.id, data)
+        data = UserWorkoutLogCreate(readiness=i + 1)
+        await crud_logging.create_workout_log(db_session, test_user.id, workout.id, data)
 
     await db_session.commit()
 
@@ -389,8 +366,8 @@ async def test_endpoint_list_session_logs_pagination(
 
     # Create 5 logs
     for i in range(5):
-        data = UserWorkoutLogCreate(workout_id=workout.id, readiness=1)
-        await crud_logging.create_workout_log(db_session, test_user.id, data)
+        data = UserWorkoutLogCreate(readiness=1)
+        await crud_logging.create_workout_log(db_session, test_user.id, workout.id, data)
 
     await db_session.commit()
 
@@ -483,7 +460,7 @@ async def test_readiness_validation_rejected_zero():
     from pydantic import ValidationError
 
     with pytest.raises(ValidationError):
-        UserWorkoutLogCreate(workout_id=1, readiness=0)
+        UserWorkoutLogCreate(readiness=0)
 
 
 @pytest.mark.asyncio
@@ -492,14 +469,14 @@ async def test_readiness_validation_rejected_six():
     from pydantic import ValidationError
 
     with pytest.raises(ValidationError):
-        UserWorkoutLogCreate(workout_id=1, readiness=6)
+        UserWorkoutLogCreate(readiness=6)
 
 
 @pytest.mark.asyncio
 async def test_readiness_validation_accepted_range():
     """Test that readiness 1-5 is accepted."""
     for readiness in range(1, 6):
-        schema = UserWorkoutLogCreate(workout_id=1, readiness=readiness)
+        schema = UserWorkoutLogCreate(readiness=readiness)
         assert schema.readiness == readiness
 
 
@@ -551,8 +528,8 @@ async def test_endpoint_get_session_log(
     """Test GET /workouts/{id}/logs/{log_id} endpoint."""
     _, workout, _ = test_program_with_workout
 
-    data = UserWorkoutLogCreate(workout_id=workout.id, readiness=3, notes="Test")
-    log = await crud_logging.create_workout_log(db_session, test_user.id, data)
+    data = UserWorkoutLogCreate(readiness=3, notes="Test")
+    log = await crud_logging.create_workout_log(db_session, test_user.id, workout.id, data)
     await db_session.commit()
 
     response = await authenticated_client.get(f"/api/v1/workouts/{workout.id}/logs/{log.id}")
@@ -585,8 +562,8 @@ async def test_endpoint_get_session_log_wrong_user(
     """Test that users cannot access other users' session logs via endpoint."""
     _, workout, _ = test_program_with_workout
 
-    data = UserWorkoutLogCreate(workout_id=workout.id, readiness=3)
-    log = await crud_logging.create_workout_log(db_session, test_user.id, data)
+    data = UserWorkoutLogCreate(readiness=3)
+    log = await crud_logging.create_workout_log(db_session, test_user.id, workout.id, data)
     await db_session.commit()
 
     response = await client.get(

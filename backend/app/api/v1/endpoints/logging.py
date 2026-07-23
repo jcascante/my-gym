@@ -27,11 +27,7 @@ async def create_session_log(
     db: AsyncSession = Depends(get_db),
 ) -> UserWorkoutLog:
     """Create a new workout session log (start of workout)."""
-    # Verify workout_id in data matches route param
-    if data.workout_id != workout_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="workout_id mismatch")
-
-    log = await crud_logging.create_workout_log(db, user.id, data)
+    log = await crud_logging.create_workout_log(db, user.id, workout_id, data)
     return log
 
 
@@ -126,9 +122,6 @@ async def create_readiness(
     db: AsyncSession = Depends(get_db),
 ) -> UserWorkoutLog:
     """Create a new readiness log entry for a workout session (append-only)."""
-    if data.workout_id != workout_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="workout_id mismatch")
-
     workout_stmt = select(Workout).where(
         and_(
             Workout.id == workout_id,
@@ -141,5 +134,5 @@ async def create_readiness(
     if not workout:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workout not found")
 
-    log = await crud_logging.create_workout_log(db, user.id, data)
+    log = await crud_logging.create_workout_log(db, user.id, workout_id, data)
     return log

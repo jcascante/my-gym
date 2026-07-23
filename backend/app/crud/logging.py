@@ -8,11 +8,13 @@ from app.models.user import _utcnow
 from app.schemas.logging import UserWorkoutLogCreate, WorkoutSetLogCreate
 
 
-async def create_workout_log(db: AsyncSession, user_id: int, data: UserWorkoutLogCreate) -> UserWorkoutLog:
+async def create_workout_log(
+    db: AsyncSession, user_id: int, workout_id: int, data: UserWorkoutLogCreate
+) -> UserWorkoutLog:
     """Create a new workout session log."""
     log = UserWorkoutLog(
         user_id=user_id,
-        workout_id=data.workout_id,
+        workout_id=workout_id,
         session_date=_utcnow(),
         readiness=data.readiness,
         notes=data.notes,

@@ -7,8 +7,8 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 class UserWorkoutLogCreate(BaseModel):
     """Create a new workout session log."""
 
-    workout_id: int
     readiness: Optional[int] = Field(None, ge=1, le=5)
+    phase: Optional[str] = Field(None, description="'pre' or 'post'")
     notes: Optional[str] = None
 
 

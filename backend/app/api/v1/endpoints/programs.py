@@ -349,6 +349,7 @@ async def accept(
     program, definition = await _load(db, user, program_id)
     program.status = ProgramStatus.ACTIVE
     await save_program(db, program)
+    program = cast(WorkoutProgram, await get_program(db, user.id, program_id))
     return await _preview_out(db, program, definition)
 
 
