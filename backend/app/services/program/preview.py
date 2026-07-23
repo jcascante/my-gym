@@ -1,10 +1,12 @@
 from typing import Any
 
 from app.models import Exercise, WorkoutExercise, WorkoutProgram
+from app.models.logging import WorkoutSetLog
 from app.schemas.template import TemplateDefinition
 from app.services.program.progression.base import SetScheme, SlotBase, get_model
 from app.services.program.progression.deload import apply_deload
 from app.services.program.progression.ramp_guard import apply_ramp_guard, population_for
+from app.services.progression.autoregulation import compute_adjustment
 
 _STRENGTH_REST_SECONDS = 195
 _HYPERTROPHY_REST_SECONDS = 120
@@ -43,6 +45,22 @@ def _effort_target(
     return None
 
 
+def _apply_autoregulation(scheme: SetScheme, factor: float) -> SetScheme:
+    """Wraps a resolved+deloaded scheme with the EWMA autoregulation factor, before
+    `apply_ramp_guard` runs (plan Task 4.2) - same "wrap model.resolve() output" shape
+    `apply_deload` already uses. A no-op when there's nothing to adjust (factor==1.0,
+    e.g. insufficient history) or the slot has no load (bodyweight)."""
+    if factor == 1.0 or scheme.load is None:
+        return scheme
+    return SetScheme(
+        sets=scheme.sets,
+        reps=scheme.reps,
+        load=round(scheme.load * factor, 2),
+        rest_seconds=scheme.rest_seconds,
+        note=scheme.note or "autoregulated",
+    )
+
+
 def _resolved_exercise_id(ex: WorkoutExercise, week: int) -> int:
     pool = ex.rotation_pool
     if pool and len(pool) > 1:
@@ -51,7 +69,11 @@ def _resolved_exercise_id(ex: WorkoutExercise, week: int) -> int:
 
 
 def derive_week(
-    program: WorkoutProgram, definition: TemplateDefinition, week: int, exercises: dict[int, Exercise] | None = None
+    program: WorkoutProgram,
+    definition: TemplateDefinition,
+    week: int,
+    exercises: dict[int, Exercise] | None = None,
+    set_logs_by_exercise: dict[int, list[WorkoutSetLog]] | None = None,
 ) -> list[dict[str, Any]]:
     model = get_model(definition.progression.model_key)
     every = definition.progression.deload_every
@@ -80,9 +102,15 @@ def derive_week(
             prior_scheme = None
             if population != "unrestricted" and week > 1:
                 prior_scheme = apply_deload(model.resolve(base, week - 1, params), week - 1, every)
-            scheme = apply_ramp_guard(
-                apply_deload(model.resolve(base, week, params), week, every), prior_scheme, population
-            )
+            resolved_scheme = apply_deload(model.resolve(base, week, params), week, every)
+            if ex.target_rpe is not None and set_logs_by_exercise:
+                logs_for_slot = set_logs_by_exercise.get(ex.id, [])
+                if logs_for_slot:
+                    factor, _reason = compute_adjustment(
+                        logs_for_slot, ex.id, definition.progression.model_key, ex.target_rpe
+                    )
+                    resolved_scheme = _apply_autoregulation(resolved_scheme, factor)
+            scheme = apply_ramp_guard(resolved_scheme, prior_scheme, population)
             exercise_name = exercise.name if exercise else f"Exercise #{resolved_exercise_id}"
             rest_seconds = _rest_seconds_for_intent(scheme.reps, ex.intensity_pct)
             is_first_primary = not first_primary_assigned and ex.fills_rule.get("priority") == "primary"

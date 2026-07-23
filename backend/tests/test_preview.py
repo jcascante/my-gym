@@ -1,5 +1,8 @@
+from datetime import datetime
+
 import pytest
 
+from app.models import WorkoutSetLog
 from app.schemas.template import TemplateDefinition
 from app.services.program.drafting import build_draft
 from app.services.program.preview import derive_week
@@ -684,3 +687,123 @@ async def test_derive_week_does_not_cap_load_ramp_for_intermediate_experience(sa
     assert loads
     assert any(load == 12.5 for load in loads)
     assert not any(s.get("note") == "ramp_capped" for d in week2 for s in d["slots"])
+
+
+# --- Autoregulation (Task 4.2) -----------------------------------------------------
+
+
+def _set_log(workout_exercise_id: int, day: int, actual_rpe: float) -> WorkoutSetLog:
+    return WorkoutSetLog(
+        user_id=1,
+        workout_id=1,
+        workout_exercise_id=workout_exercise_id,
+        set_number=1,
+        actual_rpe=actual_rpe,
+        effort_method="rpe",
+        created_at=datetime(2026, 7, day),
+    )
+
+
+@pytest.mark.asyncio
+async def test_derive_week_reduces_load_when_logged_rpe_overshoots_target(sample_template_orm, sample_exercises):
+    """A slot whose logged RPE has consistently run above its target_rpe over 2+
+    sessions gets its load pulled down by the autoregulation factor."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(["barbell", "bench", "squat_rack"], "intermediate", [], set())
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80},
+        effort_method="rpe",
+    )
+    for w in program.workouts:
+        w.id = w.order
+        for j, ex in enumerate(w.exercises, 1):
+            ex.id = j
+    exercise_map = {e.id: e for e in sample_exercises}
+
+    baseline = derive_week(program, definition, 1, exercise_map)
+    target_we = next(ex for w in program.workouts for ex in w.exercises if ex.target_rpe is not None)
+    baseline_load = next(s["load"] for d in baseline for s in d["slots"] if s["workout_exercise_id"] == target_we.id)
+    assert baseline_load is not None
+
+    # Logged RPE 2 points over target on both of the last two sessions.
+    overshoot_rpe = target_we.target_rpe + 2.0
+    logs = {target_we.id: [_set_log(target_we.id, 1, overshoot_rpe), _set_log(target_we.id, 2, overshoot_rpe)]}
+
+    adjusted = derive_week(program, definition, 1, exercise_map, logs)
+    adjusted_load = next(s["load"] for d in adjusted for s in d["slots"] if s["workout_exercise_id"] == target_we.id)
+
+    assert adjusted_load < baseline_load
+    assert adjusted_load == round(baseline_load * 0.925, 2)  # clamped at the -7.5% floor
+
+
+@pytest.mark.asyncio
+async def test_derive_week_without_set_logs_is_unaffected(sample_template_orm, sample_exercises):
+    """Omitting set_logs_by_exercise (the default) leaves derive_week's output
+    unchanged - backward compatible with callers that don't pass logged history."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(["barbell", "bench", "squat_rack"], "intermediate", [], set())
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80},
+        effort_method="rpe",
+    )
+    for w in program.workouts:
+        w.id = w.order
+        for j, ex in enumerate(w.exercises, 1):
+            ex.id = j
+    exercise_map = {e.id: e for e in sample_exercises}
+
+    without_logs = derive_week(program, definition, 1, exercise_map)
+    with_empty_logs = derive_week(program, definition, 1, exercise_map, {})
+
+    assert without_logs == with_empty_logs
+
+
+@pytest.mark.asyncio
+async def test_derive_week_autoregulation_no_op_with_insufficient_history(sample_template_orm, sample_exercises):
+    """A single logged session is not enough history - the load is left unadjusted."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(["barbell", "bench", "squat_rack"], "intermediate", [], set())
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80},
+        effort_method="rpe",
+    )
+    for w in program.workouts:
+        w.id = w.order
+        for j, ex in enumerate(w.exercises, 1):
+            ex.id = j
+    exercise_map = {e.id: e for e in sample_exercises}
+
+    baseline = derive_week(program, definition, 1, exercise_map)
+    target_we = next(ex for w in program.workouts for ex in w.exercises if ex.target_rpe is not None)
+
+    logs = {target_we.id: [_set_log(target_we.id, 1, target_we.target_rpe + 3.0)]}
+    adjusted = derive_week(program, definition, 1, exercise_map, logs)
+
+    assert baseline == adjusted
