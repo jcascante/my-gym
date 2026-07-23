@@ -8,6 +8,7 @@ from app.schemas.template import TemplateDefinition
 from app.services.program.progression.base import SetScheme, SlotBase, get_model
 from app.services.program.progression.deload import apply_deload
 from app.services.program.progression.ramp_guard import apply_ramp_guard, population_for
+from app.services.program.versioning import resolve_program_versions
 from app.services.progression.autoregulation import compute_adjustment
 from app.services.progression.deload import compute_deload_trigger
 
@@ -97,8 +98,17 @@ def derive_week(
     set_logs_by_exercise: dict[int, list[WorkoutSetLog]] | None = None,
     readiness_logs: list[UserWorkoutLog] | None = None,
     reference_date: date | None = None,
+    model_version: str | None = None,
+    ranking_weights_version: str | None = None,
 ) -> list[dict[str, Any]]:
-    model = get_model(definition.progression.model_key)
+    # ranking_weights_version isn't consumed here yet -- exercise-substitution
+    # ranking happens at draft time (build_draft/rotation_pool), not week-derivation
+    # time -- but resolving it now keeps derive_week's pinning contract (Task 4.5)
+    # symmetric with model_version and ready for that future consumer.
+    resolved_model_version, _resolved_ranking_weights_version = resolve_program_versions(
+        program, model_version=model_version, ranking_weights_version=ranking_weights_version
+    )
+    model = get_model(definition.progression.model_key, resolved_model_version)
     every = definition.progression.deload_every
     params = definition.progression.params
     effort_method = program.constraints.get("effort_method")

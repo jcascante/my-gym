@@ -13,6 +13,7 @@ from app.services.program.regression_graphs import RegressionEdge, RegressionGra
 from app.services.program.selection import SelectionContext, _extract_features, ranked_pool_for_slot
 from app.services.program.taxonomy import ROLE_FACTOR, muscle_group_for
 from app.services.program.variety import pool_size_for, rotation_pool_ids
+from app.services.program.versioning import resolve_program_versions
 
 
 def _base_load_for(
@@ -80,6 +81,8 @@ def build_draft(
     effort_method: str | None = None,
     variety_preference: str = "low",
     engine_config_version: str = "unversioned",
+    model_version: str | None = None,
+    ranking_weights_version: str | None = None,
     config: EngineConfig | None = None,
     telemetry_sink: list[dict[str, Any]] | None = None,
     advisory_sink: list[Advisory] | None = None,
@@ -90,6 +93,12 @@ def build_draft(
         for ri in definition.required_inputs
         if ri.applies_to and ri.key in required_inputs
     }
+    # Task 4.5: pin the progression-pipeline and ranking-weights versions this
+    # program is generated with -- explicit args (if a caller has its own opinion)
+    # win, otherwise the current/live versions are captured at draft time.
+    resolved_model_version, resolved_ranking_weights_version = resolve_program_versions(
+        model_version=model_version, ranking_weights_version=ranking_weights_version
+    )
     program = WorkoutProgram(
         user_id=user_id,
         template_id=template.id,
@@ -100,6 +109,8 @@ def build_draft(
         duration_weeks=duration_weeks,
         days_per_week=days_per_week,
         weight_unit=weight_unit,
+        model_version=resolved_model_version,
+        ranking_weights_version=resolved_ranking_weights_version,
         constraints={
             "locked_slots": [],
             "excluded_exercise_ids": [],

@@ -175,3 +175,15 @@ DELOAD_READINESS_THRESHOLD = 2  # readiness (1-5 scale) at/below this counts as 
 DELOAD_MIN_LOW_READINESS_SESSIONS = 2  # occurrences within the lookback window to trigger
 DELOAD_LOOKBACK_DAYS = 14
 DELOAD_LOAD_FACTOR = 0.6  # matches apply_deload's existing scheduled-deload reduction
+
+# Template/model versioning (Phase 4, Task 4.5) - stamped onto WorkoutProgram at
+# generation time so a re-derived week always uses the same progression-pipeline
+# logic and exercise-ranking weights the program was originally built with, even
+# after either is later bumped. Bump CURRENT_PROGRESSION_MODEL_VERSION when
+# derive_week's/build_draft's prescription logic changes in a way that would alter
+# output for existing programs.
+CURRENT_PROGRESSION_MODEL_VERSION = "1.0"
+
+# Fallback used when a ranking-weights artifact is missing, unreadable, or predates
+# Task 4.5's `_metadata.weights_version` field - never blocks generation.
+DEFAULT_RANKING_WEIGHTS_VERSION = "unversioned"

@@ -74,6 +74,15 @@ class SwapRecord:
     rpe_feedback: float | None = None
 
 
+def _default_weights_version() -> str:
+    # A label for *which run* produced the artifact (Task 4.5: template/model
+    # versioning), not a hyperparameter of the fit itself -- deliberately kept out of
+    # `RankWeights`/`to_json_dict()` so the fit stays a pure, byte-deterministic
+    # function of its input records; only `write_weights` (an inherently time-stamped
+    # side effect) stamps a version onto the persisted artifact.
+    return datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+
+
 @dataclass(frozen=True)
 class RankWeights:
     """Fitted (or degraded-to-uniform) Bradley-Terry output."""
@@ -248,9 +257,15 @@ async def load_swap_history_from_db(session: AsyncSession) -> list[SwapRecord]:
     return records
 
 
-def write_weights(weights: RankWeights, output_path: Path) -> None:
+def write_weights(weights: RankWeights, output_path: Path, *, weights_version: str | None = None) -> None:
+    """Persist `weights` as JSON, plus a Task 4.5 `_metadata.weights_version` label
+    identifying this training run -- read back by
+    `app.services.program.versioning.get_current_ranking_weights_version` so a newly
+    generated `WorkoutProgram` can pin to whichever artifact was live at draft time."""
+    payload = weights.to_json_dict()
+    payload["_metadata"] = {"weights_version": weights_version or _default_weights_version()}
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(weights.to_json_dict(), indent=2, sort_keys=True) + "\n")
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
 async def _load_and_fit() -> RankWeights:
