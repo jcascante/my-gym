@@ -1,5 +1,12 @@
 import { Card } from './Card';
+import { Alert } from './Alert';
 import type { TemplateMatch } from '@/types/program';
+
+const TIER_LABELS: Record<TemplateMatch['tier'], string> = {
+  best: 'Best match',
+  strong: 'Strong fit',
+  possible: 'Possible fit',
+};
 
 export function TemplateMatchCard({
   match,
@@ -24,7 +31,9 @@ export function TemplateMatchCard({
       <Card>
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">{match.name}</h3>
-          <span className="text-primary-600 dark:text-primary-400 font-bold">{match.fit_pct}%</span>
+          <span className="text-primary-600 dark:text-primary-400 font-bold">
+            {TIER_LABELS[match.tier]}
+          </span>
         </div>
         <ul className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
           {Object.entries(match.factors).map(([k, v]) => (
@@ -32,7 +41,15 @@ export function TemplateMatchCard({
               {k}: {Math.round(v * 100)}%
             </li>
           ))}
+          <li className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+            Fit: {match.fit_pct}%
+          </li>
         </ul>
+        {match.advisories.map((advisory, i) => (
+          <Alert key={i} type={advisory.severity} className="mt-2">
+            {advisory.message}
+          </Alert>
+        ))}
       </Card>
     </button>
   );

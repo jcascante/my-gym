@@ -1,5 +1,18 @@
 import type { ProgressionStyle, EffortMethod } from '@/types/programCreation';
 
+export interface Advisory {
+  code: string;
+  severity: 'info' | 'warning' | 'error';
+  message: string;
+  subject: string | null;
+}
+
+export interface WarmupSet {
+  pct: number;
+  reps: number;
+  load: number | null;
+}
+
 export interface RequiredInput {
   key: string;
   label: string;
@@ -14,6 +27,16 @@ export interface TemplateMatch {
   fit_pct: number;
   factors: Record<string, number>;
   required_inputs: RequiredInput[];
+  tier: 'best' | 'strong' | 'possible';
+  all_infeasible: boolean;
+  advisories: Advisory[];
+}
+
+export interface TemplateMatchResponse {
+  matches: TemplateMatch[];
+  total_count: number;
+  offset: number;
+  limit: number;
 }
 
 export interface EffortTarget {
@@ -36,6 +59,8 @@ export interface SlotPreview {
   is_user_swapped: boolean;
   effort_target: EffortTarget | null;
   rotation_pool: number[];
+  tempo: string;
+  warmup_sets: WarmupSet[];
 }
 
 export interface WorkoutPreview {
@@ -51,6 +76,7 @@ export interface ProgramPreview {
   status: 'draft' | 'active' | 'archived';
   duration_weeks: number;
   weeks: Record<string, WorkoutPreview[]>;
+  advisories: Advisory[];
 }
 
 export interface MatchRequest {

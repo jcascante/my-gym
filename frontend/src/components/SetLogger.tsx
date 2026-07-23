@@ -1,103 +1,129 @@
-import { useState } from 'react';
-import { Button } from '@/components';
+import React, { useState } from 'react';
+import { EffortMethod } from '../types/programCreation';
 
-export interface SetLoggerProps {
-  exerciseName: string;
-  suggestedWeight?: number;
-  suggestedReps?: number;
-  currentSet: number;
-  totalSets: number;
-  onLogSet: (weight: number, reps: number) => void;
-  onSkipExercise?: () => void;
+interface SetLoggerProps {
+  effort_method: EffortMethod;
+  onSetLogged: (data: {
+    weight?: number;
+    reps?: number;
+    effort: number;
+    effort_method: EffortMethod;
+  }) => void;
 }
 
-export function SetLogger({
-  exerciseName,
-  suggestedWeight = 0,
-  suggestedReps = 8,
-  currentSet,
-  totalSets,
-  onLogSet,
-  onSkipExercise,
-}: SetLoggerProps) {
-  const [weight, setWeight] = useState<string>(suggestedWeight.toString());
-  const [reps, setReps] = useState<string>(suggestedReps.toString());
-  const [justLogged, setJustLogged] = useState(false);
+export const SetLogger: React.FC<SetLoggerProps> = ({ effort_method, onSetLogged }) => {
+  const [weight, setWeight] = useState<number | ''>('');
+  const [reps, setReps] = useState<number | ''>('');
+  const [effort, setEffort] = useState<number | ''>('');
 
-  const handleLogSet = () => {
-    const w = parseFloat(weight);
-    const r = parseInt(reps, 10);
-
-    if (isNaN(w) || w < 0 || isNaN(r) || r < 0) {
-      return;
+  const getEffortBounds = () => {
+    switch (effort_method) {
+      case 'rpe':
+        return { min: 1, max: 10, label: 'RPE (1–10)' };
+      case 'rir':
+        return { min: 0, max: 10, label: 'Reps in Reserve (0–10)' };
+      case 'borg':
+        return { min: 6, max: 20, label: 'Borg Scale (6–20) - Perceived Exertion' };
+      default:
+        return { min: 1, max: 10, label: 'RPE (1–10)' };
     }
-
-    onLogSet(w, r);
-    setJustLogged(true);
-    setTimeout(() => setJustLogged(false), 500);
   };
 
-  const isValid = weight && reps && !isNaN(parseFloat(weight)) && !isNaN(parseInt(reps, 10));
+  const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+
+  const handleWeightBlur = () => {
+    if (weight !== '' && weight < 0) setWeight('');
+  };
+
+  const handleRepsBlur = () => {
+    if (reps !== '' && (reps < 1 || reps > 100)) setReps('');
+  };
+
+  const handleEffortBlur = () => {
+    if (effort !== '') {
+      const { min, max } = getEffortBounds();
+      setEffort(clamp(Number(effort), min, max));
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (effort === '') return;
+
+    const { min, max } = getEffortBounds();
+    const effortVal = clamp(Number(effort), min, max);
+
+    onSetLogged({
+      weight: weight !== '' ? weight : undefined,
+      reps: reps !== '' ? reps : undefined,
+      effort: effortVal,
+      effort_method,
+    });
+
+    // Reset form
+    setWeight('');
+    setReps('');
+    setEffort('');
+  };
+
+  const { label } = getEffortBounds();
 
   return (
-    <div className="space-y-6">
-      {/* Exercise Header */}
-      <div className="text-center">
-        <h2 className="heading-lg mb-2">{exerciseName}</h2>
-        <p className="label-sm text-neutral-600 dark:text-neutral-400">
-          Set {currentSet} of {totalSets}
-        </p>
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div>
+        <label htmlFor="weight-input" className="block text-sm font-medium">
+          Weight (optional)
+        </label>
+        <input
+          id="weight-input"
+          type="number"
+          step="0.5"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value === '' ? '' : Number(e.target.value))}
+          onBlur={handleWeightBlur}
+          placeholder="0"
+          className="border px-2 py-1 rounded"
+        />
       </div>
 
-      {/* Input Fields */}
-      <div className="space-y-4">
-        {/* Weight Input */}
-        <div className="flex flex-col">
-          <label className="label-sm text-neutral-700 dark:text-neutral-300 mb-3">
-            Weight (lbs)
-          </label>
-          <input
-            type="number"
-            inputMode="decimal"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            className="text-center text-5xl font-bold text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400 bg-transparent focus:outline-none focus:ring-0 font-variant-numeric tabular-nums"
-            style={{ lineHeight: '1.2' }}
-          />
-        </div>
-
-        {/* Reps Input */}
-        <div className="flex flex-col">
-          <label className="label-sm text-neutral-700 dark:text-neutral-300 mb-3">Reps</label>
-          <input
-            type="number"
-            inputMode="numeric"
-            value={reps}
-            onChange={(e) => setReps(e.target.value)}
-            className="text-center text-5xl font-bold text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400 bg-transparent focus:outline-none focus:ring-0 font-variant-numeric tabular-nums"
-            style={{ lineHeight: '1.2' }}
-          />
-        </div>
+      <div>
+        <label htmlFor="reps-input" className="block text-sm font-medium">
+          Reps (optional)
+        </label>
+        <input
+          id="reps-input"
+          type="number"
+          value={reps}
+          onChange={(e) => setReps(e.target.value === '' ? '' : Number(e.target.value))}
+          onBlur={handleRepsBlur}
+          placeholder="0"
+          className="border px-2 py-1 rounded"
+        />
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col gap-3 pt-4">
-        <Button
-          className={`w-full btn btn-success transition-all duration-300 ${
-            justLogged ? 'scale-95 bg-success-700' : ''
-          }`}
-          onClick={handleLogSet}
-          disabled={!isValid}
-        >
-          {justLogged ? '✓ Set Logged' : 'Log Set'}
-        </Button>
-
-        {onSkipExercise && (
-          <Button className="w-full btn btn-outline" onClick={onSkipExercise}>
-            Skip Exercise
-          </Button>
-        )}
+      <div>
+        <label htmlFor="effort-input" className="block text-sm font-medium">
+          {label}
+        </label>
+        <input
+          id="effort-input"
+          type="number"
+          step={effort_method === 'rpe' ? 0.5 : 1}
+          value={effort}
+          onChange={(e) => setEffort(e.target.value === '' ? '' : Number(e.target.value))}
+          onBlur={handleEffortBlur}
+          placeholder="0"
+          className="border px-2 py-1 rounded"
+        />
       </div>
-    </div>
+
+      <button
+        type="submit"
+        disabled={effort === ''}
+        className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+      >
+        Log Set
+      </button>
+    </form>
   );
-}
+};

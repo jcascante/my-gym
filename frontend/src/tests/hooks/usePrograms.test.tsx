@@ -23,16 +23,24 @@ describe('usePrograms hooks', () => {
 
   describe('useMatchTemplates', () => {
     it('returns matches on mutate', async () => {
-      vi.spyOn(api, 'matchTemplates').mockResolvedValue([
-        {
-          template_id: 1,
-          slug: 's',
-          name: 'n',
-          fit_pct: 90,
-          factors: {},
-          required_inputs: [],
-        },
-      ]);
+      vi.spyOn(api, 'matchTemplates').mockResolvedValue({
+        matches: [
+          {
+            template_id: 1,
+            slug: 's',
+            name: 'n',
+            fit_pct: 90,
+            factors: {},
+            required_inputs: [],
+            tier: 'best',
+            all_infeasible: false,
+            advisories: [],
+          },
+        ],
+        total_count: 1,
+        offset: 0,
+        limit: 10,
+      });
       const { result } = renderHook(() => useMatchTemplates(), { wrapper });
       result.current.mutate({
         environment_id: 1,
@@ -42,7 +50,7 @@ describe('usePrograms hooks', () => {
         weight_unit: 'kg',
         duration_weeks: 8,
       });
-      await waitFor(() => expect(result.current.data?.[0].template_id).toBe(1));
+      await waitFor(() => expect(result.current.data?.matches[0].template_id).toBe(1));
     });
   });
 
@@ -54,6 +62,7 @@ describe('usePrograms hooks', () => {
         status: 'draft' as const,
         duration_weeks: 8,
         weeks: {},
+        advisories: [],
       };
       vi.spyOn(api, 'createDraft').mockResolvedValue(mockPreview);
       const { result } = renderHook(() => useCreateDraft(), { wrapper });
@@ -81,6 +90,7 @@ describe('usePrograms hooks', () => {
         status: 'draft' as const,
         duration_weeks: 8,
         weeks: {},
+        advisories: [],
       };
       vi.spyOn(api, 'getProgramPreview').mockResolvedValue(mockPreview);
       const { result } = renderHook(() => useProgramPreview(1), { wrapper });
@@ -104,6 +114,7 @@ describe('usePrograms hooks', () => {
         status: 'draft' as const,
         duration_weeks: 8,
         weeks: {},
+        advisories: [],
       };
       vi.spyOn(api, 'submitFeedback').mockResolvedValue(mockPreview);
       const { result } = renderHook(() => useSubmitFeedback(1), { wrapper });
@@ -132,6 +143,39 @@ describe('usePrograms hooks', () => {
     });
   });
 
+  describe('feedback mutations and useProgramPreview share a cache entry', () => {
+    it('propagates a swap response to a useProgramPreview reader on the same query client', async () => {
+      // Regression: DraftProgramView used to render the `program` prop directly instead
+      // of reading through useProgramPreview, so useSubmitFeedback's onSuccess (which
+      // writes into programKeys.preview(id)) had no reader - swap/exclude/lock all
+      // persisted correctly server-side but the screen never updated.
+      const initialPreview = {
+        program_id: 1,
+        name: 'Before swap',
+        status: 'draft' as const,
+        duration_weeks: 8,
+        weeks: {},
+        advisories: [],
+      };
+      const swappedPreview = { ...initialPreview, name: 'After swap' };
+      vi.spyOn(api, 'submitFeedback').mockResolvedValue(swappedPreview);
+
+      const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      function sharedWrapper({ children }: { children: React.ReactNode }) {
+        return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
+      }
+
+      const preview = renderHook(() => useProgramPreview(1, initialPreview), {
+        wrapper: sharedWrapper,
+      });
+      const feedback = renderHook(() => useSubmitFeedback(1), { wrapper: sharedWrapper });
+
+      expect(preview.result.current.data?.name).toBe('Before swap');
+      feedback.result.current.mutate({ type: 'swap', workout_exercise_id: 1, exercise_id: 2 });
+      await waitFor(() => expect(preview.result.current.data?.name).toBe('After swap'));
+    });
+  });
+
   describe('useAcceptProgram', () => {
     it('accepts program on mutate', async () => {
       const mockPreview = {
@@ -140,6 +184,7 @@ describe('usePrograms hooks', () => {
         status: 'active' as const,
         duration_weeks: 8,
         weeks: {},
+        advisories: [],
       };
       vi.spyOn(api, 'acceptProgram').mockResolvedValue(mockPreview);
       const { result } = renderHook(() => useAcceptProgram(1), { wrapper });

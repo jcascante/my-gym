@@ -1,5 +1,6 @@
 import type { FeedbackAction, SlotPreview } from '@/types/program';
 import { SlotFeedbackMenu } from './SlotFeedbackMenu';
+import { formatSlotNote } from '@/utils/slotNote';
 
 function formatEffortTarget(target: SlotPreview['effort_target']): string | null {
   if (!target) return null;
@@ -62,7 +63,7 @@ export function SlotRow({
             )}
             {slot.note && (
               <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-                {slot.note}
+                {formatSlotNote(slot.note)}
               </span>
             )}
             {slot.rotation_pool.length > 1 && (

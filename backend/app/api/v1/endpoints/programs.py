@@ -1,6 +1,6 @@
-from typing import cast
+from typing import Any, cast
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.dependencies import get_current_user
@@ -8,28 +8,44 @@ from app.core import (
     ProgramNotFoundError,
     ProgramTemplateNotFoundError,
     TrainingEnvironmentNotFoundError,
+    WorkoutExerciseNotFoundError,
 )
 from app.core.database import get_db
+from app.crud.checkin import create_check_in, list_check_ins_for_program
 from app.crud.exercise import get_exercises_by_ids, list_exercises
+from app.crud.injury import list_injury_records
 from app.crud.program import get_program, get_template, list_active_templates, save_program
 from app.crud.training_environment import get_training_environment
-from app.models import ProgramStatus, TrainingEnvironment, User, WorkoutProgram
+from app.models import CheckIn, InjuryRegion, ProgramStatus, TrainingEnvironment, User, WorkoutProgram
+from app.schemas.checkin import CheckInCreate, CheckInResponse, CheckInResultResponse
+from app.schemas.explain import LedgerContributionOut, SlotExplanationOut, TemplateExplanationOut
 from app.schemas.program_api import (
+    Advisory,
     AlternativeOut,
     DraftRequest,
     FeedbackRequest,
     MatchRequest,
     ProgramPreviewOut,
     TemplateMatchOut,
+    TemplateMatchResponse,
     WorkoutPreviewOut,
 )
 from app.schemas.template import TemplateDefinition
-from app.services.program.adaptation import FeedbackAction, alternatives_for_slot, apply_feedback
+from app.services.program.adaptation import FeedbackAction, _reselect_exercise, alternatives_for_slot, apply_feedback
+from app.services.program.checkin import apply_check_in
 from app.services.program.drafting import build_draft
+from app.services.program.engine_config import EngineConfig, get_engine_config
+from app.services.program.explain import explain_slot, explain_template
 from app.services.program.matching import MatchInput, rank_templates
 from app.services.program.preview import derive_week
-from app.services.program.selection import SelectionContext, template_is_feasible
+from app.services.program.selection import (
+    SelectionContext,
+    contraindication_tag_for_region,
+    selection_hazards_from_injury_records,
+    template_is_feasible,
+)
 from app.services.program.style_override import apply_progression_style
+from app.services.program.telemetry import record_event
 
 router = APIRouter(prefix="/programs", tags=["programs"])
 
@@ -41,11 +57,21 @@ async def _ctx_for(
     *,
     movement_preferences: dict[str, float] | None = None,
     complementary_focus: bool = True,
+    program: WorkoutProgram | None = None,
 ) -> SelectionContext:
     profile = user.profile
-    injuries = []
-    if profile and profile.injuries_limitations:
-        injuries = [w.strip().lower() for w in profile.injuries_limitations.split(",") if w.strip()]
+    injury_records = await list_injury_records(db, user.id)
+    injuries, injury_provocations = selection_hazards_from_injury_records(injury_records)
+    region_score_penalties: dict[str, float] = {}
+    if program is not None:
+        check_in_state = program.constraints.get("check_in_state", {})
+        for region_value, region_state in check_in_state.items():
+            if not region_state.get("excluded"):
+                continue
+            tag = contraindication_tag_for_region(InjuryRegion(region_value))
+            if tag is not None and tag not in injuries:
+                injuries = [*injuries, tag]
+        region_score_penalties = dict(program.constraints.get("region_score_penalties", {}))
     experience = profile.experience_level.value if profile and profile.experience_level else "beginner"
     return SelectionContext(
         list(environment.equipment_tags),
@@ -54,10 +80,17 @@ async def _ctx_for(
         set(),
         movement_preferences=movement_preferences or {},
         complementary_focus=complementary_focus,
+        injury_provocations=injury_provocations,
+        region_score_penalties=region_score_penalties,
     )
 
 
-async def _preview_out(db: AsyncSession, program: WorkoutProgram, definition: TemplateDefinition) -> ProgramPreviewOut:
+async def _preview_out(
+    db: AsyncSession,
+    program: WorkoutProgram,
+    definition: TemplateDefinition,
+    advisories: list[Advisory] | None = None,
+) -> ProgramPreviewOut:
     exercise_ids = [ex.exercise_id for w in program.workouts for ex in w.exercises]
     exercises = await get_exercises_by_ids(db, exercise_ids) if exercise_ids else {}
     weeks = {
@@ -70,13 +103,19 @@ async def _preview_out(db: AsyncSession, program: WorkoutProgram, definition: Te
         status=program.status.value,
         duration_weeks=program.duration_weeks,
         weeks=weeks,
+        advisories=advisories or [],
     )
 
 
-@router.post("/match", response_model=list[TemplateMatchOut])
+@router.post("/match", response_model=TemplateMatchResponse)
 async def match(
-    data: MatchRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
-) -> list[TemplateMatchOut]:
+    data: MatchRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    engine_config: EngineConfig = Depends(get_engine_config),
+    limit: int | None = Query(None, ge=0),
+    offset: int = Query(0, ge=0),
+) -> TemplateMatchResponse:
     environment = await get_training_environment(db, user.id, data.environment_id)
     if environment is None:
         raise TrainingEnvironmentNotFoundError()
@@ -100,20 +139,56 @@ async def match(
         movement_preferences=data.movement_preferences,
         complementary_focus=data.complementary_focus,
         progression_style=data.progression_style.value,
+        goal_vector=profile.goal_weights if profile else None,
     )
-    ranked = rank_templates(templates, inp, feasibility, definitions=definitions, all_exercises=exercises)
-    return [
-        TemplateMatchOut(
-            **m.__dict__,
-            required_inputs=[r.model_dump() for r in definitions[m.template_id].required_inputs],
+    ranked = rank_templates(
+        templates, inp, feasibility, definitions=definitions, all_exercises=exercises, config=engine_config
+    )
+    total_count = len(ranked)
+
+    # Record telemetry for all matches (necessary for pagination: templates beyond the top 3
+    # must be ranked and scored for full result set, so we capture telemetry for all ranked
+    # candidates, not just the returned batch). This increases DB writes per /match call.
+    for m in ranked:
+        await record_event(
+            db,
+            user=user,
+            event_type="match_score",
+            payload={
+                "template_id": m.template_id,
+                "slug": m.slug,
+                "fit_pct": m.fit_pct,
+                "tier": m.tier,
+                "factors": m.factors,
+                "all_infeasible": m.all_infeasible,
+            },
+            config_version=engine_config.config_version,
         )
-        for m in ranked
-    ]
+
+    # Apply pagination
+    effective_limit = limit if limit is not None else engine_config.match.default_match_limit
+    paginated = ranked[offset : offset + effective_limit]
+
+    return TemplateMatchResponse(
+        matches=[
+            TemplateMatchOut(
+                **m.__dict__,
+                required_inputs=[r.model_dump() for r in definitions[m.template_id].required_inputs],
+            )
+            for m in paginated
+        ],
+        total_count=total_count,
+        offset=offset,
+        limit=effective_limit,
+    )
 
 
 @router.post("/draft", response_model=ProgramPreviewOut, status_code=status.HTTP_201_CREATED)
 async def draft(
-    data: DraftRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    data: DraftRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    engine_config: EngineConfig = Depends(get_engine_config),
 ) -> ProgramPreviewOut:
     environment = await get_training_environment(db, user.id, data.environment_id)
     if environment is None:
@@ -130,6 +205,8 @@ async def draft(
         complementary_focus=data.complementary_focus,
     )
     exercises = await list_exercises(db)
+    telemetry_sink: list[dict[str, Any]] = []
+    advisory_sink: list[Advisory] = []
     program = build_draft(
         template,
         definition,
@@ -144,12 +221,32 @@ async def draft(
         progression_style=data.progression_style.value,
         effort_method=data.effort_method.value if data.effort_method else None,
         variety_preference=data.variety_preference.value,
+        engine_config_version=engine_config.config_version,
+        telemetry_sink=telemetry_sink,
+        advisory_sink=advisory_sink,
     )
+    # Stashed for task 3.6's /explain/template - MatchInput reconstruction needs the
+    # user's original match-time inputs, and WorkoutProgram itself only stores
+    # `program.focus` (the template's own first goal, not the user's fitness_focus)
+    # and `program.days_per_week`.
+    program.constraints = {
+        **program.constraints,
+        "fitness_focus": data.fitness_focus,
+        "session_duration_min": data.session_duration_min,
+    }
     await save_program(db, program)
+    for entry in telemetry_sink:
+        await record_event(
+            db,
+            user=user,
+            event_type="slot_selection",
+            payload=entry,
+            config_version=engine_config.config_version,
+        )
     saved = await get_program(db, user.id, program.id)
     assert saved is not None
     preview_definition = apply_progression_style(definition, data.progression_style.value)
-    return await _preview_out(db, saved, preview_definition)
+    return await _preview_out(db, saved, preview_definition, advisories=advisory_sink)
 
 
 async def _load(db: AsyncSession, user: User, program_id: int) -> tuple[WorkoutProgram, TemplateDefinition]:
@@ -184,6 +281,7 @@ async def feedback(
     data: FeedbackRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    engine_config: EngineConfig = Depends(get_engine_config),
 ) -> ProgramPreviewOut:
     program, definition = await _load(db, user, program_id)
     environment = await get_training_environment(db, user.id, program.environment_id)
@@ -195,10 +293,26 @@ async def feedback(
         environment,
         movement_preferences=program.constraints.get("movement_preferences", {}),
         complementary_focus=program.constraints.get("complementary_focus", True),
+        program=program,
     )
     exercises = await list_exercises(db)
     apply_feedback(program, definition, FeedbackAction(**data.model_dump()), ctx, exercises)
+    resulting_exercise_id = next(
+        (ex.exercise_id for w in program.workouts for ex in w.exercises if ex.id == data.workout_exercise_id),
+        None,
+    )
     await save_program(db, program)
+    await record_event(
+        db,
+        user=user,
+        event_type="feedback_action",
+        payload={
+            "action": data.model_dump(),
+            "workout_exercise_id": data.workout_exercise_id,
+            "resulting_exercise_id": resulting_exercise_id,
+        },
+        config_version=engine_config.config_version,
+    )
     saved = await get_program(db, user.id, program.id)
     assert saved is not None
     return await _preview_out(db, saved, definition)
@@ -221,6 +335,7 @@ async def alternatives(
         environment,
         movement_preferences=program.constraints.get("movement_preferences", {}),
         complementary_focus=program.constraints.get("complementary_focus", True),
+        program=program,
     )
     exercises = await list_exercises(db)
     alts = alternatives_for_slot(program, definition, we_id, ctx, exercises)
@@ -234,4 +349,131 @@ async def accept(
     program, definition = await _load(db, user, program_id)
     program.status = ProgramStatus.ACTIVE
     await save_program(db, program)
+    program = cast(WorkoutProgram, await get_program(db, user.id, program_id))
     return await _preview_out(db, program, definition)
+
+
+@router.post("/{program_id}/check-ins", response_model=CheckInResultResponse, status_code=status.HTTP_201_CREATED)
+async def create_check_in_endpoint(
+    program_id: int,
+    data: CheckInCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> CheckInResultResponse:
+    program, _definition = await _load(db, user, program_id)
+    effects = apply_check_in(program, data.region, data.status)
+
+    if effects.excluded:
+        environment = await get_training_environment(db, user.id, program.environment_id)
+        if environment is None:
+            raise TrainingEnvironmentNotFoundError()
+        ctx = await _ctx_for(
+            db,
+            user,
+            environment,
+            movement_preferences=program.constraints.get("movement_preferences", {}),
+            complementary_focus=program.constraints.get("complementary_focus", True),
+            program=program,
+        )
+        exercises = await list_exercises(db)
+        tag = contraindication_tag_for_region(data.region)
+        if tag is not None:
+            exercise_by_id = {ex.id: ex for ex in exercises}
+            for workout in program.workouts:
+                for we in workout.exercises:
+                    current = exercise_by_id.get(we.exercise_id)
+                    if current is not None and tag in current.contraindications:
+                        _reselect_exercise(program, we, ctx, exercises)
+
+    await save_program(db, program)
+    check_in = await create_check_in(db, user.id, program.id, data.region, data.status, data.note)
+
+    return CheckInResultResponse(
+        check_in=CheckInResponse.model_validate(check_in),
+        excluded=effects.excluded,
+        consult_recommended=effects.consult_recommended,
+        draft_injury_record=effects.draft_injury_record,
+        advisories=effects.advisories,
+    )
+
+
+@router.get("/{program_id}/check-ins", response_model=list[CheckInResponse])
+async def list_check_ins_endpoint(
+    program_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> list[CheckIn]:
+    program, _definition = await _load(db, user, program_id)
+    return await list_check_ins_for_program(db, user.id, program.id)
+
+
+@router.get("/{program_id}/explain/template", response_model=TemplateExplanationOut)
+async def explain_template_endpoint(
+    program_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> TemplateExplanationOut:
+    program, definition = await _load(db, user, program_id)
+    template = await get_template(db, program.template_id)
+    if template is None:
+        raise ProgramTemplateNotFoundError()
+    environment = await get_training_environment(db, user.id, program.environment_id)
+    if environment is None:
+        raise TrainingEnvironmentNotFoundError()
+    exercises = await list_exercises(db)
+    profile = user.profile
+    default_duration = (template.session_duration_min + template.session_duration_max) // 2
+    match_input = MatchInput(
+        fitness_focus=program.constraints.get("fitness_focus", program.focus or "general"),
+        experience_level=profile.experience_level.value if profile and profile.experience_level else "beginner",
+        days_per_week=program.days_per_week,
+        session_duration_min=program.constraints.get("session_duration_min", default_duration),
+        environment_equipment=list(environment.equipment_tags),
+        movement_preferences=program.constraints.get("movement_preferences", {}),
+        complementary_focus=program.constraints.get("complementary_focus", True),
+        progression_style=program.constraints.get("progression_style", "consistent"),
+        goal_vector=profile.goal_weights if profile else None,
+    )
+    match = explain_template(template, definition, exercises, match_input)
+    return TemplateExplanationOut(
+        template_id=match.template_id,
+        slug=match.slug,
+        name=match.name,
+        fit_pct=match.fit_pct,
+        factors=match.factors,
+        tier=match.tier,
+        advisories=match.advisories,
+    )
+
+
+@router.get("/{program_id}/explain/slot/{we_id}", response_model=SlotExplanationOut)
+async def explain_slot_endpoint(
+    program_id: int,
+    we_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> SlotExplanationOut:
+    program, _definition = await _load(db, user, program_id)
+    environment = await get_training_environment(db, user.id, program.environment_id)
+    if environment is None:
+        raise TrainingEnvironmentNotFoundError()
+    ctx = await _ctx_for(
+        db,
+        user,
+        environment,
+        movement_preferences=program.constraints.get("movement_preferences", {}),
+        complementary_focus=program.constraints.get("complementary_focus", True),
+        program=program,
+    )
+    exercises = await list_exercises(db)
+    explanation = explain_slot(program, we_id, ctx, exercises)
+    if explanation is None:
+        raise WorkoutExerciseNotFoundError()
+    return SlotExplanationOut(
+        workout_exercise_id=explanation.workout_exercise_id,
+        exercise_id=explanation.exercise_id,
+        exercise_name=explanation.exercise_name,
+        factors=explanation.factors,
+        score=explanation.score,
+        ledger_contributions=[
+            LedgerContributionOut(group=c.group, effective_sets=c.effective_sets)
+            for c in explanation.ledger_contributions
+        ],
+        safety_note=explanation.safety_note,
+    )

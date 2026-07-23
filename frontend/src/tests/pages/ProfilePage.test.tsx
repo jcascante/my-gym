@@ -1,12 +1,25 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ProfilePage from '@/pages/ProfilePage';
 import * as authApi from '@/api/auth';
+import * as injuriesApi from '@/api/injuries';
 import { useAuthStore } from '@/store/auth';
 
 vi.mock('@/api/auth');
+vi.mock('@/api/injuries');
 vi.mock('@/store/auth');
+
+function renderProfilePage() {
+  render(
+    <BrowserRouter>
+      <QueryClientProvider client={new QueryClient()}>
+        <ProfilePage />
+      </QueryClientProvider>
+    </BrowserRouter>,
+  );
+}
 
 describe('ProfilePage', () => {
   const mockUser = {
@@ -27,7 +40,6 @@ describe('ProfilePage', () => {
     experience_level: 'intermediate',
     days_per_week: 4,
     workout_duration_min: 60,
-    injuries_limitations: 'None',
     short_term_goals: 'Build muscle',
     medium_term_goals: 'Improve overall fitness',
   };
@@ -35,6 +47,7 @@ describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    vi.mocked(injuriesApi.listInjuryRecords).mockResolvedValue([]);
   });
 
   it('should render all profile fields in read-only mode', () => {
@@ -47,11 +60,7 @@ describe('ProfilePage', () => {
       }),
     );
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     expect(screen.getByText('My Profile')).toBeInTheDocument();
     expect(screen.getAllByText('Personal Information')).toHaveLength(2);
@@ -68,7 +77,6 @@ describe('ProfilePage', () => {
     expect(screen.getByText('strength')).toBeInTheDocument();
     expect(screen.getByText('4 days/week')).toBeInTheDocument();
     expect(screen.getByText('60 minutes')).toBeInTheDocument();
-    expect(screen.getByText('None')).toBeInTheDocument();
     expect(screen.getByText('Build muscle')).toBeInTheDocument();
     expect(screen.getByText('Improve overall fitness')).toBeInTheDocument();
 
@@ -91,11 +99,7 @@ describe('ProfilePage', () => {
       }),
     );
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     expect(screen.getByText('25')).toBeInTheDocument();
     expect(screen.getByText('female')).toBeInTheDocument();
@@ -114,11 +118,7 @@ describe('ProfilePage', () => {
       }),
     );
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     const editButton = screen.getByRole('button', { name: /Edit Profile/i });
     fireEvent.click(editButton);
@@ -153,11 +153,7 @@ describe('ProfilePage', () => {
       }),
     );
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     const editButton = screen.getByRole('button', { name: /Edit Profile/i });
     fireEvent.click(editButton);
@@ -198,11 +194,7 @@ describe('ProfilePage', () => {
 
     vi.mocked(authApi.saveUserProfile).mockResolvedValue(mockResponse);
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     const editButton = screen.getByRole('button', { name: /Edit Profile/i });
     fireEvent.click(editButton);
@@ -250,11 +242,7 @@ describe('ProfilePage', () => {
 
     vi.mocked(authApi.saveUserProfile).mockResolvedValue(mockResponse);
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     const editButton = screen.getByRole('button', { name: /Edit Profile/i });
     fireEvent.click(editButton);
@@ -274,7 +262,6 @@ describe('ProfilePage', () => {
           experience_level: 'intermediate',
           days_per_week: 4,
           workout_duration_min: 60,
-          injuries_limitations: 'None',
           short_term_goals: 'Build muscle',
           medium_term_goals: 'Improve overall fitness',
         }),
@@ -296,11 +283,7 @@ describe('ProfilePage', () => {
     const errorMessage = 'Failed to save profile';
     vi.mocked(authApi.saveUserProfile).mockRejectedValue(new Error(errorMessage));
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     const editButton = screen.getByRole('button', { name: /Edit Profile/i });
     fireEvent.click(editButton);
@@ -329,11 +312,7 @@ describe('ProfilePage', () => {
     const errorMessage = 'Failed to save profile';
     vi.mocked(authApi.saveUserProfile).mockRejectedValue(new Error(errorMessage));
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     const editButton = screen.getByRole('button', { name: /Edit Profile/i });
     fireEvent.click(editButton);
@@ -364,11 +343,7 @@ describe('ProfilePage', () => {
     const errorMessage = 'Validation failed';
     vi.mocked(authApi.saveUserProfile).mockRejectedValue(new Error(errorMessage));
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     const editButton = screen.getByRole('button', { name: /Edit Profile/i });
     fireEvent.click(editButton);
@@ -405,23 +380,19 @@ describe('ProfilePage', () => {
       last_name: 'Doe',
       profile: {
         ...mockUserProfile,
-        injuries_limitations: 'Back pain',
+        short_term_goals: 'Run a 5k',
       },
     };
 
     vi.mocked(authApi.saveUserProfile).mockResolvedValue(mockResponse);
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     const editButton = screen.getByRole('button', { name: /Edit Profile/i });
     fireEvent.click(editButton);
 
-    const injuriesInput = screen.getByDisplayValue('None');
-    fireEvent.change(injuriesInput, { target: { value: 'Back pain' } });
+    const goalsInput = screen.getByDisplayValue('Build muscle');
+    fireEvent.change(goalsInput, { target: { value: 'Run a 5k' } });
 
     const saveButton = screen.getByRole('button', { name: /Save Changes/i });
     fireEvent.click(saveButton);
@@ -429,7 +400,7 @@ describe('ProfilePage', () => {
     await waitFor(() => {
       expect(authApi.saveUserProfile).toHaveBeenCalledWith(
         expect.objectContaining({
-          injuries_limitations: 'Back pain',
+          short_term_goals: 'Run a 5k',
         }),
       );
     });
@@ -453,17 +424,13 @@ describe('ProfilePage', () => {
       profile: {
         ...mockUserProfile,
         fitness_focus: null,
-        injuries_limitations: null,
+        short_term_goals: null,
       },
     };
 
     vi.mocked(authApi.saveUserProfile).mockResolvedValue(mockResponse);
 
-    render(
-      <BrowserRouter>
-        <ProfilePage />
-      </BrowserRouter>,
-    );
+    renderProfilePage();
 
     const editButton = screen.getByRole('button', { name: /Edit Profile/i });
     fireEvent.click(editButton);
@@ -471,8 +438,8 @@ describe('ProfilePage', () => {
     const focusSelect = screen.getByLabelText('Fitness Focus');
     fireEvent.change(focusSelect, { target: { value: '' } });
 
-    const injuriesInput = screen.getByDisplayValue('None');
-    fireEvent.change(injuriesInput, { target: { value: '' } });
+    const goalsInput = screen.getByDisplayValue('Build muscle');
+    fireEvent.change(goalsInput, { target: { value: '' } });
 
     const saveButton = screen.getByRole('button', { name: /Save Changes/i });
     fireEvent.click(saveButton);
@@ -481,7 +448,7 @@ describe('ProfilePage', () => {
       expect(authApi.saveUserProfile).toHaveBeenCalledWith(
         expect.objectContaining({
           fitness_focus: null,
-          injuries_limitations: null,
+          short_term_goals: null,
         }),
       );
       expect(setUserProfileMock).toHaveBeenCalledWith(mockResponse.profile);

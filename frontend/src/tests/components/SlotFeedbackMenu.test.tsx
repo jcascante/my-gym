@@ -16,6 +16,8 @@ const slot = {
   is_user_swapped: false,
   effort_target: null,
   rotation_pool: [],
+  tempo: 'controlled',
+  warmup_sets: [],
 };
 
 it('emits lock action', async () => {

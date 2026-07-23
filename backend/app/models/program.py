@@ -65,6 +65,13 @@ class WorkoutProgram(Base):
     start_date: Mapped[date | None] = mapped_column(Date)
     weight_unit: Mapped[str] = mapped_column(String(3), nullable=False, default="kg")
     constraints: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    # Task 4.5: pins the progression-pipeline version and exercise-ranking-weights
+    # artifact this program was generated with, so re-derived weeks stay deterministic
+    # even after either is later bumped. Nullable for backward compat with programs
+    # generated before these columns existed - callers fall back to current/live
+    # versions for them (see app.services.program.versioning.resolve_program_versions).
+    model_version: Mapped[str | None] = mapped_column(String(50))
+    ranking_weights_version: Mapped[str | None] = mapped_column(String(50))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
 

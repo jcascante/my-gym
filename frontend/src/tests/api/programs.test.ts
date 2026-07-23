@@ -15,7 +15,26 @@ describe('programs api', () => {
   });
 
   it('posts match request', async () => {
-    mockPost.mockResolvedValue({ data: [{ template_id: 1 }] });
+    mockPost.mockResolvedValue({
+      data: {
+        matches: [
+          {
+            template_id: 1,
+            slug: 'test',
+            name: 'Test',
+            fit_pct: 0.9,
+            factors: {},
+            required_inputs: [],
+            tier: 'best' as const,
+            all_infeasible: false,
+            advisories: [],
+          },
+        ],
+        total_count: 1,
+        offset: 0,
+        limit: 10,
+      },
+    });
     const res = await matchTemplates({
       environment_id: 1,
       days_per_week: 3,
@@ -24,8 +43,8 @@ describe('programs api', () => {
       weight_unit: 'kg',
       duration_weeks: 8,
     });
-    expect(mockPost).toHaveBeenCalledWith('/programs/match', expect.any(Object));
-    expect(res[0].template_id).toBe(1);
+    expect(mockPost).toHaveBeenCalledWith('/programs/match', expect.any(Object), { params: {} });
+    expect(res.matches[0].template_id).toBe(1);
   });
 
   it('posts feedback to program id', async () => {

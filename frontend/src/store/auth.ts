@@ -22,6 +22,8 @@ export interface UserProfile {
   injuries_limitations?: string | null;
   short_term_goals?: string | null;
   medium_term_goals?: string | null;
+  goal_weights?: Record<string, number> | null;
+  effort_method?: string | null;
 }
 
 interface AuthState {

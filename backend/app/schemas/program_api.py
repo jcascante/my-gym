@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.schemas.program import EffortMethod, ProgressionStyle, VarietyPreference
@@ -24,13 +26,46 @@ class MatchRequest(BaseModel):
         return v
 
 
+class Advisory(BaseModel):
+    """Structured, surfaced-not-silently-accepted advisory (plan §2.5, proposal §4.3).
+
+    `severity` mirrors `Alert.tsx`'s existing `type` prop vocabulary minus `"success"`
+    (an advisory is never a success state), so the frontend task can map directly with
+    no translation layer.
+    """
+
+    code: str
+    severity: Literal["info", "warning", "error"]
+    message: str
+    subject: str | None = None
+
+
+class WarmupSetOut(BaseModel):
+    pct: float
+    reps: int
+    load: float | None
+
+
 class TemplateMatchOut(BaseModel):
     template_id: int
     slug: str
     name: str
     fit_pct: int
     factors: dict[str, float]
+    tier: Literal["best", "strong", "possible"]
     required_inputs: list[dict[str, object]]
+    # True only when returned via the all-infeasible best-effort fallback.
+    # Phase 2 (plan §2.5) will fold this into the general Advisory list rather
+    # than keep it as a standalone boolean.
+    all_infeasible: bool = False
+    advisories: list[Advisory] = []
+
+
+class TemplateMatchResponse(BaseModel):
+    matches: list[TemplateMatchOut]
+    total_count: int
+    offset: int
+    limit: int
 
 
 class DraftRequest(MatchRequest):
@@ -61,6 +96,8 @@ class SlotPreviewOut(BaseModel):
     is_user_swapped: bool
     effort_target: dict[str, object] | None = None
     rotation_pool: list[int] = []
+    tempo: str
+    warmup_sets: list[WarmupSetOut] = []
 
 
 class WorkoutPreviewOut(BaseModel):
@@ -76,6 +113,7 @@ class ProgramPreviewOut(BaseModel):
     status: str
     duration_weeks: int
     weeks: dict[int, list[WorkoutPreviewOut]]
+    advisories: list[Advisory] = []
 
 
 class AlternativeOut(BaseModel):

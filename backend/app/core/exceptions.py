@@ -35,6 +35,13 @@ class TrainingEnvironmentNotFoundError(AppException):
         super().__init__(message, status_code=404)
 
 
+class InjuryRecordNotFoundError(AppException):
+    error_code: str = "INJURY_RECORD_NOT_FOUND"
+
+    def __init__(self, message: str = "Injury record not found"):
+        super().__init__(message, status_code=404)
+
+
 class ExerciseNotFoundError(AppException):
     error_code: str = "EXERCISE_NOT_FOUND"
 
@@ -74,4 +81,11 @@ class ProgramNotFoundError(AppException):
     error_code: str = "PROGRAM_NOT_FOUND"
 
     def __init__(self, message: str = "Program not found"):
+        super().__init__(message, status_code=404)
+
+
+class WorkoutExerciseNotFoundError(AppException):
+    error_code: str = "WORKOUT_EXERCISE_NOT_FOUND"
+
+    def __init__(self, message: str = "Workout exercise not found"):
         super().__init__(message, status_code=404)

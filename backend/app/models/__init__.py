@@ -1,6 +1,9 @@
 from app.core.database import Base
 
-from .exercise import BodyRegion, Contraindication, Equipment, Exercise, MovementPattern, Muscle
+from .checkin import CheckIn, CheckInStatus
+from .exercise import BodyRegion, Contraindication, Equipment, Exercise, MovementPattern, Muscle, Provocation
+from .injury import InjuryCondition, InjuryPhase, InjuryRecord, InjuryRegion, InjurySource
+from .logging import UserWorkoutLog, WorkoutSetLog
 from .program import (  # noqa: F401
     ProgramStatus,
     ProgramTemplate,
@@ -8,6 +11,7 @@ from .program import (  # noqa: F401
     WorkoutExercise,
     WorkoutProgram,
 )
+from .telemetry import EngineEvent
 from .training_environment import EnvironmentType, TrainingEnvironment
 from .user import (
     ActivityLevel,
@@ -32,9 +36,20 @@ __all__ = [
     "Equipment",
     "Muscle",
     "Contraindication",
+    "Provocation",
     "ProgramStatus",
     "ProgramTemplate",
     "WorkoutProgram",
     "Workout",
     "WorkoutExercise",
+    "EngineEvent",
+    "InjuryRecord",
+    "InjuryRegion",
+    "InjuryCondition",
+    "InjuryPhase",
+    "InjurySource",
+    "CheckIn",
+    "CheckInStatus",
+    "UserWorkoutLog",
+    "WorkoutSetLog",
 ]

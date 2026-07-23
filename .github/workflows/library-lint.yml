@@ -1,0 +1,51 @@
+name: Library Lint
+
+# Narrowly-scoped workflow: its only job is running the exercise/template
+# library linter test (backend/tests/test_library_lint.py). This repo has no
+# existing pytest/mypy/ruff CI workflow to "wire into" (only deploy.yml and
+# seed-database.yml exist, and neither runs the backend test suite) -- see
+# Task 2.2 brief. Standing up a full backend CI pipeline is out of scope here.
+on:
+  pull_request:
+    paths:
+      - "backend/app/db/seed/**"
+      - "backend/app/models/exercise.py"
+      - "backend/app/models/program.py"
+      - "backend/scripts/lint_library.py"
+      - "backend/app/services/program/taxonomy.py"
+      - "backend/tests/test_library_lint.py"
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/app/db/seed/**"
+      - "backend/app/models/exercise.py"
+      - "backend/app/models/program.py"
+      - "backend/scripts/lint_library.py"
+      - "backend/app/services/program/taxonomy.py"
+      - "backend/tests/test_library_lint.py"
+
+jobs:
+  library-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run library lint test
+        run: uv run pytest tests/test_library_lint.py -v

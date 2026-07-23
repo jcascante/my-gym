@@ -1,0 +1,74 @@
+# Program engine config surface (plan §1.1). Reviewed via PR, deployable without code change.
+#
+# Defaults below mirror today's hardcoded scoring behavior exactly:
+#   match.*      <- app/services/program/matching.py MatchWeights
+#   selection.*  <- app/services/program/selection.py SelectionWeights
+# match.epsilon/alpha/beta/sigma_days/sigma_duration and assembly.* are placeholders for
+# later phases (plan §1.3/§1.4/§1.5) and are inert until flags.* below are turned on.
+config_version: "1"
+
+match:
+  goal: 0.25
+  experience: 0.20
+  days: 0.12
+  duration: 0.08
+  movement_preference: 0.15
+  focus_complement: 0.12
+  periodization: 0.08
+  epsilon: 0.10
+  alpha: 1.0
+  beta: 1.0
+  sigma_days: 1.0
+  sigma_duration: 15.0
+  default_match_limit: 4
+
+selection:
+  variety: 1.0
+  priority_fit: 1.5
+  muscle_fit: 1.0
+  difficulty: 0.75
+  unilateral_balance: 0.5
+  movement_preference: 1.25
+  complementary_coverage: 1.25
+  provenance: heuristic
+
+assembly:
+  beam_width: 1
+  lambda_v: 0.0
+  lambda_f: 0.0
+
+flags:
+  use_constraint_scorer: false
+  use_beam_search: false
+  use_volume_validator: false
+  use_frequency_advisories: false
+  use_interference_scheduler: false
+  use_safety_substitution: false
+
+# Volume bands table — MEV / target / MRV guard by experience level (plan §2.4).
+# Table varies only by experience; identical across all 15 taxonomy muscle groups.
+# Modifiers: emphasis +2–4 sets to target band, amber-injury reduces guard by 30%.
+volume_bands:
+  bands:
+    - experience: beginner
+      mev: 6
+      target_min: 8
+      target_max: 12
+      mrv_guard: 16
+      citation: "Schoenfeld, Ogborn & Krieger (2017), dose-response of weekly set volume and hypertrophy, J Sports Sci; Schoenfeld et al. (2019), volume and hypertrophy in trained men, MSSE; Israetel et al., MEV/MAV/MRV volume landmarks framework, Renaissance Periodization; Ralston et al. (2017), weekly set volume and strength gain, Sports Med."
+    - experience: intermediate
+      mev: 8
+      target_min: 10
+      target_max: 18
+      mrv_guard: 22
+      citation: "Schoenfeld, Ogborn & Krieger (2017), dose-response of weekly set volume and hypertrophy, J Sports Sci; Schoenfeld et al. (2019), volume and hypertrophy in trained men, MSSE; Israetel et al., MEV/MAV/MRV volume landmarks framework, Renaissance Periodization; Ralston et al. (2017), weekly set volume and strength gain, Sports Med."
+    - experience: advanced
+      mev: 10
+      target_min: 12
+      target_max: 20
+      mrv_guard: 26
+      citation: "Schoenfeld, Ogborn & Krieger (2017), dose-response of weekly set volume and hypertrophy, J Sports Sci; Schoenfeld et al. (2019), volume and hypertrophy in trained men, MSSE; Israetel et al., MEV/MAV/MRV volume landmarks framework, Renaissance Periodization; Ralston et al. (2017), weekly set volume and strength gain, Sports Med."
+  modifiers:
+    emphasis_target_bonus_min: 2
+    emphasis_target_bonus_max: 4
+    amber_injury_guard_reduction_pct: 0.30

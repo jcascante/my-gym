@@ -53,7 +53,10 @@ frontend/vite.config.d.ts
 .mypy_cache/
 .ruff_cache/
 htmlcov/
+.coverage
 
 postgres_data/
 
 .worktrees/
+
+.claude/sessions/

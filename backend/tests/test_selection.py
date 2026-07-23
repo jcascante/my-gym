@@ -1,6 +1,9 @@
 # backend/tests/test_selection.py
+from datetime import date
+
+from app.models.injury import InjuryCondition, InjuryPhase, InjuryRecord, InjuryRegion, InjurySource
 from app.schemas.template import SlotRule
-from app.services.program.selection import SelectionContext, select_for_slot
+from app.services.program.selection import SelectionContext, select_for_slot, selection_hazards_from_injury_records
 
 
 class _Ex:
@@ -108,6 +111,76 @@ def test_movement_preference_biases_selection_without_excluding_others():
     assert chosen.id == 2  # kettlebell strongly preferred
 
 
+def _injury(
+    region: str,
+    *,
+    phase: str = "rehabilitating",
+    provocations: list[str] | None = None,
+) -> InjuryRecord:
+    return InjuryRecord(
+        user_id=1,
+        region=InjuryRegion(region),
+        condition=InjuryCondition.TENDINOPATHY,
+        phase=InjuryPhase(phase),
+        provocations=provocations or [],
+        severity=2,
+        reported_at=date(2026, 1, 1),
+        source=InjurySource.USER_REPORTED,
+    )
+
+
+def test_selection_hazards_maps_region_to_contraindication_tag():
+    injuries, provocations = selection_hazards_from_injury_records([_injury("knee", provocations=[])])
+    assert injuries == ["knee"]
+    assert provocations == []
+
+
+def test_selection_hazards_maps_region_synonyms():
+    injuries, _ = selection_hazards_from_injury_records([_injury("cervical"), _injury("lumbar"), _injury("ankle_foot")])
+    assert set(injuries) == {"neck", "lower_back", "ankle"}
+
+
+def test_selection_hazards_thoracic_has_no_contraindication_tag():
+    injuries, _ = selection_hazards_from_injury_records([_injury("thoracic")])
+    assert injuries == []
+
+
+def test_selection_hazards_cleared_record_contributes_nothing():
+    injuries, provocations = selection_hazards_from_injury_records(
+        [_injury("knee", phase="cleared", provocations=["deep_knee_flexion"])]
+    )
+    assert injuries == []
+    assert provocations == []
+
+
+def test_selection_hazards_tracks_rehabilitating_flag_per_provocation():
+    injuries, provocations = selection_hazards_from_injury_records(
+        [
+            _injury("knee", phase="rehabilitating", provocations=["deep_knee_flexion"]),
+            _injury("shoulder", phase="acute", provocations=["overhead"]),
+        ]
+    )
+    assert injuries == ["knee", "shoulder"]
+    by_provocation = {p.provocation: p.is_rehabilitating for p in provocations}
+    assert by_provocation == {"deep_knee_flexion": True, "overhead": False}
+
+
+def test_region_score_penalty_biases_away_without_hard_excluding():
+    """Task 3.4's amber check-in bias: a contraindicated exercise is de-weighted, not
+    removed from the pool outright (unlike `injuries`' hard exclude)."""
+    knee_ex = _Ex(1, "knee-heavy", "k", "squat", "lower_body", ["quads"], [], "intermediate", ["knee"])
+    safe_ex = _Ex(2, "safe", "s", "squat", "lower_body", ["quads"], [], "intermediate", [])
+    rule = SlotRule(pattern="squat", priority="primary", scheme="main")
+    ctx = SelectionContext([], "intermediate", [], set(), region_score_penalties={"knee": 1.0})
+    chosen = select_for_slot([knee_ex, safe_ex], rule, ctx, None, set())
+    assert chosen.id == 2
+
+    # Penalty alone never excludes: with only the penalized exercise available, it's
+    # still selectable.
+    chosen_only_option = select_for_slot([knee_ex], rule, ctx, None, set())
+    assert chosen_only_option.id == 1
+
+
 def test_movement_preference_never_empties_a_slot():
     from app.schemas.template import SlotRule
     from app.services.program.selection import SelectionContext, select_for_slot
@@ -117,6 +190,20 @@ def test_movement_preference_never_empties_a_slot():
     ctx = SelectionContext(["barbell"], "intermediate", [], set(), movement_preferences={"barbell": 0.0})
     chosen = select_for_slot([only_option], rule, ctx, None, set())
     assert chosen.id == 1
+
+
+def test_ranked_pool_breaks_score_ties_on_exercise_id_ascending():
+    from app.schemas.template import SlotRule
+    from app.services.program.selection import SelectionContext, ranked_pool_for_slot
+
+    # Two exercises that score identically; the lower id must win the tie regardless
+    # of input order (previously relied on Python's stable sort preserving input order).
+    hi = _Ex(5, "row-a", "row", "horizontal_pull", "upper_body", ["lats"], [], "intermediate", [])
+    lo = _Ex(3, "row-b", "row", "horizontal_pull", "upper_body", ["lats"], [], "intermediate", [])
+    rule = SlotRule(pattern="horizontal_pull", priority="accessory", scheme="accessory")
+    ctx = SelectionContext(["barbell"], "intermediate", [], set())
+    ranked = ranked_pool_for_slot([hi, lo], rule, ctx, set())
+    assert [ex.id for ex in ranked] == [3, 5]
 
 
 def test_ranked_pool_for_slot_returns_descending_order():

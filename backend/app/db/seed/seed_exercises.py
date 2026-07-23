@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session
-from app.db.seed.exercise_classification import classify_exercise, validate_tags
+from app.db.seed.exercise_classification import classify_exercise, derive_provocation_tags, validate_tags
 from app.db.seed.exercises import EXERCISE_SEED_DATA
 from app.models import Exercise
 
@@ -16,7 +16,13 @@ async def upsert_exercises(db: AsyncSession) -> None:
     for data in EXERCISE_SEED_DATA:
         validate_tags(data)
         is_unilateral, is_compound = classify_exercise(data)
-        row = {**data, "is_unilateral": is_unilateral, "is_compound": is_compound}
+        provocation_tags = derive_provocation_tags(data)
+        row = {
+            **data,
+            "is_unilateral": is_unilateral,
+            "is_compound": is_compound,
+            "provocation_tags": provocation_tags,
+        }
 
         existing = await db.execute(select(Exercise).where(Exercise.slug == data["slug"]))
         exercise = existing.scalar_one_or_none()

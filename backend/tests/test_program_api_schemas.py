@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.program_api import DraftRequest, MatchRequest
+from app.schemas.program_api import Advisory, DraftRequest, MatchRequest, ProgramPreviewOut
 
 
 def _base_kwargs():
@@ -128,3 +128,40 @@ def test_match_request_accepts_movement_preferences_at_boundaries():
 def test_match_request_rejects_negative_movement_preference():
     with pytest.raises(ValidationError):
         MatchRequest(**_base_kwargs(), movement_preferences={"barbell": -0.1})
+
+
+def test_advisory_round_trips():
+    a = Advisory(code="VOLUME_BELOW_MEV", severity="warning", message="Chest is low.", subject="chest")
+    dumped = a.model_dump()
+    restored = Advisory.model_validate(dumped)
+    assert restored == a
+
+
+def test_advisory_subject_defaults_to_none():
+    a = Advisory(code="VOLUME_BELOW_MEV", severity="warning", message="Chest is low.")
+    assert a.subject is None
+
+
+def test_advisory_rejects_invalid_severity():
+    with pytest.raises(ValidationError):
+        Advisory(code="X", severity="success", message="m")  # not in {info, warning, error}
+
+
+def test_program_preview_out_defaults_advisories_to_empty_list():
+    out = ProgramPreviewOut(program_id=1, name="Test", status="draft", duration_weeks=8, weeks={})
+    assert out.advisories == []
+
+
+def test_program_preview_out_serializes_advisories():
+    out = ProgramPreviewOut(
+        program_id=1,
+        name="Test",
+        status="draft",
+        duration_weeks=8,
+        weeks={},
+        advisories=[Advisory(code="VOLUME_ABOVE_MRV", severity="warning", message="m", subject="quads")],
+    )
+    dumped = out.model_dump()
+    assert dumped["advisories"] == [
+        {"code": "VOLUME_ABOVE_MRV", "severity": "warning", "message": "m", "subject": "quads"}
+    ]

@@ -16,6 +16,8 @@ const baseSlot: SlotPreview = {
   is_user_swapped: false,
   effort_target: null,
   rotation_pool: [],
+  tempo: 'controlled',
+  warmup_sets: [],
 };
 
 describe('SlotRow', () => {
@@ -61,5 +63,23 @@ describe('SlotRow', () => {
     const slot = { ...baseSlot, rotation_pool: [1] };
     render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
     expect(screen.queryByText(/🔁 rotates weekly/)).not.toBeInTheDocument();
+  });
+
+  it('shows a friendly label for a deload note', () => {
+    const slot = { ...baseSlot, note: 'deload' };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText('Deload week')).toBeInTheDocument();
+  });
+
+  it('shows a friendly label for a ramp-capped note', () => {
+    const slot = { ...baseSlot, note: 'ramp_capped' };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText('Capped for safe progression')).toBeInTheDocument();
+  });
+
+  it('shows an unrecognized note as-is', () => {
+    const slot = { ...baseSlot, note: 'Go heavy' };
+    render(<SlotRow slot={slot} onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText('Go heavy')).toBeInTheDocument();
   });
 });
