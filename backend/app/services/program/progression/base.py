@@ -1,5 +1,8 @@
+import logging
 from dataclasses import dataclass
 from typing import Protocol
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -47,6 +50,7 @@ def get_model(key: str, version: str | None = None) -> ProgressionModel:
         versioned_key = f"{key}@{version}"
         if versioned_key in _REGISTRY:
             return _REGISTRY[versioned_key]
+        logger.warning(f"Model version {key}@{version} not found, falling back to current")
     if key not in _REGISTRY:
         raise KeyError(f"Unknown progression model: {key}")
     return _REGISTRY[key]

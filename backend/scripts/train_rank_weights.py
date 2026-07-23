@@ -29,7 +29,7 @@ import math
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -80,7 +80,7 @@ def _default_weights_version() -> str:
     # `RankWeights`/`to_json_dict()` so the fit stays a pure, byte-deterministic
     # function of its input records; only `write_weights` (an inherently time-stamped
     # side effect) stamps a version onto the persisted artifact.
-    return datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
 @dataclass(frozen=True)
