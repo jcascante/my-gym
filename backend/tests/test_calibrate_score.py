@@ -82,40 +82,70 @@ class TestFitIsotonicRegression:
         assert result.calibration_function == DEFAULT_CALIBRATION
 
     def test_nan_values_are_filtered(self):
-        """NaN values in target or actual are filtered out."""
-        targets = [2.0, float("nan"), 4.0, 5.0, 6.0, 7.0, 8.0, 9.0] * 3  # 24 with NaN
-        actuals = [2.1, 2.9, float("nan"), 4.8, 6.1, 6.9, 8.2, 9.1] * 3
+        """NaN values in target or actual are filtered out; remaining valid pairs fit."""
+        # 25 pairs total with 2 NaN values → 22+ valid pairs after filtering
+        targets = (
+            [2.0, float("nan"), 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+            + [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+            + [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, float("nan")]
+        )
+        actuals = (
+            [2.1, 2.9, 3.1, 4.2, 4.8, 6.1, 6.9, 8.2, 9.1]
+            + [2.2, 3.2, 4.1, 5.2, 6.2, 7.1, 8.1, 9.2, 10.1]
+            + [2.6, 3.6, 4.6, 5.6, 6.6, 7.6, 7.5]
+        )
 
-        # After filtering NaN, should have ~21 valid pairs (24 - 3 = 21)
         with patch("scripts.calibrate_score.logger"):
             result = fit_isotonic_regression(targets, actuals)
 
-        # Should succeed with sufficient data after filtering
-        assert result.sufficient_data or not result.sufficient_data  # Either outcome is OK
-        # But should not crash
-        assert result is not None
+        # With 22+ valid pairs (>20), should fit successfully
+        assert result.sufficient_data
+        assert result.n_training_samples >= 22
+        assert len(result.calibration_function) > 0
 
     def test_negative_rpe_values_are_filtered(self):
-        """Negative RPE values are filtered out."""
-        targets = [2.0, 3.0, -1.0, 5.0, 6.0, 7.0, 8.0, 9.0] * 3  # 24 with negative
-        actuals = [2.1, 2.9, 4.2, -0.5, 6.1, 6.9, 8.2, 9.1] * 3
+        """Negative RPE values are filtered out; remaining valid pairs fit."""
+        # 25 pairs total with 2 negative values → 22+ valid pairs after filtering
+        targets = (
+            [2.0, -1.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+            + [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+            + [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, -0.5]
+        )
+        actuals = (
+            [2.1, 2.9, 3.1, 4.2, 4.8, 6.1, 6.9, 8.2, 9.1]
+            + [2.2, 3.2, 4.1, 5.2, 6.2, 7.1, 8.1, 9.2, 10.1]
+            + [2.6, 3.6, 4.6, 5.6, 6.6, 7.6, 7.5]
+        )
 
         with patch("scripts.calibrate_score.logger"):
             result = fit_isotonic_regression(targets, actuals)
 
-        # Should not crash
-        assert result is not None
+        # After filtering negatives, should have 22+ valid pairs (>20)
+        assert result.sufficient_data
+        assert result.n_training_samples >= 22
+        assert len(result.calibration_function) > 0
 
-    def test_out_of_range_rpe_clipped(self):
-        """RPE values >10 are clipped to 10."""
-        targets = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 12.0] * 3  # 24 with >10
-        actuals = [2.1, 2.9, 4.2, 4.8, 6.1, 6.9, 8.2, 10.5] * 3
+    def test_out_of_range_rpe_filtered(self):
+        """RPE values >10 are filtered out; remaining valid pairs fit."""
+        # 25 pairs total with 2 out-of-range values → 22+ valid pairs after filtering
+        targets = (
+            [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 12.0]
+            + [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+            + [2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 11.0]
+        )
+        actuals = (
+            [2.1, 2.9, 4.2, 4.8, 6.1, 6.9, 8.2, 9.1, 9.0]
+            + [2.2, 3.2, 4.1, 5.2, 6.2, 7.1, 8.1, 9.2, 10.1]
+            + [2.6, 3.6, 4.6, 5.6, 6.6, 7.6, 7.5]
+        )
 
         with patch("scripts.calibrate_score.logger"):
             result = fit_isotonic_regression(targets, actuals)
 
-        # Should handle clipping and either fit or return default
-        assert result is not None
+        # After filtering out-of-range, should have 22+ valid pairs (>20)
+        assert result.sufficient_data
+        assert result.n_training_samples >= 22
+        assert len(result.calibration_function) > 0
 
     def test_calibration_function_is_monotonic(self):
         """Output calibration function must be monotonically increasing."""
@@ -342,12 +372,13 @@ class TestCLI:
 
         assert temp_output_path.exists()
 
-    def test_main_with_default_output_path(self):
-        """Main should use default output path if not specified (with mocked DB)."""
+    def test_main_with_custom_output_path(self, temp_output_path: Path):
+        """Main should work with explicit output path (with mocked DB)."""
         with patch("scripts.calibrate_score.load_rpe_data_from_db", new_callable=AsyncMock) as mock_load:
             mock_load.return_value = ([], [])
             with patch("scripts.calibrate_score.async_session"):
-                exit_code = main([])
+                exit_code = main(["--output-path", str(temp_output_path)])
 
-        # Should not crash
+        # Should succeed and create file
         assert exit_code == 0
+        assert temp_output_path.exists()

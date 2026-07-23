@@ -10,7 +10,7 @@ graceful degradation to identity (1:1 mapping) when insufficient data or errors 
 
 Run directly (loads the real DB and writes the calibration artifact):
 
-    python -m app.scripts.calibrate_score [--output-path PATH] [--lookback-days N]
+    python -m scripts.calibrate_score [--output-path PATH] [--lookback-days N]
 """
 
 from __future__ import annotations
@@ -86,11 +86,6 @@ class CalibrationResult:
         }
 
 
-def _clamp_rpe(value: float) -> float:
-    """Clamp RPE value to [0, 10] range."""
-    return max(0.0, min(10.0, value))
-
-
 def _is_valid_rpe(value: float) -> bool:
     """Check if RPE value is valid (not NaN, not negative, in range)."""
     try:
@@ -102,8 +97,8 @@ def _is_valid_rpe(value: float) -> bool:
 def fit_isotonic_regression(targets: list[float], actuals: list[float]) -> CalibrationResult:
     """Fit isotonic regression to (target_rpe, actual_rpe) pairs.
 
-    Deterministic: fixed `random_state`, inputs sorted before fitting, outputs
-    rounded to fixed precision.
+    Deterministic: inputs sorted before fitting, outputs rounded to fixed precision.
+    (Note: JSON artifacts include timestamps, so files are not byte-identical across runs.)
 
     Degrades gracefully (identity function + logged warning, never raises) when:
     - Fewer than MIN_SESSIONS_TO_TRAIN valid pairs
@@ -246,11 +241,12 @@ async def load_rpe_data_from_db(
         actuals = []
 
         for log in logs:
-            # Get actual RPE from WorkoutSetLog rows for this session
+            # Get actual RPE from WorkoutSetLog rows for this session (RPE effort method only)
             actual_rpe_stmt = select(func.avg(WorkoutSetLog.actual_rpe)).where(
                 (WorkoutSetLog.workout_id == log.workout_id)
                 & (WorkoutSetLog.user_id == user_id)
                 & (WorkoutSetLog.actual_rpe.isnot(None))
+                & (WorkoutSetLog.effort_method == "rpe")
             )
             actual_rpe_result = await session.execute(actual_rpe_stmt)
             avg_actual_rpe = actual_rpe_result.scalar()
