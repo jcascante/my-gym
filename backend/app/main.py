@@ -12,6 +12,7 @@ from app.api.v1 import (
     templates_router,
     training_environments_router,
     users_router,
+    users_workout_router,
 )
 from app.core import AppException, get_logger, settings, setup_logging
 
@@ -90,6 +91,7 @@ app.include_router(templates_router, prefix=settings.API_V1_STR)
 app.include_router(programs_router, prefix=settings.API_V1_STR)
 app.include_router(injuries_router, prefix=settings.API_V1_STR)
 app.include_router(logging_router, prefix=settings.API_V1_STR)
+app.include_router(users_workout_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")

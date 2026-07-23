@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class UserWorkoutLogCreate(BaseModel):
@@ -35,6 +35,20 @@ class WorkoutSetLogCreate(BaseModel):
     actual_weight: Optional[float] = None
     actual_reps: Optional[int] = None
     actual_rpe: Optional[float] = Field(None, ge=1.0, le=10.0)
+
+    @field_validator("actual_weight")
+    @classmethod
+    def validate_weight(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
+            raise ValueError("Weight must be >= 0")
+        return v
+
+    @field_validator("actual_reps")
+    @classmethod
+    def validate_reps(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and (v < 1 or v > 100):
+            raise ValueError("Reps must be between 1 and 100")
+        return v
 
 
 class WorkoutSetLogOut(BaseModel):
