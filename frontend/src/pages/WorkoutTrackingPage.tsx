@@ -211,8 +211,8 @@ export default function WorkoutTrackingPage() {
   return (
     <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900 flex flex-col">
       {/* Header */}
-      <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 p-4 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto">
+      <div className="sticky top-0 z-10 bg-neutral-50 dark:bg-neutral-900">
+        <div className="max-w-2xl mx-auto bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-sm mt-4 p-4">
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -310,8 +310,8 @@ export default function WorkoutTrackingPage() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700 p-4">
-        <div className="max-w-2xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 dark:bg-neutral-900">
+        <div className="max-w-2xl mx-auto bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-sm mb-4 p-4">
           {isExerciseComplete && currentExerciseIndex === totalExercises - 1 ? (
             <Button className="w-full" onClick={handleCompleteWorkout}>
               Complete Workout
