@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { useActiveProgram } from '@/hooks/usePrograms';
-import { Card, WorkoutCard, ProgressBar, StatCard } from '@/components';
+import { Button, Card, WorkoutCard, ProgressBar, StatCard, Spinner } from '@/components';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -48,9 +48,10 @@ export default function DashboardPage() {
         {/* Today's Workout Section */}
         {activeProgramId ? (
           isLoading ? (
-            <div className="card card-elevated p-8 text-center">
-              <p className="text-neutral-600 dark:text-neutral-400">Loading workout...</p>
-            </div>
+            <Card padding="lg" className="mb-8 flex items-center justify-center gap-3">
+              <Spinner size="sm" />
+              <p className="body-md text-neutral-600 dark:text-neutral-400">Loading workout...</p>
+            </Card>
           ) : todayWorkout ? (
             <div className="mb-8">
               <WorkoutCard
@@ -64,22 +65,25 @@ export default function DashboardPage() {
               />
             </div>
           ) : (
-            <div className="card card-elevated border-l-4 border-neutral-300 dark:border-neutral-600 mb-8 p-6">
+            <Card
+              padding="lg"
+              className="mb-8 border-l-4 border-neutral-300 dark:border-neutral-600"
+            >
               <p className="body-md text-neutral-600 dark:text-neutral-400">
                 No workouts scheduled for today.
               </p>
-            </div>
+            </Card>
           )
         ) : (
-          <div className="card card-elevated border-l-4 border-secondary-600 mb-8 p-6">
+          <Card padding="lg" className="mb-8 border-l-4 border-secondary-600">
             <h2 className="heading-lg mb-2">Get Started</h2>
             <p className="body-md text-neutral-600 dark:text-neutral-400 mb-4">
               Create your first workout program to get started.
             </p>
-            <button onClick={() => navigate('/programs/new')} className="btn btn-secondary">
+            <Button variant="primary" onClick={() => navigate('/programs/new')}>
               Create Program
-            </button>
-          </div>
+            </Button>
+          </Card>
         )}
 
         {/* This Week Section */}
