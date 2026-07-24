@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, Spinner, WeekTabs, SlotRow, CheckInWidget } from '@/components';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, Spinner, WeekTabs, SlotRow, CheckInWidget, Button } from '@/components';
 import { useProgramPreview } from '@/hooks/usePrograms';
 
 export default function ProgramPreviewPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const programId = Number(id);
   const { data, isLoading } = useProgramPreview(programId);
   const [active, setActive] = useState(1);
@@ -20,7 +21,16 @@ export default function ProgramPreviewPage() {
       <div className="space-y-4">
         {(data.weeks[String(active)] ?? []).map((w) => (
           <Card key={w.workout_id}>
-            <h3 className="font-semibold mb-2">{w.name}</h3>
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="font-semibold">{w.name}</h3>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => navigate(`/workouts/${w.workout_id}`)}
+              >
+                Start Tracking
+              </Button>
+            </div>
             {w.slots.map((s) => (
               <SlotRow key={s.workout_exercise_id} slot={s} readOnly={true} />
             ))}
