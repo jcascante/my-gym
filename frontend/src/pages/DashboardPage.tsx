@@ -1,16 +1,15 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
-import { useProgramPreview } from '@/hooks/usePrograms';
+import { useActiveProgram } from '@/hooks/usePrograms';
 import { Card, WorkoutCard, ProgressBar, StatCard } from '@/components';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const userProfile = useAuthStore((state) => state.userProfile);
-  const [activeProgramId] = useState<number | null>(null);
 
-  const { data: program, isLoading } = useProgramPreview(activeProgramId);
+  const { data: program, isLoading } = useActiveProgram();
+  const activeProgramId = program?.program_id ?? null;
 
   const today = new Date();
   const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
@@ -59,7 +58,9 @@ export default function DashboardPage() {
                 programName={program?.name || 'Your Program'}
                 weekNumber={1}
                 durationMin={userProfile?.workout_duration_min || 45}
-                onStartClick={() => navigate(`/workouts/${todayWorkout.workout_id}/track`)}
+                onStartClick={() =>
+                  navigate(`/workouts/${todayWorkout.workout_id}?programId=${activeProgramId}`)
+                }
               />
             </div>
           ) : (

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   SetLogger,
@@ -29,7 +29,7 @@ interface ExerciseProgress {
   exercise_name: string;
   sets: number;
   reps: number;
-  load: number;
+  load: number | null;
   rest_seconds: number;
   note: string | null;
   completedSets: LoggedSet[];
@@ -64,126 +64,8 @@ export default function WorkoutTrackingPage() {
   const [toast, setToast] = useState<{ message: string; icon?: string } | null>(null);
   const [readinessOpen, setReadinessOpen] = useState<'pre' | 'post' | null>(null);
 
-  // Define callbacks before any conditional returns (React hooks rules)
-  const handleLogSet = useCallback(
-    async (data: {
-      weight?: number;
-      reps?: number;
-      effort: number;
-      effort_method: EffortMethod;
-    }) => {
-      if (!workoutIdNum) {
-        console.error('Workout ID is missing');
-        return;
-      }
-
-      try {
-        await logSetLog(
-          workoutIdNum,
-          currentExercise.workout_exercise_id,
-          completedSetsCount + 1,
-          data.weight,
-          data.reps,
-          data.effort,
-          effortMethod,
-        );
-
-        const newSet: LoggedSet = {
-          setNumber: completedSetsCount + 1,
-          weight: data.weight,
-          reps: data.reps,
-          effort: data.effort,
-          effort_method: data.effort_method,
-          timestamp: new Date(),
-        };
-
-        const newExercises = [...exercises];
-        newExercises[currentExerciseIndex].completedSets.push(newSet);
-        setExercises(newExercises);
-
-        const isNowComplete = newExercises[currentExerciseIndex].completedSets.length >= totalSets;
-        if (isNowComplete) {
-          setToast({
-            message: `Great! ${currentExercise.exercise_name} complete! 💪`,
-            icon: '🎉',
-          });
-
-          // Auto-advance to next exercise after 1.5s
-          if (currentExerciseIndex < exercises.length - 1) {
-            setTimeout(() => {
-              setCurrentExerciseIndex((prev) => prev + 1);
-              setToast({
-                message: `Next up: ${newExercises[currentExerciseIndex + 1].exercise_name}`,
-                icon: '▶️',
-              });
-            }, 1500);
-          }
-        } else {
-          const remaining = totalSets - newExercises[currentExerciseIndex].completedSets.length;
-          setToast({
-            message: `Set logged! ${remaining} more to go! 💪`,
-            icon: '✓',
-          });
-        }
-      } catch (err) {
-        console.error('Failed to log set:', err);
-        setToast({
-          message: 'Failed to log set. Please try again.',
-          icon: '⚠️',
-        });
-      }
-    },
-    [
-      workoutIdNum,
-      currentExercise,
-      completedSetsCount,
-      currentExerciseIndex,
-      exercises,
-      effortMethod,
-      totalSets,
-    ],
-  );
-
-  const handleCompleteWorkout = () => {
-    setReadinessOpen('post');
-  };
-
-  const handleSubmitReadiness = useCallback(
-    async (readiness: number) => {
-      if (!workoutIdNum) {
-        console.error('Workout ID is missing');
-        return;
-      }
-
-      try {
-        await postWorkoutReadiness(
-          workoutIdNum,
-          readiness,
-          readinessOpen === 'pre' ? 'pre' : 'post',
-        );
-        setToast({
-          message: `Readiness recorded: ${readiness}/5`,
-          icon: '✓',
-        });
-
-        if (readinessOpen === 'post') {
-          navigate('/dashboard');
-        }
-      } catch (err) {
-        console.error('Failed to record readiness:', err);
-        setToast({
-          message: 'Failed to record readiness. Please try again.',
-          icon: '⚠️',
-        });
-      } finally {
-        setReadinessOpen(null);
-      }
-    },
-    [readinessOpen, workoutIdNum, navigate],
-  );
-
   // Initialize exercises from workout details
-  React.useEffect(() => {
+  useEffect(() => {
     if (workoutDetails?.slots) {
       const exs = workoutDetails.slots.map((slot) => ({
         workout_exercise_id: slot.workout_exercise_id,
@@ -224,6 +106,107 @@ export default function WorkoutTrackingPage() {
   const totalExercises = exercises.length;
   const completedExercises = exercises.filter((ex) => ex.completedSets.length >= ex.sets).length;
   const progressPercentage = (completedExercises / totalExercises) * 100;
+
+  const handleLogSet = async (data: {
+    weight?: number;
+    reps?: number;
+    effort: number;
+    effort_method: EffortMethod;
+  }) => {
+    if (!workoutIdNum) {
+      console.error('Workout ID is missing');
+      return;
+    }
+
+    try {
+      await logSetLog(
+        workoutIdNum,
+        currentExercise.workout_exercise_id,
+        completedSetsCount + 1,
+        data.weight,
+        data.reps,
+        data.effort,
+        effortMethod,
+      );
+
+      const newSet: LoggedSet = {
+        setNumber: completedSetsCount + 1,
+        weight: data.weight,
+        reps: data.reps,
+        effort: data.effort,
+        effort_method: data.effort_method,
+        timestamp: new Date(),
+      };
+
+      const newExercises = [...exercises];
+      newExercises[currentExerciseIndex].completedSets.push(newSet);
+      setExercises(newExercises);
+
+      const isNowComplete = newExercises[currentExerciseIndex].completedSets.length >= totalSets;
+      if (isNowComplete) {
+        setToast({
+          message: `Great! ${currentExercise.exercise_name} complete! 💪`,
+          icon: '🎉',
+        });
+
+        // Auto-advance to next exercise after 1.5s
+        if (currentExerciseIndex < exercises.length - 1) {
+          const nextIndex = currentExerciseIndex + 1;
+          const nextExerciseName = newExercises[nextIndex].exercise_name;
+          setTimeout(() => {
+            setCurrentExerciseIndex(nextIndex);
+            setToast({
+              message: `Next up: ${nextExerciseName}`,
+              icon: '▶️',
+            });
+          }, 1500);
+        }
+      } else {
+        const remaining = totalSets - newExercises[currentExerciseIndex].completedSets.length;
+        setToast({
+          message: `Set logged! ${remaining} more to go! 💪`,
+          icon: '✓',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to log set:', err);
+      setToast({
+        message: 'Failed to log set. Please try again.',
+        icon: '⚠️',
+      });
+    }
+  };
+
+  const handleCompleteWorkout = () => {
+    setReadinessOpen('post');
+  };
+
+  const handleSubmitReadiness = async (readiness: number) => {
+    if (!workoutIdNum) {
+      console.error('Workout ID is missing');
+      return;
+    }
+
+    try {
+      await postWorkoutReadiness(workoutIdNum, readiness, readinessOpen === 'pre' ? 'pre' : 'post');
+      setToast({
+        message: `Readiness recorded: ${readiness}/5`,
+        icon: '✓',
+      });
+
+      if (readinessOpen === 'post') {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      console.error('Failed to record readiness:', err);
+      setToast({
+        message: 'Failed to record readiness. Please try again.',
+        icon: '⚠️',
+      });
+    } finally {
+      setReadinessOpen(null);
+    }
+  };
 
   return (
     <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900 flex flex-col">
@@ -302,7 +285,7 @@ export default function WorkoutTrackingPage() {
               <div>
                 <p className="text-xs text-neutral-600 dark:text-neutral-400">Target</p>
                 <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                  {currentExercise.load} lbs × {currentExercise.reps}
+                  {currentExercise.load ?? '—'} × {currentExercise.reps}
                 </p>
               </div>
               <div>

@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import ProgramTemplate, Workout, WorkoutProgram
+from app.models import ProgramStatus, ProgramTemplate, Workout, WorkoutProgram
 
 
 async def list_active_templates(db: AsyncSession) -> list[ProgramTemplate]:
@@ -29,3 +29,13 @@ async def save_program(db: AsyncSession, program: WorkoutProgram) -> WorkoutProg
     await db.commit()
     await db.refresh(program)
     return program
+
+
+async def get_active_program(db: AsyncSession, user_id: int) -> WorkoutProgram | None:
+    result = await db.execute(
+        select(WorkoutProgram)
+        .where(WorkoutProgram.user_id == user_id, WorkoutProgram.status == ProgramStatus.ACTIVE)
+        .options(selectinload(WorkoutProgram.workouts).selectinload(Workout.exercises))
+        .order_by(WorkoutProgram.id.desc())
+    )
+    return result.scalars().first()

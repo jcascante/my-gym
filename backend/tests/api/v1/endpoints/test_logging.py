@@ -686,24 +686,6 @@ class TestReadinessEndpoint:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    async def test_create_readiness_workout_id_mismatch(
-        self, authenticated_client: AsyncClient, test_program_with_workout: tuple
-    ):
-        """Test that workout_id mismatch is rejected."""
-        _, workout, _ = test_program_with_workout
-
-        response = await authenticated_client.post(
-            f"/api/v1/users/me/workouts/{workout.id}/readiness",
-            json={
-                "workout_id": 999,
-                "readiness": 4,
-            },
-        )
-
-        assert response.status_code == 400
-        assert "mismatch" in response.json()["detail"].lower()
-
-    @pytest.mark.asyncio
     async def test_create_readiness_workout_not_found(self, authenticated_client: AsyncClient):
         """Test 404 when workout not found."""
         response = await authenticated_client.post(

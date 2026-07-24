@@ -14,7 +14,7 @@ from app.core.database import get_db
 from app.crud.checkin import create_check_in, list_check_ins_for_program
 from app.crud.exercise import get_exercises_by_ids, list_exercises
 from app.crud.injury import list_injury_records
-from app.crud.program import get_program, get_template, list_active_templates, save_program
+from app.crud.program import get_active_program, get_program, get_template, list_active_templates, save_program
 from app.crud.training_environment import get_training_environment
 from app.models import CheckIn, InjuryRegion, ProgramStatus, TrainingEnvironment, User, WorkoutProgram
 from app.schemas.checkin import CheckInCreate, CheckInResponse, CheckInResultResponse
@@ -257,6 +257,18 @@ async def _load(db: AsyncSession, user: User, program_id: int) -> tuple[WorkoutP
     definition = TemplateDefinition.from_orm_template(template)
     style = program.constraints.get("progression_style", "consistent")
     return program, apply_progression_style(definition, style)
+
+
+@router.get("/active/current", response_model=ProgramPreviewOut)
+async def get_active(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> ProgramPreviewOut:
+    program = await get_active_program(db, user.id)
+    if program is None:
+        raise ProgramNotFoundError()
+    template = await get_template(db, program.template_id)
+    definition = TemplateDefinition.from_orm_template(template)
+    style = program.constraints.get("progression_style", "consistent")
+    definition = apply_progression_style(definition, style)
+    return await _preview_out(db, program, definition)
 
 
 @router.get("/{program_id}", response_model=ProgramPreviewOut)

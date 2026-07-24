@@ -48,6 +48,18 @@ async def test_full_flow(client, auth_headers, seeded_templates, seeded_exercise
     r = await client.post(f"/api/v1/programs/{pid}/accept", headers=auth_headers)
     assert r.status_code == 200 and r.json()["status"] == "active"
 
+    # 5. active/current returns the just-accepted program
+    r = await client.get("/api/v1/programs/active/current", headers=auth_headers)
+    assert r.status_code == 200
+    assert r.json()["program_id"] == pid
+    assert r.json()["status"] == "active"
+
+
+@pytest.mark.asyncio
+async def test_active_current_returns_404_when_no_active_program(client, auth_headers):
+    r = await client.get("/api/v1/programs/active/current", headers=auth_headers)
+    assert r.status_code == 404
+
 
 @pytest.mark.asyncio
 async def test_exclude_persists_to_db_not_just_in_memory_response(

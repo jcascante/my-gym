@@ -29,6 +29,26 @@ export async function getProgramPreview(id: number): Promise<ProgramPreview> {
   return data;
 }
 
+export async function getActiveProgram(): Promise<ProgramPreview | null> {
+  try {
+    const { data } = await apiClient.get<ProgramPreview>('/programs/active/current');
+    return data;
+  } catch (err: unknown) {
+    if (isNotFoundError(err)) return null;
+    throw err;
+  }
+}
+
+function isNotFoundError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'response' in err &&
+    typeof (err as { response?: { status?: number } }).response?.status === 'number' &&
+    (err as { response: { status: number } }).response.status === 404
+  );
+}
+
 export async function submitFeedback(id: number, action: FeedbackAction): Promise<ProgramPreview> {
   const { data } = await apiClient.post<ProgramPreview>(`/programs/${id}/feedback`, action);
   return data;

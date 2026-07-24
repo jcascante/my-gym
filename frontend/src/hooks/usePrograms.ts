@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   acceptProgram,
   createDraft,
+  getActiveProgram,
   getProgramPreview,
   getSlotAlternatives,
   matchTemplates,
@@ -17,7 +18,17 @@ import type {
   TemplateMatchResponse,
 } from '@/types/program';
 
-export const programKeys = { preview: (id: number) => ['program', id] as const };
+export const programKeys = {
+  preview: (id: number) => ['program', id] as const,
+  active: ['program', 'active'] as const,
+};
+
+export function useActiveProgram() {
+  return useQuery({
+    queryKey: programKeys.active,
+    queryFn: getActiveProgram,
+  });
+}
 
 export interface InfiniteTemplateMatchesState {
   matches: TemplateMatch[];
