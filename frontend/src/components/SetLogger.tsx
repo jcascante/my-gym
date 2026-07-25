@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { EffortMethod } from '../types/programCreation';
+import { Button } from './Button';
+import { FormField } from './FormField';
 
 interface SetLoggerProps {
   effort_method: EffortMethod;
@@ -70,60 +72,41 @@ export const SetLogger: React.FC<SetLoggerProps> = ({ effort_method, onSetLogged
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div>
-        <label htmlFor="weight-input" className="block text-sm font-medium">
-          Weight (optional)
-        </label>
-        <input
-          id="weight-input"
-          type="number"
-          step="0.5"
-          value={weight}
-          onChange={(e) => setWeight(e.target.value === '' ? '' : Number(e.target.value))}
-          onBlur={handleWeightBlur}
-          placeholder="0"
-          className="border px-2 py-1 rounded"
-        />
-      </div>
+      <FormField
+        id="weight-input"
+        label="Weight (optional)"
+        type="number"
+        step="0.5"
+        value={weight}
+        onChange={(e) => setWeight(e.target.value === '' ? '' : Number(e.target.value))}
+        onBlur={handleWeightBlur}
+        placeholder="0"
+      />
 
-      <div>
-        <label htmlFor="reps-input" className="block text-sm font-medium">
-          Reps (optional)
-        </label>
-        <input
-          id="reps-input"
-          type="number"
-          value={reps}
-          onChange={(e) => setReps(e.target.value === '' ? '' : Number(e.target.value))}
-          onBlur={handleRepsBlur}
-          placeholder="0"
-          className="border px-2 py-1 rounded"
-        />
-      </div>
+      <FormField
+        id="reps-input"
+        label="Reps (optional)"
+        type="number"
+        value={reps}
+        onChange={(e) => setReps(e.target.value === '' ? '' : Number(e.target.value))}
+        onBlur={handleRepsBlur}
+        placeholder="0"
+      />
 
-      <div>
-        <label htmlFor="effort-input" className="block text-sm font-medium">
-          {label}
-        </label>
-        <input
-          id="effort-input"
-          type="number"
-          step={effort_method === 'rpe' ? 0.5 : 1}
-          value={effort}
-          onChange={(e) => setEffort(e.target.value === '' ? '' : Number(e.target.value))}
-          onBlur={handleEffortBlur}
-          placeholder="0"
-          className="border px-2 py-1 rounded"
-        />
-      </div>
+      <FormField
+        id="effort-input"
+        label={label}
+        type="number"
+        step={effort_method === 'rpe' ? 0.5 : 1}
+        value={effort}
+        onChange={(e) => setEffort(e.target.value === '' ? '' : Number(e.target.value))}
+        onBlur={handleEffortBlur}
+        placeholder="0"
+      />
 
-      <button
-        type="submit"
-        disabled={effort === ''}
-        className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-      >
+      <Button type="submit" variant="primary" disabled={effort === ''} className="w-full">
         Log Set
-      </button>
+      </Button>
     </form>
   );
 };
