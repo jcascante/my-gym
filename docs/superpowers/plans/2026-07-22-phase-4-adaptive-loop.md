@@ -856,7 +856,64 @@ Claude-Session: https://claude.ai/code/session_01R61M9QX1crhxixZH3f3bpu"
 
 ---
 
-[Remaining tasks 4.2–4.6 follow same structure but are deferred until tasks 4.1a–d complete. When ready to continue, follow the same bite-sized step pattern for each.]
+[Tasks 4.2–4.6 (autoregulation, reactive deload, learning-to-rank, versioning, calibration) are complete — implemented, reviewed, and merged into `engine-refactor`.]
+
+---
+
+## Task 4.7: SetLogger Visual Consistency
+
+**Files:**
+- Modify: `frontend/src/components/SetLogger.tsx`
+- Modify: `frontend/src/components/SetLogger.test.tsx` (update only if selectors break)
+
+**Interfaces:**
+- Consumes: existing `FormField` (`frontend/src/components/FormField.tsx`) and `Button` (`frontend/src/components/Button.tsx`) shared components.
+- No change to `SetLoggerProps` (`effort_method`, `onSetLogged`) — pure markup swap.
+
+**Context:**
+- `SetLogger` is the only unstyled component in the workout-tracking flow: raw `<input className="border px-2 py-1 rounded">` (no dark-mode classes) and a hardcoded `bg-blue-600` submit button, inconsistent with the rest of the app (`CompletedSets`, `ReadinessModal`, `Toast`, `WorkoutTrackingPage` all already themed).
+- `FormField` already provides label/input pairing, dark-mode styling via the `.input`/`.input-group`/`.input-label` CSS classes, and error-state styling — used across onboarding forms (`TrainingEnvironmentForm`, `InjuryRecordForm`, `ProgramWizardStep1`).
+- `Button` already provides a themed `primary` variant with built-in `disabled` styling — used by `WorkoutCard`, `DashboardPage`, etc.
+- Scope is visual only: keep the existing `clamp`/blur-validation logic, `getEffortBounds()` switch, and `handleSubmit` reset behavior unchanged.
+
+---
+
+### Step 1: Replace raw inputs with FormField
+
+- [x] Open `frontend/src/components/SetLogger.tsx`
+- [x] Import `FormField` and `Button` (used direct relative imports `./Button`, `./FormField` to match sibling form components' convention, not the `@/components` barrel)
+- [x] Replace the Weight `<div><label/><input/></div>` block with `FormField` (kept explicit `id="weight-input"` rather than relying on auto-generated id)
+- [x] Replace the Reps block the same way
+- [x] Replace the Effort block the same way
+- [x] Replace the raw `<button type="submit" ...>` with `Button variant="primary"`
+
+---
+
+### Step 2: Run tests
+
+- [x] Run: `docker-compose exec frontend npm run test -- SetLogger.test.tsx` — PASS, all 8 tests, no test-file changes needed
+- [x] Run full suite/type-check/lint/prettier — 278 tests passed, `type-check` clean, `lint` clean, `prettier --check` shows only pre-existing warnings (coverage/dist/config files, none touched by this task)
+
+---
+
+### Step 3: Visual check
+
+- [ ] SKIPPED — user declined browser-based verification this session. Manual check of light/dark mode and teal button color still outstanding before considering this task fully verified.
+
+---
+
+### Step 4: Commit
+
+- [ ] Stage and commit:
+  ```bash
+  git add frontend/src/components/SetLogger.tsx frontend/src/components/SetLogger.test.tsx
+  git commit -m "style(frontend): use shared FormField/Button in SetLogger for theme consistency
+
+  SetLogger was the only unstyled component in the workout-tracking flow
+  (raw inputs, no dark mode, hardcoded blue button). No behavior change.
+
+  Claude-Session: https://claude.ai/code/session_01VFBHYHNffb4yU9JrmyFPNm"
+  ```
 
 ---
 
@@ -874,10 +931,11 @@ Claude-Session: https://claude.ai/code/session_01R61M9QX1crhxixZH3f3bpu"
 
 ## Exit Criteria
 
-- ✅ All 6 tasks implemented, committed, pushed to `engine-refactor-phase4`
+- ✅ Tasks 4.1–4.6 implemented, committed, merged into `engine-refactor`
 - ✅ `pytest backend/` ≥80% coverage
 - ✅ `mypy app/`, `ruff check .`, `black --check .` all clean
 - ✅ Frontend: `npm run test`, `lint`, `type-check`, `build` all clean
 - ✅ Alembic migrations (4.5) up/down tested
 - ✅ E2E: log RPE > target → autoregulation adjustment; readiness < 3 → deload fires
 - ✅ Determinism: same logged inputs → byte-identical load adjustments
+- [ ] Task 4.7: SetLogger uses shared `FormField`/`Button` components, matches app theme in light/dark mode
