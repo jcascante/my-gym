@@ -8,7 +8,9 @@ import {
   Card,
   ReadinessModal,
   Spinner,
+  Alert,
 } from '@/components';
+import { formatSlotNote } from '@/utils/slotNote';
 import type { EffortMethod } from '@/types/programCreation';
 import { useAuthStore } from '@/store/auth';
 import { useWorkoutDetails } from '@/hooks/useWorkoutDetails';
@@ -32,6 +34,7 @@ interface ExerciseProgress {
   load: number | null;
   rest_seconds: number;
   note: string | null;
+  adjustment_reason: string | null;
   completedSets: LoggedSet[];
 }
 
@@ -63,6 +66,7 @@ export default function WorkoutTrackingPage() {
   const [exercises, setExercises] = useState<ExerciseProgress[]>([]);
   const [toast, setToast] = useState<{ message: string; icon?: string } | null>(null);
   const [readinessOpen, setReadinessOpen] = useState<'pre' | 'post' | null>(null);
+  const [deloadBannerDismissed, setDeloadBannerDismissed] = useState(false);
 
   // Initialize exercises from workout details
   useEffect(() => {
@@ -75,6 +79,7 @@ export default function WorkoutTrackingPage() {
         load: slot.load,
         rest_seconds: slot.rest_seconds,
         note: slot.note,
+        adjustment_reason: slot.adjustment_reason,
         completedSets: [],
       }));
       setExercises(exs);
@@ -259,6 +264,20 @@ export default function WorkoutTrackingPage() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto p-4 pb-24">
+          {/* Reactive Deload Banner */}
+          {workoutDetails.reactive_deload &&
+            !deloadBannerDismissed &&
+            workoutDetails.deload_reason && (
+              <Alert
+                type="info"
+                dismissible
+                onDismiss={() => setDeloadBannerDismissed(true)}
+                className="mb-4"
+              >
+                {workoutDetails.deload_reason}
+              </Alert>
+            )}
+
           {/* Set Logger */}
           <Card className="mb-8">
             <SetLogger effort_method={effortMethod} onSetLogged={handleLogSet} />
@@ -300,8 +319,13 @@ export default function WorkoutTrackingPage() {
                 <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
                   <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">Note</p>
                   <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                    {currentExercise.note}
+                    {formatSlotNote(currentExercise.note)}
                   </p>
+                  {currentExercise.adjustment_reason && (
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                      {currentExercise.adjustment_reason}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
