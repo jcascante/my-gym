@@ -86,6 +86,7 @@ export interface MatchRequest {
   weight_unit: WeightUnit;
   progression_style: ProgressionStyle;
   effort_method: EffortMethod | '';
+  start_date: string;
   movement_preferences?: Record<EquipmentFamily, number>;
   complementary_focus?: boolean;
   variety_preference?: VarietyPreference;
