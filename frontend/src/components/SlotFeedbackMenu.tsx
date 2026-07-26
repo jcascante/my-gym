@@ -25,7 +25,7 @@ export function SlotFeedbackMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-10 bg-white dark:bg-neutral-800 shadow rounded border border-neutral-200 dark:border-neutral-600 text-sm text-neutral-900 dark:text-neutral-50"
+          className="absolute right-0 top-full mt-1 z-20 min-w-max bg-white dark:bg-neutral-800 shadow-lg rounded border border-neutral-200 dark:border-neutral-600 text-sm text-neutral-900 dark:text-neutral-50"
         >
           <button
             role="menuitem"
