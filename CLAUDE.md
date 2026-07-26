@@ -2,14 +2,6 @@
 
 Guidance for developing **MyGym** — a personalized workout program manager. Users complete onboarding, get AI-generated programs, and track daily workouts with feedback.
 
-## Stack: React 19 + FastAPI + PostgreSQL + Docker
-
-**Backend**: FastAPI (async), Pydantic V2, SQLAlchemy 2.0+ async, Alembic migrations, pytest
-**Frontend**: React + TypeScript, Vite, Zustand, TanStack Query, Vitest
-**Database**: PostgreSQL (prod), SQLite (testing)
-**Testing**: TDD - write tests before code (>80% coverage)
-**Quality**: Ruff, Black, mypy (strict), ESLint, Prettier, pre-commit hooks
-
 ## Core Domain
 
 **MyGym MVP**: User auth → onboarding (profile + goals) → AI program generation → daily tracking + feedback
@@ -17,14 +9,6 @@ Guidance for developing **MyGym** — a personalized workout program manager. Us
 **Key Models**: User, UserProfile, WorkoutProgram, Workout (daily), Exercise, UserWorkoutLog, Feedback
 **Key Flows**: Signup/Login → Onboarding → Create Program → Track Workouts → View Progress
 See [PROJECT_SCOPE.md](./PROJECT_SCOPE.md) for full data models and features.
-
-## Architecture
-
-Independent Docker services:
-- **Frontend** (5173 dev) → REST /api/v1/ → **Backend** (8000)
-- **Backend** → async SQLAlchemy → **PostgreSQL** (5432)
-- **Program Engine**: Rules-based (templates + user data → exercise schedule)
-- **Docs**: http://localhost:8000/docs (Swagger UI, auto-generated)
 
 ## Quick Commands
 
@@ -61,42 +45,6 @@ docker-compose exec postgres psql -U postgres -d app_db
 - **Program Generation**: Rules-based (template selection → exercise assignment → progression)
 - **Workout Tracking**: Immutable logs (append-only for audit trail)
 
-## Setup
-
-```bash
-# One-time setup
-git clone <repo> && cd my-gym
-docker-compose up  # Starts everything
-
-# Access points:
-# Frontend: http://localhost:5173
-# Backend: http://localhost:8000
-# Backend docs: http://localhost:8000/docs
-# Database: localhost:5432
-```
-
-## Project Structure
-
-**Backend**: `backend/app/`
-- `models/` - SQLAlchemy models (User, UserProfile, WorkoutProgram, Workout, Exercise, UserWorkoutLog)
-- `schemas/` - Pydantic schemas (request/response types)
-- `api/v1/endpoints/` - Routes (auth, user, programs, workouts, logs, feedback)
-- `services/` - Business logic (program generation, tracking)
-- `crud/` - Database operations
-- `core/` - Config, security, custom exceptions
-
-**Frontend**: `frontend/src/`
-- `components/` - Reusable components (forms, cards, charts)
-- `pages/` - Route pages (login, onboarding, dashboard, tracking)
-- `api/` - API client functions
-- `hooks/` - Custom hooks (useProgram, useTracking, useUser)
-- `store/` - Zustand stores (auth, user, workout)
-- `types/` - TypeScript interfaces
-
-**Tests**: `backend/tests/`, `frontend/src/tests/` (unit + integration)
-**Migrations**: `backend/migrations/` (Alembic version control)
-**Docs**: `PROJECT_SCOPE.md` (features + data models), `README.md` (quickstart)
-
 ## MyGym-Specific Patterns
 
 **Program Generation**:
@@ -118,25 +66,8 @@ docker-compose up  # Starts everything
 
 ## Skills & Patterns
 
-Use `.claude/skills/` for detailed guidance:
-- `api-testing` - Backend testing patterns
-- `react-component-testing` - Frontend testing patterns
-- `fastapi-async-patterns` - Async/await, dependency injection
-- `react-typescript-patterns` - React + TypeScript patterns
-- `rest-api-design` - API standards, status codes, error handling
-- `database-migrations` - Schema change workflows
-- `docker-workflows` - Docker operations
-- `code-quality` - Linting, formatting, pre-commit hooks
-- `token-optimization` - Token cost reduction strategies
-
 See `.claude/skills/README.md` for full list and usage.
 
 ## Development Workflow
 
-For small, well-scoped features and bug fixes, use `/build-feature` to implement with Haiku (cheap) and validate with Sonnet (quality):
-
-```
-/build-feature <task description>
-```
-
-This two-tier workflow (Haiku implements → Sonnet reviews) keeps token costs low while catching bugs before they compound. See `.claude/commands/build-feature.md` for details and cost estimates.
+For small, well-scoped features and bug fixes, use `/build-feature`. See `.claude/commands/build-feature.md` for details.
