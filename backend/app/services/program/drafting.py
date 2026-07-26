@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Any
 
 from app.models import Exercise, ProgramStatus, ProgramTemplate, Workout, WorkoutExercise, WorkoutProgram
@@ -75,6 +76,7 @@ def build_draft(
     environment_id: int,
     days_per_week: int,
     duration_weeks: int,
+    start_date: date | None = None,
     weight_unit: str,
     required_inputs: dict[str, float],
     progression_style: str = "consistent",
@@ -108,6 +110,7 @@ def build_draft(
         status=ProgramStatus.DRAFT,
         duration_weeks=duration_weeks,
         days_per_week=days_per_week,
+        start_date=start_date,
         weight_unit=weight_unit,
         model_version=resolved_model_version,
         ranking_weights_version=resolved_ranking_weights_version,

@@ -216,6 +216,7 @@ async def draft(
         environment_id=environment.id,
         days_per_week=data.days_per_week,
         duration_weeks=data.duration_weeks,
+        start_date=data.start_date,
         weight_unit=data.weight_unit,
         required_inputs=data.required_inputs,
         progression_style=data.progression_style.value,

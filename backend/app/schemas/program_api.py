@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -72,6 +73,7 @@ class DraftRequest(MatchRequest):
     template_id: int
     required_inputs: dict[str, float] = {}
     effort_method: EffortMethod | None = None
+    start_date: date
 
 
 class FeedbackRequest(BaseModel):

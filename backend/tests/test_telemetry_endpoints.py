@@ -22,6 +22,7 @@ def _match_body(environment_id: int) -> dict:
         "fitness_focus": "strength",
         "weight_unit": "kg",
         "duration_weeks": 8,
+        "start_date": "2026-01-05",
     }
 
 

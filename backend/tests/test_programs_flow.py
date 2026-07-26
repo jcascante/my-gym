@@ -20,6 +20,7 @@ async def test_full_flow(client, auth_headers, seeded_templates, seeded_exercise
         "fitness_focus": "strength",
         "weight_unit": "kg",
         "duration_weeks": 8,
+        "start_date": "2026-01-05",
     }
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
     assert r.status_code == 200
@@ -77,6 +78,7 @@ async def test_exclude_persists_to_db_not_just_in_memory_response(
         "fitness_focus": "strength",
         "weight_unit": "kg",
         "duration_weeks": 8,
+        "start_date": "2026-01-05",
     }
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
     template_id = r.json()["matches"][0]["template_id"]
@@ -112,6 +114,7 @@ async def test_draft_stores_engine_config_version_in_constraints(
         "fitness_focus": "strength",
         "weight_unit": "kg",
         "duration_weeks": 8,
+        "start_date": "2026-01-05",
     }
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
     template_id = r.json()["matches"][0]["template_id"]
@@ -137,6 +140,7 @@ async def test_draft_malformed_required_inputs_returns_422(
         "fitness_focus": "strength",
         "weight_unit": "kg",
         "duration_weeks": 8,
+        "start_date": "2026-01-05",
     }
     r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
     template_id = r.json()["matches"][0]["template_id"]
@@ -144,6 +148,51 @@ async def test_draft_malformed_required_inputs_returns_422(
     draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": "not-a-number"}}
     r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
     assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_draft_requires_start_date(client, auth_headers, seeded_templates, seeded_exercises, user_environment):
+    body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+        "start_date": "2026-08-03",
+    }
+    r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
+    template_id = r.json()["matches"][0]["template_id"]
+
+    draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80}}
+    del draft_body["start_date"]
+    r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
+    assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_draft_persists_submitted_start_date(
+    client, auth_headers, seeded_templates, seeded_exercises, user_environment, db_session
+):
+    body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 8,
+        "start_date": "2026-08-03",
+    }
+    r = await client.post("/api/v1/programs/match", json=body, headers=auth_headers)
+    template_id = r.json()["matches"][0]["template_id"]
+
+    draft_body = {**body, "template_id": template_id, "required_inputs": {"squat_start": 80}}
+    r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
+    assert r.status_code == 201
+    pid = r.json()["program_id"]
+
+    row = await db_session.execute(text("SELECT start_date FROM workout_programs WHERE id = :pid"), {"pid": pid})
+    assert row.scalar_one() == "2026-08-03"
 
 
 @pytest.mark.asyncio
@@ -289,6 +338,7 @@ async def _drafted_program_id(authenticated_client, user_environment) -> int:
         "fitness_focus": "strength",
         "weight_unit": "kg",
         "duration_weeks": 8,
+        "start_date": "2026-01-05",
     }
     r = await authenticated_client.post("/api/v1/programs/match", json=body)
     template_id = r.json()["matches"][0]["template_id"]
