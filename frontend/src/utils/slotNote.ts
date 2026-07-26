@@ -3,6 +3,8 @@
 const NOTE_LABELS: Record<string, string> = {
   deload: 'Deload week',
   ramp_capped: 'Capped for safe progression',
+  autoregulated: 'Load adjusted',
+  reactive_deload: 'Deload week',
 };
 
 export function formatSlotNote(note: string): string {

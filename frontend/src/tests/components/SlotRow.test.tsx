@@ -12,6 +12,7 @@ const baseSlot: SlotPreview = {
   load: 100,
   rest_seconds: 120,
   note: null,
+  adjustment_reason: null,
   is_locked: false,
   is_user_swapped: false,
   effort_target: null,

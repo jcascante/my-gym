@@ -12,3 +12,11 @@ it('labels a ramp_capped note', () => {
 it('renders an unrecognized note as-is', () => {
   expect(formatSlotNote('Go heavy')).toBe('Go heavy');
 });
+
+it('labels an autoregulated note', () => {
+  expect(formatSlotNote('autoregulated')).toBe('Load adjusted');
+});
+
+it('labels a reactive_deload note the same as a scheduled deload', () => {
+  expect(formatSlotNote('reactive_deload')).toBe('Deload week');
+});

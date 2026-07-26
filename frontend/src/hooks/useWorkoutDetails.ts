@@ -7,6 +7,8 @@ export interface WorkoutDetails {
   name: string;
   slots: SlotPreview[];
   program_id: number;
+  reactive_deload: boolean;
+  deload_reason: string | null;
 }
 
 /**
@@ -36,6 +38,8 @@ export function useWorkoutDetails(workoutId: number, programId: number | null) {
             name: workout.name,
             slots: workout.slots,
             program_id: programId || 0,
+            reactive_deload: workout.reactive_deload,
+            deload_reason: workout.deload_reason,
           };
         }
       }

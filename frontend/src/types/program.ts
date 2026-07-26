@@ -55,6 +55,7 @@ export interface SlotPreview {
   load: number | null;
   rest_seconds: number;
   note: string | null;
+  adjustment_reason: string | null;
   is_locked: boolean;
   is_user_swapped: boolean;
   effort_target: EffortTarget | null;
@@ -68,6 +69,8 @@ export interface WorkoutPreview {
   key: string;
   name: string;
   slots: SlotPreview[];
+  reactive_deload: boolean;
+  deload_reason: string | null;
 }
 
 export interface ProgramPreview {
