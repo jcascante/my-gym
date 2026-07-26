@@ -96,6 +96,7 @@ export interface DraftRequest extends MatchRequest {
   required_inputs: Record<string, number | string>;
   progression_style: ProgressionStyle;
   effort_method: EffortMethod | null;
+  start_date: string;
 }
 
 export type FeedbackAction =

@@ -77,6 +77,7 @@ describe('usePrograms hooks', () => {
         required_inputs: {},
         progression_style: 'consistent',
         effort_method: null,
+        start_date: '2026-08-01',
       });
       await waitFor(() => expect(result.current.data?.program_id).toBe(1));
     });

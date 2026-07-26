@@ -84,6 +84,7 @@ export default function ProgramBuilderPage() {
       required_inputs: requiredInputs,
       progression_style: formPrefs.progression_style,
       effort_method: formPrefs.effort_method || null,
+      start_date: formPrefs.start_date,
     });
     setDraft(program);
     setStep(3);

@@ -31,10 +31,10 @@ vi.mock('@/components/ProgramWizard', () => ({
           environment_id: environmentId,
           days_per_week: 3,
           session_duration_min: 60,
-          start_date: '2026-01-05',
           weight_unit: 'kg',
           progression_style: 'consistent',
           effort_method: '',
+          start_date: '2026-08-01',
           movement_preferences: {
             dumbbells: 50,
             barbells: 50,
@@ -285,6 +285,55 @@ describe('ProgramBuilderPage', () => {
         expect(screen.getByLabelText('Comfortable squat weight')).toBeInTheDocument(),
       );
       expect(screen.queryByText(/\(skipped\)/)).not.toBeInTheDocument();
+    });
+
+    it('includes the chosen start_date in the draft request payload', async () => {
+      vi.mocked(useAuthStore).mockReturnValue({
+        user: { id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe' },
+        userProfile: { id: 1, fitness_focus: 'strength', age: 30, gender: 'male' },
+        isAuthenticated: true,
+        isLoading: false,
+        setAuth: vi.fn(),
+        setUserProfile: vi.fn(),
+        clearAuth: vi.fn(),
+        setLoading: vi.fn(),
+      });
+
+      vi.mocked(programsApi.matchTemplates).mockResolvedValue(
+        mockTemplateMatchResponse([
+          {
+            template_id: 1,
+            slug: 'bodyweight-full-body-x3',
+            name: 'Bodyweight Full Body',
+            fit_pct: 80,
+            factors: {},
+            required_inputs: [],
+            tier: 'best',
+            all_infeasible: false,
+            advisories: [],
+          },
+        ]),
+      );
+      vi.mocked(programsApi.createDraft).mockResolvedValue({
+        program_id: 1,
+        name: 'Bodyweight Full Body',
+        status: 'draft',
+        duration_weeks: 8,
+        weeks: { '1': [] },
+        advisories: [],
+      });
+
+      render(wrap(<ProgramBuilderPage />));
+      fireEvent.click(screen.getByText('Submit prefs'));
+
+      await waitFor(() => expect(screen.getByText('Bodyweight Full Body')).toBeInTheDocument());
+      fireEvent.click(screen.getByText('Bodyweight Full Body'));
+
+      await waitFor(() => {
+        expect(programsApi.createDraft).toHaveBeenCalledWith(
+          expect.objectContaining({ start_date: '2026-08-01' }),
+        );
+      });
     });
   });
 
