@@ -9,8 +9,8 @@ from app.services.program.progression.base import SetScheme, SlotBase, get_model
 from app.services.program.progression.deload import apply_deload
 from app.services.program.progression.ramp_guard import apply_ramp_guard, population_for
 from app.services.program.versioning import resolve_program_versions
-from app.services.progression.autoregulation import compute_adjustment
-from app.services.progression.deload import compute_deload_trigger
+from app.services.progression.autoregulation import compute_adjustment, describe_adjustment
+from app.services.progression.deload import compute_deload_trigger, describe_reactive_deload
 
 _STRENGTH_REST_SECONDS = 195
 _HYPERTROPHY_REST_SECONDS = 120
@@ -116,10 +116,13 @@ def derive_week(
     experience = program.constraints.get("experience_level", "intermediate")
     exercise_map = exercises or {}
     reactive_deload_triggered = False
+    deload_reason: str | None = None
     if readiness_logs:
         reactive_deload_triggered, _reactive_deload_reason = compute_deload_trigger(
             readiness_logs, reference_date or date.today()
         )
+        if reactive_deload_triggered:
+            deload_reason = describe_reactive_deload()
     days: list[dict[str, Any]] = []
     for workout in program.workouts:
         slots = []
@@ -138,12 +141,14 @@ def derive_week(
                 exercise.contraindications if exercise else [], check_in_load_adjustments, experience
             )
             autoreg_factor = 1.0
+            adjustment_reason: str | None = None
             if ex.target_rpe is not None and set_logs_by_exercise:
                 logs_for_slot = set_logs_by_exercise.get(ex.id, [])
                 if logs_for_slot:
                     autoreg_factor, _reason = compute_adjustment(
                         logs_for_slot, ex.id, definition.progression.model_key, ex.target_rpe
                     )
+                    adjustment_reason = describe_adjustment(autoreg_factor)
             prior_scheme = None
             if population != "unrestricted" and week > 1:
                 # Autoregulated, not nominal: the ramp cap must bound against what was
@@ -172,6 +177,7 @@ def derive_week(
                     "load": scheme.load,
                     "rest_seconds": rest_seconds,
                     "note": scheme.note,
+                    "adjustment_reason": adjustment_reason,
                     "is_locked": ex.is_locked,
                     "is_user_swapped": ex.is_user_swapped,
                     "effort_target": _effort_target(scheme, ex.target_rpe, ex.intensity_pct, effort_method),
@@ -180,5 +186,14 @@ def derive_week(
                     "warmup_sets": warmup_sets,
                 }
             )
-        days.append({"workout_id": workout.id, "key": workout.key, "name": workout.name, "slots": slots})
+        days.append(
+            {
+                "workout_id": workout.id,
+                "key": workout.key,
+                "name": workout.name,
+                "slots": slots,
+                "reactive_deload": reactive_deload_triggered,
+                "deload_reason": deload_reason,
+            }
+        )
     return days

@@ -92,6 +92,7 @@ class SlotPreviewOut(BaseModel):
     load: float | None
     rest_seconds: int
     note: str | None
+    adjustment_reason: str | None = None
     is_locked: bool
     is_user_swapped: bool
     effort_target: dict[str, object] | None = None
@@ -105,6 +106,8 @@ class WorkoutPreviewOut(BaseModel):
     key: str
     name: str
     slots: list[SlotPreviewOut]
+    reactive_deload: bool = False
+    deload_reason: str | None = None
 
 
 class ProgramPreviewOut(BaseModel):

@@ -989,3 +989,79 @@ async def test_derive_week_reactive_deload_determinism_same_history_byte_identic
     )
 
     assert result_a == result_b
+
+
+@pytest.mark.asyncio
+async def test_derive_week_includes_adjustment_reason_when_autoregulated(sample_template_orm, sample_exercises):
+    """A slot whose load was cut by autoregulation carries a plain-language
+    adjustment_reason alongside the existing 'autoregulated' note tag."""
+    definition, program, exercise_map = _intermediate_program(sample_template_orm, sample_exercises)
+    target_we = next(ex for w in program.workouts for ex in w.exercises if ex.target_rpe is not None)
+    overshoot_rpe = target_we.target_rpe + 2.0
+    logs = {target_we.id: [_set_log(target_we.id, 1, overshoot_rpe), _set_log(target_we.id, 2, overshoot_rpe)]}
+
+    adjusted = derive_week(program, definition, 1, exercise_map, logs)
+    slot = next(s for d in adjusted for s in d["slots"] if s["workout_exercise_id"] == target_we.id)
+
+    # This overshoot clamps the factor to MIN_FACTOR (0.925); see the
+    # test_autoregulation.py boundary test for why that's 7%, not 7.5% rounded up.
+    assert slot["adjustment_reason"] == "Recent sessions ran harder than planned — load reduced 7%"
+
+
+@pytest.mark.asyncio
+async def test_derive_week_adjustment_reason_is_none_without_autoregulation(sample_template_orm, sample_exercises):
+    """Slots that weren't autoregulated (insufficient history, or no logs passed)
+    carry adjustment_reason=None."""
+    definition, program, exercise_map = _intermediate_program(sample_template_orm, sample_exercises)
+
+    baseline = derive_week(program, definition, 1, exercise_map)
+    assert all(s["adjustment_reason"] is None for d in baseline for s in d["slots"])
+
+
+@pytest.mark.asyncio
+async def test_derive_week_includes_reactive_deload_flag_and_reason_when_triggered(
+    sample_template_orm, sample_exercises
+):
+    """Workout-day dicts carry reactive_deload=True and a plain-language deload_reason
+    when the readiness-based trigger fires."""
+    definition, program, exercise_map = _intermediate_program(sample_template_orm, sample_exercises)
+    logs = [_readiness_log(1, 2), _readiness_log(5, 1)]
+
+    adjusted = derive_week(
+        program, definition, 1, exercise_map, readiness_logs=logs, reference_date=_REACTIVE_DELOAD_REFERENCE
+    )
+
+    assert all(d["reactive_deload"] is True for d in adjusted)
+    assert all(d["deload_reason"] == "Readiness has been low recently — built in a lighter week" for d in adjusted)
+
+
+@pytest.mark.asyncio
+async def test_derive_week_reactive_deload_flag_is_false_without_trigger(sample_template_orm, sample_exercises):
+    """Workout-day dicts carry reactive_deload=False and deload_reason=None when the
+    readiness trigger hasn't fired (including when no readiness_logs are passed)."""
+    definition, program, exercise_map = _intermediate_program(sample_template_orm, sample_exercises)
+
+    baseline = derive_week(program, definition, 1, exercise_map)
+
+    assert all(d["reactive_deload"] is False for d in baseline)
+    assert all(d["deload_reason"] is None for d in baseline)
+
+
+@pytest.mark.asyncio
+async def test_derive_week_workout_preview_out_roundtrip_with_new_fields(sample_template_orm, sample_exercises):
+    """WorkoutPreviewOut(**day) round-trips the new reactive_deload/deload_reason
+    fields, and SlotPreviewOut(**slot) round-trips adjustment_reason."""
+    from app.schemas.program_api import WorkoutPreviewOut
+
+    definition, program, exercise_map = _intermediate_program(sample_template_orm, sample_exercises)
+    logs = [_readiness_log(1, 2), _readiness_log(5, 1)]
+
+    week1 = derive_week(
+        program, definition, 1, exercise_map, readiness_logs=logs, reference_date=_REACTIVE_DELOAD_REFERENCE
+    )
+    for day in week1:
+        out = WorkoutPreviewOut(**day)
+        assert out.reactive_deload is True
+        assert out.deload_reason == "Readiness has been low recently — built in a lighter week"
+        for slot_out in out.slots:
+            assert hasattr(slot_out, "adjustment_reason")
