@@ -29,6 +29,7 @@ def test_draft_request_carries_required_inputs():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
         required_inputs={"squat_start": 80},
     )
     assert r.required_inputs["squat_start"] == 80
@@ -43,6 +44,7 @@ def test_draft_request_defaults_to_consistent_progression():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
     )
     assert r.progression_style.value == "consistent"
 
@@ -56,6 +58,7 @@ def test_draft_request_accepts_variable_progression():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
         progression_style="variable",
     )
     assert r.progression_style.value == "variable"
@@ -70,6 +73,7 @@ def test_draft_request_defaults_effort_method_to_none():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
     )
     assert r.effort_method is None
 
@@ -83,6 +87,7 @@ def test_draft_request_accepts_percent_1rm_effort_method():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
         effort_method="percent_1rm",
     )
     assert r.effort_method.value == "percent_1rm"
@@ -115,6 +120,7 @@ def test_draft_request_inherits_new_signals():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
         variety_preference="high",
     )
     assert req.variety_preference.value == "high"
