@@ -1,10 +1,12 @@
+from datetime import date, datetime, timedelta
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import hash_password
 from app.crud import logging as crud_logging
-from app.models import ProgramStatus, User, Workout, WorkoutExercise, WorkoutProgram
+from app.models import ProgramStatus, User, UserWorkoutLog, Workout, WorkoutExercise, WorkoutProgram
 from app.schemas.logging import UserWorkoutLogCreate, WorkoutSetLogCreate
 from app.services.auth import create_tokens
 
@@ -572,3 +574,72 @@ async def test_endpoint_get_session_log_wrong_user(
     )
 
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_workout_logs_for_workouts_scopes_to_given_workout_ids(
+    db_session: AsyncSession, test_user: User, test_program_with_workout: tuple
+):
+    """Readiness logs must be scoped to one program's workouts, not the user's
+    full cross-program history - otherwise a signal from an unrelated program
+    would leak into this one's reactive-deload trigger."""
+    _, workout, _ = test_program_with_workout
+
+    other_program = WorkoutProgram(
+        user_id=test_user.id,
+        template_id=1,
+        environment_id=1,
+        name="Other Program",
+        status=ProgramStatus.ACTIVE,
+        duration_weeks=8,
+        days_per_week=3,
+        weight_unit="kg",
+        constraints={},
+    )
+    db_session.add(other_program)
+    await db_session.flush()
+    other_workout = Workout(program_id=other_program.id, key="other", name="Other Day", order=1)
+    db_session.add(other_workout)
+    await db_session.flush()
+
+    in_scope = UserWorkoutLog(
+        user_id=test_user.id, workout_id=workout.id, session_date=datetime.utcnow() - timedelta(days=2), readiness=1
+    )
+    out_of_scope = UserWorkoutLog(
+        user_id=test_user.id,
+        workout_id=other_workout.id,
+        session_date=datetime.utcnow() - timedelta(days=1),
+        readiness=1,
+    )
+    db_session.add_all([in_scope, out_of_scope])
+    await db_session.commit()
+
+    since = date.today() - timedelta(days=14)
+    logs = await crud_logging.get_workout_logs_for_workouts(db_session, [workout.id], test_user.id, since)
+
+    log_ids = {log.id for log in logs}
+    assert in_scope.id in log_ids
+    assert out_of_scope.id not in log_ids
+
+
+@pytest.mark.asyncio
+async def test_get_workout_logs_for_workouts_respects_since(
+    db_session: AsyncSession, test_user: User, test_program_with_workout: tuple
+):
+    _, workout, _ = test_program_with_workout
+
+    recent = UserWorkoutLog(
+        user_id=test_user.id, workout_id=workout.id, session_date=datetime.utcnow() - timedelta(days=2), readiness=1
+    )
+    old = UserWorkoutLog(
+        user_id=test_user.id, workout_id=workout.id, session_date=datetime.utcnow() - timedelta(days=30), readiness=1
+    )
+    db_session.add_all([recent, old])
+    await db_session.commit()
+
+    since = date.today() - timedelta(days=14)
+    logs = await crud_logging.get_workout_logs_for_workouts(db_session, [workout.id], test_user.id, since)
+
+    log_ids = {log.id for log in logs}
+    assert recent.id in log_ids
+    assert old.id not in log_ids

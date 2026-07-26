@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 
 from sqlalchemy import and_, desc, select
@@ -78,6 +79,21 @@ async def get_set_logs(db: AsyncSession, workout_id: int, user_id: int) -> list[
             )
         )
         .order_by(WorkoutSetLog.workout_exercise_id, WorkoutSetLog.set_number)
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_workout_logs_for_workouts(
+    db: AsyncSession, workout_ids: list[int], user_id: int, since: date
+) -> list[UserWorkoutLog]:
+    """Readiness logs for a specific program's workouts, for the reactive-deload window."""
+    stmt = select(UserWorkoutLog).where(
+        and_(
+            UserWorkoutLog.workout_id.in_(workout_ids),
+            UserWorkoutLog.user_id == user_id,
+            UserWorkoutLog.session_date >= since,
+        )
     )
     result = await db.execute(stmt)
     return list(result.scalars().all())
