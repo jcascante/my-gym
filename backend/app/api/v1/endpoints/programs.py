@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends, Query, status
@@ -10,13 +11,24 @@ from app.core import (
     TrainingEnvironmentNotFoundError,
     WorkoutExerciseNotFoundError,
 )
+from app.core.constants import DELOAD_LOOKBACK_DAYS
 from app.core.database import get_db
 from app.crud.checkin import create_check_in, list_check_ins_for_program
 from app.crud.exercise import get_exercises_by_ids, list_exercises
 from app.crud.injury import list_injury_records
+from app.crud.logging import get_set_logs, get_workout_logs_for_workouts
 from app.crud.program import get_active_program, get_program, get_template, list_active_templates, save_program
 from app.crud.training_environment import get_training_environment
-from app.models import CheckIn, InjuryRegion, ProgramStatus, TrainingEnvironment, User, WorkoutProgram
+from app.models import (
+    CheckIn,
+    InjuryRegion,
+    ProgramStatus,
+    TrainingEnvironment,
+    User,
+    UserWorkoutLog,
+    WorkoutProgram,
+    WorkoutSetLog,
+)
 from app.schemas.checkin import CheckInCreate, CheckInResponse, CheckInResultResponse
 from app.schemas.explain import LedgerContributionOut, SlotExplanationOut, TemplateExplanationOut
 from app.schemas.program_api import (
@@ -89,12 +101,40 @@ async def _preview_out(
     db: AsyncSession,
     program: WorkoutProgram,
     definition: TemplateDefinition,
+    user: User,
     advisories: list[Advisory] | None = None,
 ) -> ProgramPreviewOut:
     exercise_ids = [ex.exercise_id for w in program.workouts for ex in w.exercises]
     exercises = await get_exercises_by_ids(db, exercise_ids) if exercise_ids else {}
+
+    current_week: int | None = None
+    if program.status == ProgramStatus.ACTIVE and program.start_date is not None:
+        elapsed_week = (date.today() - program.start_date).days // 7 + 1
+        current_week = elapsed_week if 1 <= elapsed_week <= program.duration_weeks else None
+
+    set_logs_by_exercise: dict[int, list[WorkoutSetLog]] | None = None
+    readiness_logs: list[UserWorkoutLog] | None = None
+    if current_week is not None:
+        workout_ids = [workout.id for workout in program.workouts]
+        set_logs_by_exercise = {}
+        for workout in program.workouts:
+            for log in await get_set_logs(db, workout.id, user.id):
+                set_logs_by_exercise.setdefault(log.workout_exercise_id, []).append(log)
+        since = date.today() - timedelta(days=DELOAD_LOOKBACK_DAYS)
+        readiness_logs = await get_workout_logs_for_workouts(db, workout_ids, user.id, since)
+
     weeks = {
-        w: [WorkoutPreviewOut(**day) for day in derive_week(program, definition, w, exercises)]
+        w: [
+            WorkoutPreviewOut(**day)
+            for day in derive_week(
+                program,
+                definition,
+                w,
+                exercises,
+                set_logs_by_exercise=set_logs_by_exercise if w == current_week else None,
+                readiness_logs=readiness_logs if w == current_week else None,
+            )
+        ]
         for w in range(1, program.duration_weeks + 1)
     }
     return ProgramPreviewOut(
@@ -247,7 +287,7 @@ async def draft(
     saved = await get_program(db, user.id, program.id)
     assert saved is not None
     preview_definition = apply_progression_style(definition, data.progression_style.value)
-    return await _preview_out(db, saved, preview_definition, advisories=advisory_sink)
+    return await _preview_out(db, saved, preview_definition, user, advisories=advisory_sink)
 
 
 async def _load(db: AsyncSession, user: User, program_id: int) -> tuple[WorkoutProgram, TemplateDefinition]:
@@ -269,7 +309,7 @@ async def get_active(user: User = Depends(get_current_user), db: AsyncSession = 
     definition = TemplateDefinition.from_orm_template(template)
     style = program.constraints.get("progression_style", "consistent")
     definition = apply_progression_style(definition, style)
-    return await _preview_out(db, program, definition)
+    return await _preview_out(db, program, definition, user)
 
 
 @router.get("/{program_id}", response_model=ProgramPreviewOut)
@@ -277,7 +317,7 @@ async def get_one(
     program_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ) -> ProgramPreviewOut:
     program, definition = await _load(db, user, program_id)
-    return await _preview_out(db, program, definition)
+    return await _preview_out(db, program, definition, user)
 
 
 @router.get("/{program_id}/preview", response_model=ProgramPreviewOut)
@@ -285,7 +325,7 @@ async def preview(
     program_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ) -> ProgramPreviewOut:
     program, definition = await _load(db, user, program_id)
-    return await _preview_out(db, program, definition)
+    return await _preview_out(db, program, definition, user)
 
 
 @router.post("/{program_id}/feedback", response_model=ProgramPreviewOut)
@@ -328,7 +368,7 @@ async def feedback(
     )
     saved = await get_program(db, user.id, program.id)
     assert saved is not None
-    return await _preview_out(db, saved, definition)
+    return await _preview_out(db, saved, definition, user)
 
 
 @router.get("/{program_id}/slots/{we_id}/alternatives", response_model=list[AlternativeOut])
@@ -363,7 +403,7 @@ async def accept(
     program.status = ProgramStatus.ACTIVE
     await save_program(db, program)
     program = cast(WorkoutProgram, await get_program(db, user.id, program_id))
-    return await _preview_out(db, program, definition)
+    return await _preview_out(db, program, definition, user)
 
 
 @router.post("/{program_id}/check-ins", response_model=CheckInResultResponse, status_code=status.HTTP_201_CREATED)
