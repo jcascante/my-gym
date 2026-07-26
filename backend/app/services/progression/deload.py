@@ -70,3 +70,12 @@ def compute_deload_trigger(
         f"(threshold<={DELOAD_READINESS_THRESHOLD}, dates=[{dates_str}])"
     )
     return True, reason
+
+
+def describe_reactive_deload() -> str:
+    """One-line, user-facing explanation shown when a reactive deload fires (Task 4.7
+    follow-up: PROGRAM_ENGINE_REFACTOR_PLAN.md line 184). Static copy is intentional:
+    the *why* (low readiness) is always the same story; the specific dates/counts
+    already live in compute_deload_trigger's technical reason string, used for
+    internal traceability rather than shown to the user."""
+    return "Readiness has been low recently — built in a lighter week"

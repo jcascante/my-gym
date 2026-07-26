@@ -4,6 +4,7 @@ from app.models import UserWorkoutLog
 from app.services.progression.deload import (
     INSUFFICIENT_SIGNAL_REASON,
     compute_deload_trigger,
+    describe_reactive_deload,
 )
 
 REFERENCE_DATE = date(2026, 7, 23)
@@ -119,3 +120,7 @@ def test_determinism_is_independent_of_input_order():
     logs_forward = [_log(1, 2), _log(3, 1)]
     logs_reversed = list(reversed(logs_forward))
     assert compute_deload_trigger(logs_forward, REFERENCE_DATE) == compute_deload_trigger(logs_reversed, REFERENCE_DATE)
+
+
+def test_describe_reactive_deload_returns_fixed_user_facing_copy():
+    assert describe_reactive_deload() == "Readiness has been low recently — built in a lighter week"
