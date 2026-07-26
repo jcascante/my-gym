@@ -100,3 +100,17 @@ def compute_adjustment(
         f"ewma_rpe_signal={smoothed_rounded:+.6f} over {len(sessions)} sessions " f"(model={model_key}){clamped_suffix}"
     )
     return factor, reason
+
+
+def describe_adjustment(factor: float) -> str | None:
+    """One-line, user-facing explanation of an autoregulation adjustment (Task 4.7
+    follow-up: PROGRAM_ENGINE_REFACTOR_PLAN.md line 184). `None` when `factor == 1.0`
+    (no adjustment was made - insufficient history or a neutral signal); the caller
+    should treat `None` as "nothing to show", not as an error."""
+    if factor == 1.0:
+        return None
+    if factor < 1.0:
+        pct = round((1.0 - factor) * 100)
+        return f"Recent sessions ran harder than planned — load reduced {pct}%"
+    pct = round((factor - 1.0) * 100)
+    return f"Recent sessions had room to spare — load increased {pct}%"

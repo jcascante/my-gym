@@ -7,6 +7,7 @@ from app.services.progression.autoregulation import (
     MAX_FACTOR,
     MIN_FACTOR,
     compute_adjustment,
+    describe_adjustment,
 )
 
 EXERCISE_ID = 42
@@ -159,3 +160,25 @@ def test_adjustment_factor_never_exceeds_configured_bounds():
 
 def test_k_constant_matches_spec():
     assert ADJUSTMENT_K == 0.075
+
+
+def test_describe_adjustment_returns_none_for_neutral_factor():
+    assert describe_adjustment(1.0) is None
+
+
+def test_describe_adjustment_describes_a_load_reduction():
+    assert describe_adjustment(0.95) == "Recent sessions ran harder than planned — load reduced 5%"
+
+
+def test_describe_adjustment_describes_a_load_increase():
+    assert describe_adjustment(1.03) == "Recent sessions had room to spare — load increased 3%"
+
+
+def test_describe_adjustment_at_min_factor_boundary():
+    # Floating-point note: (1.0 - 0.925) * 100 == 7.499999999999996 in binary float,
+    # not exactly 7.5, so this rounds down to 7 (not a round-half-to-even case).
+    assert describe_adjustment(MIN_FACTOR) == "Recent sessions ran harder than planned — load reduced 7%"
+
+
+def test_describe_adjustment_at_max_factor_boundary():
+    assert describe_adjustment(MAX_FACTOR) == "Recent sessions had room to spare — load increased 5%"
