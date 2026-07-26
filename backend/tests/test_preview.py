@@ -746,6 +746,45 @@ async def test_derive_week_reduces_load_when_logged_rpe_overshoots_target(sample
 
 
 @pytest.mark.asyncio
+async def test_derive_week_no_adjustment_reason_for_bodyweight_slot_overshoot(sample_template_orm, sample_exercises):
+    """A bodyweight slot (no base_load) with a target_rpe that logs an overshoot still
+    has autoregulation "fire" internally (autoreg_factor != 1.0), but since
+    `_apply_autoregulation` is a no-op for slots with no load, the load is unchanged -
+    so `adjustment_reason` must stay None instead of falsely claiming a load cut."""
+    definition = TemplateDefinition.from_orm_template(sample_template_orm)
+    ctx = SelectionContext(["barbell", "bench", "squat_rack"], "intermediate", [], set())
+    program = build_draft(
+        sample_template_orm,
+        definition,
+        ctx,
+        sample_exercises,
+        user_id=1,
+        environment_id=1,
+        days_per_week=3,
+        duration_weeks=8,
+        weight_unit="kg",
+        required_inputs={"squat_start": 80},
+        effort_method="rpe",
+    )
+    for w in program.workouts:
+        w.id = w.order
+        for j, ex in enumerate(w.exercises, 1):
+            ex.id = j
+    target_we = next(ex for w in program.workouts for ex in w.exercises if ex.target_rpe is not None)
+    target_we.base_load = None  # force this slot to bodyweight (no load)
+    exercise_map = {e.id: e for e in sample_exercises}
+
+    overshoot_rpe = target_we.target_rpe + 2.0
+    logs = {target_we.id: [_set_log(target_we.id, 1, overshoot_rpe), _set_log(target_we.id, 2, overshoot_rpe)]}
+
+    adjusted = derive_week(program, definition, 1, exercise_map, logs)
+    slot = next(s for d in adjusted for s in d["slots"] if s["workout_exercise_id"] == target_we.id)
+
+    assert slot["load"] is None
+    assert slot["adjustment_reason"] is None
+
+
+@pytest.mark.asyncio
 async def test_derive_week_without_set_logs_is_unaffected(sample_template_orm, sample_exercises):
     """Omitting set_logs_by_exercise (the default) leaves derive_week's output
     unchanged - backward compatible with callers that don't pass logged history."""

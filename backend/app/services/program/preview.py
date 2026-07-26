@@ -148,7 +148,11 @@ def derive_week(
                     autoreg_factor, _reason = compute_adjustment(
                         logs_for_slot, ex.id, definition.progression.model_key, ex.target_rpe
                     )
-                    adjustment_reason = describe_adjustment(autoreg_factor)
+                    # _apply_autoregulation is a no-op when scheme.load is None
+                    # (bodyweight, driven by ex.base_load is None via SlotBase/resolve) -
+                    # don't claim a load-adjustment reason when no load was changed.
+                    if ex.base_load is not None:
+                        adjustment_reason = describe_adjustment(autoreg_factor)
             prior_scheme = None
             if population != "unrestricted" and week > 1:
                 # Autoregulated, not nominal: the ramp cap must bound against what was

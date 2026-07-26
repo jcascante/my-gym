@@ -89,7 +89,7 @@ reactive_deload: 'Deload week',
 
 ## Known pre-existing gap (not in scope)
 
-`_apply_autoregulation` in `preview.py` only sets its own `"autoregulated"` note when no note is already set (`note=scheme.note or "autoregulated"`). If both a reactive deload and an autoregulation adjustment hit the same slot in the same week, the tag stays `"reactive_deload"` and the `"autoregulated"` tag — and therefore this feature's `adjustment_reason` display logic, which is independent of `note` and reads `autoreg_factor` directly — is unaffected by this quirk. The load math is correct either way; only the *tag* is swallowed. Left alone per user decision; noted here for visibility.
+`_apply_autoregulation` in `preview.py` only sets its own `"autoregulated"` note when no note is already set (`note=scheme.note or "autoregulated"`). If both a reactive deload and an autoregulation adjustment hit the same slot in the same week, the tag stays `"reactive_deload"` and the `"autoregulated"` tag is swallowed. As shipped, `WorkoutTrackingPage.tsx` renders the `adjustment_reason` paragraph nested inside the `{currentExercise.note && (...)}` block, not as an independent sibling — so its visibility is in fact gated on `note` being truthy. In the combined case, `note` stays `"reactive_deload"` (labeled "Deload week") while the `adjustment_reason` text still renders beneath it, so the reason line describing the autoregulation adjustment appears under the deload label. The load math is correct either way; only the *tag* is swallowed. Left alone per user decision; noted here for visibility.
 
 ## Testing Plan
 
