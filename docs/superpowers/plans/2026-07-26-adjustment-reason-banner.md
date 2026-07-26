@@ -1143,10 +1143,30 @@ Sequential — each task builds on the previous one's exports:
 
 ## Exit Criteria
 
-- [ ] `describe_adjustment`/`describe_reactive_deload` unit-tested (neutral/reduction/increase/boundary cases)
-- [ ] `derive_week` output includes `adjustment_reason` (per-slot) and `reactive_deload`/`deload_reason` (per-workout-day), tested both triggered and not-triggered
-- [ ] `SlotPreviewOut`/`WorkoutPreviewOut` round-trip the new fields
-- [ ] `pytest backend/` ≥80% coverage maintained; `mypy app/`, `ruff check .` clean
-- [ ] Frontend types (`SlotPreview`, `WorkoutPreview`, `WorkoutDetails`) mirror the backend fields exactly
-- [ ] `WorkoutTrackingPage` shows a dismissible banner when `reactive_deload` is true, and a friendly label + reason for an autoregulated exercise
-- [ ] Frontend: `npm run test`, `lint`, `type-check` all clean
+- [x] `describe_adjustment`/`describe_reactive_deload` unit-tested (neutral/reduction/increase/boundary cases)
+- [x] `derive_week` output includes `adjustment_reason` (per-slot) and `reactive_deload`/`deload_reason` (per-workout-day), tested both triggered and not-triggered — including a bodyweight-slot case added in the final-review fix round (commit fc14ec8) after the reviewer caught a false-claim bug
+- [x] `SlotPreviewOut`/`WorkoutPreviewOut` round-trip the new fields
+- [x] `pytest backend/` 91% coverage (measured in final review); `mypy app/`, `ruff check .` clean
+- [x] Frontend types (`SlotPreview`, `WorkoutPreview`, `WorkoutDetails`) mirror the backend fields exactly
+- [x] `WorkoutTrackingPage` shows a dismissible banner when `reactive_deload` is true, and a friendly label + reason for an autoregulated exercise
+- [x] Frontend: `npm run test`, `lint`, `type-check` all clean
+
+## Post-Implementation Note (final whole-plan review, 2026-07-26)
+
+All 5 tasks shipped correct and fully tested — but the final review found that
+`_preview_out` (`backend/app/api/v1/endpoints/programs.py:96-99`), the only production
+caller of `derive_week`, never passes `set_logs_by_exercise`/`readiness_logs`. **This
+plan's plumbing is therefore dormant in production**: real API responses always have
+`reactive_deload: false` and `adjustment_reason: null`, so the banner and per-exercise
+reason built here cannot appear for a real user yet. This contradicts this plan's own
+Global Constraints ("both signals ride the existing `GET /programs/{id}/preview`
+response") and the design spec's Scope section, both of which assumed the endpoint
+already threaded those logs through — it doesn't.
+
+Per user decision (2026-07-26), this was deliberately **not** fixed here: wiring
+`_preview_out` to load and pass the logs requires its own design decision (which
+week(s) of a multi-week preview should reflect today's logged RPE/readiness — applying
+it to a week-8 preview is very likely wrong) and deserves a separate spec, not a rushed
+patch. A follow-up plan should own that wiring. Until it lands, treat this plan's Goal
+statement ("closing the Phase 4 sensor-layer UI gap") as **not yet actually true** —
+this plan is necessary-but-insufficient infrastructure for that goal.
