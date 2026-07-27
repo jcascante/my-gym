@@ -79,12 +79,34 @@ describe('WorkoutCard', () => {
     renderCard();
     const buttons = screen.getAllByRole('button');
     expect(buttons).toHaveLength(1);
-    expect(buttons[0]).toHaveAccessibleName('Start Upper Body A, 2 exercises, 45 minutes');
+    expect(buttons[0]).toHaveAccessibleName(
+      'Start Upper Body A, Push/Pull Split week 3, 2 exercises, 45 minutes',
+    );
   });
 
   it('calls onStartClick when the card is clicked', async () => {
     const onStartClick = renderCard();
     await userEvent.click(screen.getByRole('button'));
     expect(onStartClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onStartClick when activated with the keyboard', async () => {
+    const onStartClick = renderCard();
+    await userEvent.tab();
+    expect(screen.getByRole('button')).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+    expect(onStartClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders "0 exercises" when the workout has no slots', () => {
+    render(
+      <WorkoutCard
+        workout={{ ...workout, slots: [] }}
+        programName="Push/Pull Split"
+        weekNumber={3}
+        onStartClick={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Push/Pull Split • Week 3 • 0 exercises • 45 min')).toBeInTheDocument();
   });
 });

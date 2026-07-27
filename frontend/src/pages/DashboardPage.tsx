@@ -57,6 +57,7 @@ export default function DashboardPage() {
             </Card>
           ) : todayWorkout ? (
             <div className="mb-8">
+              <h2 className="sr-only">Today&apos;s workout</h2>
               <WorkoutCard
                 workout={todayWorkout}
                 programName={program?.name || 'Your Program'}

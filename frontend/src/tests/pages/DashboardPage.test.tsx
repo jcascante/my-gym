@@ -1,4 +1,4 @@
-import { it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -32,51 +32,55 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => navigateMock };
 });
 
-it("shows the workout from the program's current week, not always week 1", () => {
-  programData = {
-    program_id: 1,
-    name: 'My Program',
-    status: 'active',
-    duration_weeks: 3,
-    current_week: 2,
-    weeks: {
-      '1': [makeWorkout(1, 'Week 1 Day A')],
-      '2': [makeWorkout(2, 'Week 2 Day A')],
-      '3': [makeWorkout(3, 'Week 3 Day A')],
-    },
-    advisories: [],
-  };
+describe('DashboardPage', () => {
+  beforeEach(() => navigateMock.mockClear());
 
-  render(
-    <MemoryRouter>
-      <DashboardPage />
-    </MemoryRouter>,
-  );
+  it("shows the workout from the program's current week, not always week 1", () => {
+    programData = {
+      program_id: 1,
+      name: 'My Program',
+      status: 'active',
+      duration_weeks: 3,
+      current_week: 2,
+      weeks: {
+        '1': [makeWorkout(1, 'Week 1 Day A')],
+        '2': [makeWorkout(2, 'Week 2 Day A')],
+        '3': [makeWorkout(3, 'Week 3 Day A')],
+      },
+      advisories: [],
+    };
 
-  expect(screen.getByText('Week 2 Day A')).toBeInTheDocument();
-  expect(screen.getByText('My Program • Week 2 • 0 exercises • 45 min')).toBeInTheDocument();
-});
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
 
-it('navigates to workout tracking when the card is clicked', async () => {
-  programData = {
-    program_id: 7,
-    name: 'My Program',
-    status: 'active',
-    duration_weeks: 3,
-    current_week: 2,
-    weeks: {
-      '2': [makeWorkout(2, 'Week 2 Day A')],
-    },
-    advisories: [],
-  };
+    expect(screen.getByText('Week 2 Day A')).toBeInTheDocument();
+    expect(screen.getByText('My Program • Week 2 • 0 exercises • 45 min')).toBeInTheDocument();
+  });
 
-  render(
-    <MemoryRouter>
-      <DashboardPage />
-    </MemoryRouter>,
-  );
+  it('navigates to workout tracking when the card is clicked', async () => {
+    programData = {
+      program_id: 7,
+      name: 'My Program',
+      status: 'active',
+      duration_weeks: 3,
+      current_week: 2,
+      weeks: {
+        '2': [makeWorkout(2, 'Week 2 Day A')],
+      },
+      advisories: [],
+    };
 
-  await userEvent.click(screen.getByRole('button', { name: /Start Week 2 Day A/ }));
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
 
-  expect(navigateMock).toHaveBeenCalledWith('/workouts/2?programId=7');
+    await userEvent.click(screen.getByRole('button', { name: /Start Week 2 Day A/ }));
+
+    expect(navigateMock).toHaveBeenCalledWith('/workouts/2?programId=7');
+  });
 });
