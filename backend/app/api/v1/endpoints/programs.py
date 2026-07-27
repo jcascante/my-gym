@@ -16,7 +16,7 @@ from app.core.database import get_db
 from app.crud.checkin import create_check_in, list_check_ins_for_program
 from app.crud.exercise import get_exercises_by_ids, list_exercises
 from app.crud.injury import list_injury_records
-from app.crud.logging import get_set_logs, get_workout_logs_for_workouts
+from app.crud.logging import get_set_logs_for_workouts, get_workout_logs_for_workouts
 from app.crud.program import get_active_program, get_program, get_template, list_active_templates, save_program
 from app.crud.training_environment import get_training_environment
 from app.models import (
@@ -116,11 +116,10 @@ async def _preview_out(
     readiness_logs: list[UserWorkoutLog] | None = None
     if current_week is not None:
         workout_ids = [workout.id for workout in program.workouts]
-        set_logs_by_exercise = {}
-        for workout in program.workouts:
-            for log in await get_set_logs(db, workout.id, user.id):
-                set_logs_by_exercise.setdefault(log.workout_exercise_id, []).append(log)
         since = date.today() - timedelta(days=DELOAD_LOOKBACK_DAYS)
+        set_logs_by_exercise = {}
+        for log in await get_set_logs_for_workouts(db, workout_ids, user.id, since):
+            set_logs_by_exercise.setdefault(log.workout_exercise_id, []).append(log)
         readiness_logs = await get_workout_logs_for_workouts(db, workout_ids, user.id, since)
 
     weeks = {
@@ -142,6 +141,7 @@ async def _preview_out(
         name=program.name,
         status=program.status.value,
         duration_weeks=program.duration_weeks,
+        current_week=current_week,
         weeks=weeks,
         advisories=advisories or [],
     )

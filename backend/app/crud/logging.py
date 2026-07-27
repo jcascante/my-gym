@@ -84,6 +84,21 @@ async def get_set_logs(db: AsyncSession, workout_id: int, user_id: int) -> list[
     return list(result.scalars().all())
 
 
+async def get_set_logs_for_workouts(
+    db: AsyncSession, workout_ids: list[int], user_id: int, since: date
+) -> list[WorkoutSetLog]:
+    """Set logs for a specific program's workouts, windowed to the reactive-deload lookback."""
+    stmt = select(WorkoutSetLog).where(
+        and_(
+            WorkoutSetLog.workout_id.in_(workout_ids),
+            WorkoutSetLog.user_id == user_id,
+            WorkoutSetLog.created_at >= since,
+        )
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
 async def get_workout_logs_for_workouts(
     db: AsyncSession, workout_ids: list[int], user_id: int, since: date
 ) -> list[UserWorkoutLog]:

@@ -78,6 +78,7 @@ export interface ProgramPreview {
   name: string;
   status: 'draft' | 'active' | 'archived';
   duration_weeks: number;
+  current_week?: number | null;
   weeks: Record<string, WorkoutPreview[]>;
   advisories: Advisory[];
 }

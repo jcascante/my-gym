@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.endpoints.programs import _preview_out
@@ -116,6 +117,8 @@ async def test_current_week_gets_live_signals_but_adjacent_weeks_stay_nominal(
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     result = await _preview_out(db_session, program, definition, test_user)
 
+    assert result.current_week == 3
+
     current = result.weeks[3][0]
     assert current.slots[0].adjustment_reason is not None
     assert current.reactive_deload is True
@@ -143,6 +146,8 @@ async def test_draft_and_archived_programs_never_get_live_signals(
         definition = TemplateDefinition.from_orm_template(sample_template_orm)
         result = await _preview_out(db_session, program, definition, test_user)
 
+        assert result.current_week is None
+
         day = result.weeks[3][0]
         assert day.slots[0].adjustment_reason is None
         assert day.reactive_deload is False
@@ -161,6 +166,8 @@ async def test_future_start_date_yields_no_current_week_and_no_signals(
 
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     result = await _preview_out(db_session, program, definition, test_user)
+
+    assert result.current_week is None
 
     day = result.weeks[1][0]
     assert day.slots[0].adjustment_reason is None
@@ -186,6 +193,8 @@ async def test_overrun_start_date_yields_no_current_week_and_no_signals(
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     result = await _preview_out(db_session, program, definition, test_user)
 
+    assert result.current_week is None
+
     for week in range(1, 9):
         day = result.weeks[week][0]
         assert day.slots[0].adjustment_reason is None
@@ -205,6 +214,7 @@ async def test_exact_week_one_boundary_gets_signals_only_on_week_one(
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     result = await _preview_out(db_session, program, definition, test_user)
 
+    assert result.current_week == 1
     assert result.weeks[1][0].slots[0].adjustment_reason is not None
     assert result.weeks[2][0].slots[0].adjustment_reason is None
 
@@ -222,6 +232,31 @@ async def test_null_start_date_falls_back_to_nominal_without_error(
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     result = await _preview_out(db_session, program, definition, test_user)
 
+    assert result.current_week is None
     day = result.weeks[1][0]
     assert day.slots[0].adjustment_reason is None
     assert day.reactive_deload is False
+
+
+@pytest.mark.asyncio
+async def test_get_program_endpoint_surfaces_live_signals_over_http(
+    authenticated_client: AsyncClient,
+    db_session: AsyncSession,
+    test_user: User,
+    sample_template_orm: ProgramTemplate,
+):
+    """End-to-end proof the wiring reaches an actual HTTP response, not just _preview_out."""
+    start_date = date.today() - timedelta(weeks=2)  # lands on week 3 of an 8-week program
+    program, workout, exercise = await _build_program(
+        db_session, test_user, sample_template_orm, status=ProgramStatus.ACTIVE, start_date=start_date
+    )
+    await _add_high_rpe_set_logs(db_session, test_user, workout, exercise)
+    await _add_low_readiness_logs(db_session, test_user, workout)
+
+    response = await authenticated_client.get(f"/api/v1/programs/{program.id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["current_week"] == 3
+    current_week_slots = [slot for day in data["weeks"]["3"] for slot in day["slots"]]
+    assert any(slot["adjustment_reason"] is not None for slot in current_week_slots)

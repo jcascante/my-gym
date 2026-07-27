@@ -117,6 +117,7 @@ class ProgramPreviewOut(BaseModel):
     name: str
     status: str
     duration_weeks: int
+    current_week: int | None = None
     weeks: dict[int, list[WorkoutPreviewOut]]
     advisories: list[Advisory] = []
 
