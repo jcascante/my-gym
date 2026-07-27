@@ -4,7 +4,7 @@
 
 **Goal:** Give MyGym a real workout schedule — materialized session rows with dates and status — so users can browse past, present, and upcoming sessions instead of being dropped straight into the exercise logger.
 
-**Architecture:** A new `workout_sessions` table holds one row per (program, week, workout template) with a `scheduled_date` and `status`. Sessions are materialized when a program is accepted (DRAFT → ACTIVE). A lazy flip marks past `scheduled` rows `missed` on read. The frontend gains a `/schedule` week browser and a `/sessions/:id` detail screen ahead of the existing logger.
+**Architecture:** A new `workout_sessions` table holds one row per (program, week, workout template) with a `scheduled_date` and `status`. Sessions are materialized when a program is accepted (DRAFT → ACTIVE). A lazy flip marks past `scheduled` rows `missed` on read. Both log tables gain a NOT NULL `session_id`, the legacy workout-scoped logging routes are deleted, and the live-signal queries stop inferring sessions from timestamps. The frontend gains a `/schedule` week browser and a `/sessions/:id` detail screen ahead of the existing logger.
 
 **Tech Stack:** FastAPI, SQLAlchemy 2.0 async, Alembic, Pydantic v2, pytest/pytest-asyncio. React 18, TypeScript, TanStack Query, react-router-dom, Tailwind, Vitest + Testing Library.
 
@@ -17,7 +17,9 @@
 - TDD: write the failing test, watch it fail, implement, watch it pass, commit.
 - Backend commands run through Docker: `docker-compose exec backend <cmd>`. Same for frontend.
 - REST under `/api/v1/`. Auth via `Depends(get_current_user)`; every session endpoint is ownership-scoped through `WorkoutProgram.user_id`.
-- Set logs stay append-only. Nothing in this plan updates or deletes a `WorkoutSetLog`.
+- Set logs stay append-only. Nothing in this plan updates or deletes a `WorkoutSetLog` row.
+- `session_id` is NOT NULL on `workout_set_logs` and `user_workout_logs`. A log that cannot name its session must not be writable — this is the invariant the whole plan exists to establish. Never make it nullable to get a test passing.
+- `DELOAD_LOOKBACK_DAYS = 14` stays a time window and `compute_deload_trigger` keeps its current signature and semantics. Only *which logs it can see* changes. Same for `compute_adjustment`'s EWMA params, `MIN_SESSIONS`, and clamp range — only its grouping key changes.
 - Comments only for non-obvious *why*. No comments restating what the code does, and no references to tasks, PRs, or plan step numbers in committed code.
 - Current Alembic head is `9f1a2b3c4d5e`. The one new migration in this plan descends from it.
 - Dates compare against server-side `date.today()`. Per-user timezones are out of scope.
@@ -46,9 +48,11 @@
 | File | Change |
 | --- | --- |
 | `backend/app/models/__init__.py` | Export `WorkoutSession`, `SessionStatus` |
-| `backend/app/models/logging.py` | `WorkoutSetLog.session_id` nullable FK |
-| `backend/app/schemas/logging.py` | `WorkoutSetLogOut.session_id` |
-| `backend/app/crud/logging.py` | `append_set_log` persists `session_id` |
+| `backend/app/models/logging.py` | NOT NULL `session_id` on both log tables |
+| `backend/app/schemas/logging.py` | `WorkoutSetLogOut.session_id`; delete `WorkoutSetLogCreate` |
+| `backend/app/crud/logging.py` | `append_set_log` requires `session_id`; session-scoped signal queries replace the workout-scoped ones |
+| `backend/app/api/v1/endpoints/logging.py` | Legacy workout-scoped routes deleted |
+| `backend/app/services/progression/autoregulation.py` | Group set logs by `session_id`, not `created_at.date()` |
 | `backend/app/api/v1/endpoints/programs.py` | `accept` materializes sessions; `_load` delegates to the extracted loader; `start_date` on the preview |
 | `backend/app/schemas/program_api.py` | `ProgramPreviewOut.start_date` |
 | `backend/app/crud/session.py` | Session queries and the missed-flip |
@@ -95,7 +99,7 @@
 - Create: `backend/app/models/session.py`
 - Create: `backend/alembic/versions/a3f81c9d2e40_add_workout_sessions.py`
 - Modify: `backend/app/models/__init__.py`
-- Modify: `backend/app/models/logging.py:44-55`
+- Modify: `backend/app/models/logging.py:21-55`
 - Test: `backend/tests/test_session_model.py`
 
 **Interfaces:**
@@ -103,7 +107,8 @@
 - Produces:
   - `app.models.session.SessionStatus` — a `str, enum.Enum` with members `SCHEDULED = "scheduled"`, `IN_PROGRESS = "in_progress"`, `COMPLETED = "completed"`, `MISSED = "missed"`, `SKIPPED = "skipped"`.
   - `app.models.session.WorkoutSession` — columns `id: int`, `program_id: int`, `workout_id: int`, `week: int`, `scheduled_date: date`, `status: SessionStatus`, `completed_at: datetime | None`, `created_at: datetime`, `updated_at: datetime`.
-  - `app.models.logging.WorkoutSetLog.session_id: int | None`.
+  - `app.models.logging.WorkoutSetLog.session_id: int` — **NOT NULL** FK.
+  - `app.models.logging.UserWorkoutLog.session_id: int` — **NOT NULL** FK.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -157,6 +162,30 @@ async def test_set_log_carries_a_session_id(db_session: AsyncSession) -> None:
     await db_session.refresh(log)
 
     assert log.session_id == 7
+
+
+@pytest.mark.asyncio
+async def test_set_log_without_a_session_is_rejected(db_session: AsyncSession) -> None:
+    from app.models import WorkoutSetLog
+
+    db_session.add(WorkoutSetLog(user_id=1, workout_id=1, workout_exercise_id=1, set_number=1))
+
+    with pytest.raises(IntegrityError):
+        await db_session.commit()
+
+
+@pytest.mark.asyncio
+async def test_readiness_log_without_a_session_is_rejected(db_session: AsyncSession) -> None:
+    from datetime import datetime
+
+    from app.models import UserWorkoutLog
+
+    db_session.add(
+        UserWorkoutLog(user_id=1, workout_id=1, session_date=datetime(2026, 7, 27), readiness=4)
+    )
+
+    with pytest.raises(IntegrityError):
+        await db_session.commit()
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -208,13 +237,15 @@ class WorkoutSession(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
 ```
 
-- [ ] **Step 4: Add the set-log column**
+- [ ] **Step 4: Add the session column to both log tables**
 
-In `backend/app/models/logging.py`, inside `WorkoutSetLog`, add after the `workout_exercise_id` column:
+In `backend/app/models/logging.py`, add to `WorkoutSetLog` after `workout_exercise_id`, and to `UserWorkoutLog` after `workout_id`:
 
 ```python
-    session_id: Mapped[int | None] = mapped_column(ForeignKey("workout_sessions.id"), index=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("workout_sessions.id"), nullable=False, index=True)
 ```
+
+NOT NULL on both is the invariant this plan exists to establish — a log that cannot name its session must not be writable.
 
 - [ ] **Step 5: Export from the models package**
 
@@ -229,7 +260,9 @@ and add `"SessionStatus"` and `"WorkoutSession"` to `__all__`.
 - [ ] **Step 6: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_session_model.py -v`
-Expected: PASS (3 tests)
+Expected: PASS (5 tests)
+
+Other suites will now fail to construct logs without a `session_id`. That is expected and is fixed in Tasks 9 and 9.1 — do not relax the constraint to quiet them.
 
 - [ ] **Step 7: Write the migration**
 
@@ -278,17 +311,24 @@ def upgrade() -> None:
     op.create_index(op.f("ix_workout_sessions_workout_id"), "workout_sessions", ["workout_id"])
     op.create_index(op.f("ix_workout_sessions_scheduled_date"), "workout_sessions", ["scheduled_date"])
 
-    op.add_column("workout_set_logs", sa.Column("session_id", sa.Integer(), nullable=True))
-    op.create_index(op.f("ix_workout_set_logs_session_id"), "workout_set_logs", ["session_id"])
-    op.create_foreign_key(
-        "fk_workout_set_logs_session_id", "workout_set_logs", "workout_sessions", ["session_id"], ["id"]
-    )
+    # Dev-stage: no backfill, so pre-existing logs cannot satisfy a NOT NULL
+    # session_id. They are discarded rather than left unanchored.
+    op.execute("DELETE FROM workout_set_logs")
+    op.execute("DELETE FROM user_workout_logs")
+
+    for table in ("workout_set_logs", "user_workout_logs"):
+        op.add_column(table, sa.Column("session_id", sa.Integer(), nullable=False))
+        op.create_index(op.f(f"ix_{table}_session_id"), table, ["session_id"])
+        op.create_foreign_key(
+            f"fk_{table}_session_id", table, "workout_sessions", ["session_id"], ["id"]
+        )
 
 
 def downgrade() -> None:
-    op.drop_constraint("fk_workout_set_logs_session_id", "workout_set_logs", type_="foreignkey")
-    op.drop_index(op.f("ix_workout_set_logs_session_id"), table_name="workout_set_logs")
-    op.drop_column("workout_set_logs", "session_id")
+    for table in ("workout_set_logs", "user_workout_logs"):
+        op.drop_constraint(f"fk_{table}_session_id", table, type_="foreignkey")
+        op.drop_index(op.f(f"ix_{table}_session_id"), table_name=table)
+        op.drop_column(table, "session_id")
 
     op.drop_index(op.f("ix_workout_sessions_scheduled_date"), table_name="workout_sessions")
     op.drop_index(op.f("ix_workout_sessions_workout_id"), table_name="workout_sessions")
@@ -963,8 +1003,8 @@ git commit -m "feat(sessions): add session range and detail queries"
 - Produces:
   - `ScheduleEntryOut` — `session_id: int`, `scheduled_date: date`, `week: int`, `status: str`, `workout_id: int`, `workout_name: str`, `exercise_count: int`, `duration_min: int`.
   - `SessionDetailOut` — everything in `ScheduleEntryOut` plus `program_id: int`, `program_name: str`, `slots: list[SlotPreviewOut]`, `logged_sets: list[WorkoutSetLogOut]`, `reactive_deload: bool`, `deload_reason: str | None`.
-  - `SessionSetLogCreate` — `workout_exercise_id: int`, `set_number: int`, `actual_weight: float | None`, `actual_reps: int | None`, `actual_rpe: float | None`, `effort_method: Literal["rpe", "rir", "borg"]`. No `workout_id`; the session supplies it.
-  - `WorkoutSetLogOut.session_id: int | None`.
+  - `SessionSetLogCreate` — `workout_exercise_id: int`, `set_number: int`, `actual_weight: float | None`, `actual_reps: int | None`, `actual_rpe: float | None`, `effort_method: Literal["rpe", "rir", "borg"]`. No `workout_id`; the session supplies it. This **replaces** `WorkoutSetLogCreate`, which is deleted — there is no second validator set to share or duplicate.
+  - `WorkoutSetLogOut.session_id: int`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1087,13 +1127,21 @@ class SessionSetLogCreate(BaseModel):
         return v
 ```
 
-- [ ] **Step 4: Add session_id to the set-log output schema**
+- [ ] **Step 4: Retire WorkoutSetLogCreate**
 
-In `backend/app/schemas/logging.py`, add to `WorkoutSetLogOut` after `workout_exercise_id`:
+In `backend/app/schemas/logging.py`:
+
+1. Add to `WorkoutSetLogOut`, after `workout_exercise_id`:
 
 ```python
-    session_id: Optional[int] = None
+    session_id: int
 ```
+
+2. Delete the entire `WorkoutSetLogCreate` class and its three validators. `SessionSetLogCreate` supersedes it, and the endpoints that consumed it are deleted in Task 9. Leave `UserWorkoutLogCreate` and `UserWorkoutLogOut` alone.
+
+3. Add `session_id: int` to `UserWorkoutLogOut` after `workout_id`.
+
+Imports in `crud/logging.py` and `endpoints/logging.py` still reference `WorkoutSetLogCreate` and will fail until Task 9. That is expected — do not re-add the class.
 
 - [ ] **Step 5: Run test to verify it passes**
 
@@ -1230,6 +1278,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.v1.dependencies import get_current_user
 from app.core.database import get_db
@@ -1244,9 +1293,20 @@ router = APIRouter(prefix="/users/me", tags=["sessions"])
 DEFAULT_DURATION_MIN = 45
 
 
+async def _workouts_by_id(db: AsyncSession, workout_ids: list[int]) -> dict[int, Workout]:
+    if not workout_ids:
+        return {}
+    result = await db.execute(
+        select(Workout)
+        .where(Workout.id.in_(workout_ids))
+        .options(selectinload(Workout.exercises))
+    )
+    return {workout.id: workout for workout in result.scalars().all()}
+
+
 async def _workout_for(db: AsyncSession, session: WorkoutSession) -> Workout:
-    result = await db.execute(select(Workout).where(Workout.id == session.workout_id))
-    workout = result.scalar_one_or_none()
+    workouts = await _workouts_by_id(db, [session.workout_id])
+    workout = workouts.get(session.workout_id)
     if workout is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workout not found")
     return workout
@@ -1266,23 +1326,22 @@ async def list_schedule(
 ) -> list[ScheduleEntryOut]:
     sessions = await get_sessions_in_range(db, user.id, start, end)
     duration_min = _duration_for(user)
+    workouts = await _workouts_by_id(db, [s.workout_id for s in sessions])
 
-    entries = []
-    for session in sessions:
-        workout = await _workout_for(db, session)
-        entries.append(
-            ScheduleEntryOut(
-                session_id=session.id,
-                scheduled_date=session.scheduled_date,
-                week=session.week,
-                status=session.status.value,
-                workout_id=workout.id,
-                workout_name=workout.name,
-                exercise_count=len(workout.exercises),
-                duration_min=duration_min,
-            )
+    return [
+        ScheduleEntryOut(
+            session_id=session.id,
+            scheduled_date=session.scheduled_date,
+            week=session.week,
+            status=session.status.value,
+            workout_id=session.workout_id,
+            workout_name=workouts[session.workout_id].name,
+            exercise_count=len(workouts[session.workout_id].exercises),
+            duration_min=duration_min,
         )
-    return entries
+        for session in sessions
+        if session.workout_id in workouts
+    ]
 
 
 @router.get("/sessions/{session_id}", response_model=SessionDetailOut)
@@ -1519,12 +1578,19 @@ git commit -m "feat(sessions): resolve session slots from the session's own week
 
 **Files:**
 - Modify: `backend/app/api/v1/endpoints/sessions.py`
-- Modify: `backend/app/crud/logging.py:52-67`
+- Modify: `backend/app/crud/logging.py:12-67`
+- Modify: `backend/app/api/v1/endpoints/logging.py` (delete the workout-scoped routes)
+- Modify: `backend/app/main.py`
+- Modify: `backend/tests/test_logging.py`
 - Test: `backend/tests/test_sessions_api.py`
 
 **Interfaces:**
 - Consumes: `set_session_status` (Task 5); `SessionSetLogCreate` (Task 6).
-- Produces: `POST /users/me/sessions/{session_id}/set-logs`, `POST /users/me/sessions/{session_id}/readiness`, `POST /users/me/sessions/{session_id}/complete`.
+- Produces:
+  - `POST /users/me/sessions/{session_id}/set-logs`, `.../readiness`, `.../complete`.
+  - `_session_detail(db, session, user) -> SessionDetailOut` — the response builder, shared by the GET handler and `complete_session`.
+  - `crud_logging.append_set_log(db, user_id, session, data: SessionSetLogCreate) -> WorkoutSetLog` and `create_workout_log(db, user_id, session, data) -> UserWorkoutLog` — both take the session, not a bare `workout_id`.
+- Removes: every workout-scoped logging route, and the `router` / `users_workout_router` split in `logging.py`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1613,30 +1679,73 @@ async def test_writes_404_for_a_stranger(client: AsyncClient, active_program: Wo
 
 `test_completing_twice_is_idempotent` requires `completed_at` on the response, so add `completed_at: Optional[datetime] = None` to `SessionDetailOut` in `backend/app/schemas/session.py` and populate it from `session.completed_at`.
 
+Also append this, which pins the invariant the whole plan rests on:
+
+```python
+@pytest.mark.asyncio
+async def test_a_set_log_is_always_anchored_to_its_session(
+    authenticated_client: AsyncClient, active_program: WorkoutProgram, db_session: AsyncSession
+) -> None:
+    start = date.today().isoformat()
+    entry = (
+        await authenticated_client.get(f"/api/v1/users/me/schedule?start={start}&end={start}")
+    ).json()[0]
+
+    await authenticated_client.post(
+        f"/api/v1/users/me/sessions/{entry['session_id']}/set-logs",
+        json={"workout_exercise_id": 1, "set_number": 1, "actual_reps": 8, "actual_rpe": 8.0},
+    )
+
+    from app.models import WorkoutSetLog
+
+    logs = (await db_session.execute(select(WorkoutSetLog))).scalars().all()
+    assert [log.session_id for log in logs] == [entry["session_id"]]
+    assert [log.workout_id for log in logs] == [entry["workout_id"]]
+```
+
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_sessions_api.py -v -k "set_log or completing or readiness or stranger"`
 Expected: FAIL — 405 or 404; the write routes do not exist.
 
-- [ ] **Step 3: Persist session_id on set logs**
+- [ ] **Step 3: Make the CRUD writers session-scoped**
 
-In `backend/app/crud/logging.py`, change `append_set_log` to accept and store the session:
+In `backend/app/crud/logging.py`, replace the `WorkoutSetLogCreate` import with `SessionSetLogCreate` from `app.schemas.session`, import `WorkoutSession` from `app.models.session`, and rewrite both writers so the session — not a caller-supplied `workout_id` — determines what the log is attached to:
 
 ```python
 async def append_set_log(
-    db: AsyncSession, user_id: int, data: WorkoutSetLogCreate, session_id: int | None = None
+    db: AsyncSession, user_id: int, session: WorkoutSession, data: SessionSetLogCreate
 ) -> WorkoutSetLog:
-    """Append a new set log to a workout session."""
+    """Append a set log, anchored to the session that produced it."""
     log = WorkoutSetLog(
         user_id=user_id,
-        workout_id=data.workout_id,
+        session_id=session.id,
+        workout_id=session.workout_id,
         workout_exercise_id=data.workout_exercise_id,
         set_number=data.set_number,
         actual_weight=data.actual_weight,
         actual_reps=data.actual_reps,
         actual_rpe=data.actual_rpe,
         effort_method=data.effort_method,
-        session_id=session_id,
+    )
+    db.add(log)
+    await db.flush()
+    await db.commit()
+    await db.refresh(log)
+    return log
+
+
+async def create_workout_log(
+    db: AsyncSession, user_id: int, session: WorkoutSession, data: UserWorkoutLogCreate
+) -> UserWorkoutLog:
+    """Create a readiness log, anchored to the session it describes."""
+    log = UserWorkoutLog(
+        user_id=user_id,
+        session_id=session.id,
+        workout_id=session.workout_id,
+        session_date=_utcnow(),
+        readiness=data.readiness,
+        notes=data.notes,
     )
     db.add(log)
     await db.flush()
@@ -1645,7 +1754,7 @@ async def append_set_log(
     return log
 ```
 
-The default keeps the existing `/workouts/{id}/set-logs` callers working unchanged.
+`workout_id` is kept as a denormalised convenience for the existing queries; `session_id` is the authority. Leave `get_workout_log`, `get_user_workout_logs`, and `get_set_logs` as they are — Task 9.1 revisits the signal queries.
 
 - [ ] **Step 4: Write the endpoints**
 
@@ -1656,7 +1765,7 @@ from app.crud import logging as crud_logging
 from app.crud.session import set_session_status
 from app.models.logging import UserWorkoutLog
 from app.models.session import SessionStatus
-from app.schemas.logging import UserWorkoutLogCreate, UserWorkoutLogOut, WorkoutSetLogCreate
+from app.schemas.logging import UserWorkoutLogCreate, UserWorkoutLogOut
 from app.schemas.session import SessionSetLogCreate
 
 
@@ -1680,12 +1789,7 @@ async def create_session_set_log(
 ) -> WorkoutSetLog:
     session = await _owned_session(db, session_id, user)
 
-    log = await crud_logging.append_set_log(
-        db,
-        user.id,
-        WorkoutSetLogCreate(workout_id=session.workout_id, **data.model_dump()),
-        session_id=session.id,
-    )
+    log = await crud_logging.append_set_log(db, user.id, session, data)
 
     if session.status == SessionStatus.SCHEDULED:
         await set_session_status(db, session, SessionStatus.IN_PROGRESS)
@@ -1705,7 +1809,7 @@ async def create_session_readiness(
     db: AsyncSession = Depends(get_db),
 ) -> UserWorkoutLog:
     session = await _owned_session(db, session_id, user)
-    return await crud_logging.create_workout_log(db, user.id, session.workout_id, data)
+    return await crud_logging.create_workout_log(db, user.id, session, data)
 
 
 @router.post("/sessions/{session_id}/complete", response_model=SessionDetailOut)
@@ -1719,25 +1823,457 @@ async def complete_session(
     if session.status != SessionStatus.COMPLETED:
         await set_session_status(db, session, SessionStatus.COMPLETED)
 
-    return await get_session_detail(session_id, user, db)
+    return await _session_detail(db, session, user)
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [ ] **Step 5: Extract the shared response builder**
 
-Run: `docker-compose exec backend pytest tests/test_sessions_api.py -v`
-Expected: PASS (10 tests)
+`complete_session` must not call the `get_session_detail` route handler. Move the whole `SessionDetailOut(...)` construction from Task 8 into a module-level helper and have both call it:
 
-- [ ] **Step 6: Run the full backend suite**
+```python
+async def _session_detail(
+    db: AsyncSession, session: WorkoutSession, user: User
+) -> SessionDetailOut:
+    workout = await _workout_for(db, session)
+    program, definition = await load_program_with_definition(db, user.id, session.program_id)
+    week_days = derive_week(program, definition, session.week)
+    day = next((d for d in week_days if d["workout_id"] == session.workout_id), None)
+    preview = WorkoutPreviewOut(**day) if day else None
+
+    logs = (
+        await db.execute(
+            select(WorkoutSetLog)
+            .where(WorkoutSetLog.session_id == session.id)
+            .order_by(WorkoutSetLog.workout_exercise_id, WorkoutSetLog.set_number)
+        )
+    ).scalars().all()
+
+    return SessionDetailOut(
+        session_id=session.id,
+        scheduled_date=session.scheduled_date,
+        week=session.week,
+        status=session.status.value,
+        completed_at=session.completed_at,
+        workout_id=workout.id,
+        workout_name=workout.name,
+        exercise_count=len(workout.exercises),
+        duration_min=_duration_for(user),
+        program_id=program.id,
+        program_name=program.name,
+        slots=preview.slots if preview else [],
+        logged_sets=[WorkoutSetLogOut.model_validate(log) for log in logs],
+        reactive_deload=preview.reactive_deload if preview else False,
+        deload_reason=preview.deload_reason if preview else None,
+    )
+```
+
+`get_session_detail` then reduces to:
+
+```python
+@router.get("/sessions/{session_id}", response_model=SessionDetailOut)
+async def get_session_detail(
+    session_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> SessionDetailOut:
+    return await _session_detail(db, await _owned_session(db, session_id, user), user)
+```
+
+- [ ] **Step 6: Delete the legacy logging routes**
+
+Session-scoped routes are now the only way to log. In `backend/app/api/v1/endpoints/logging.py`, delete `create_session_log`, `get_session_log`, `append_set_log`, `get_workout_sets`, `create_set_log`, and `create_readiness` — every route in the file — along with both `router` and `users_workout_router`. The file's remaining content is unused; delete the file.
+
+In `backend/app/main.py`, remove the `logging_router` and `users_workout_router` imports and their two `include_router` calls (lines 93-94).
+
+In `backend/tests/test_logging.py`, delete the tests that exercise the removed HTTP routes. Keep and update the tests that cover `crud_logging` directly, passing a real `WorkoutSession` where they previously passed a `workout_id`. Keep the `other_user` fixtures — `test_sessions_api.py` copies them.
+
+Anything still importing `WorkoutSetLogCreate` is now dead; `docker-compose exec backend grep -rn "WorkoutSetLogCreate\|users_workout_router\|logging_router" app/ tests/` must come back empty.
+
+- [ ] **Step 7: Run test to verify it passes**
+
+Run: `docker-compose exec backend pytest tests/test_sessions_api.py tests/test_logging.py -v`
+Expected: PASS (11 tests in `test_sessions_api.py`, plus the surviving CRUD tests).
+
+- [ ] **Step 8: Run the full backend suite**
 
 Run: `docker-compose exec backend pytest`
-Expected: PASS, with no regressions in `test_logging.py` or `test_programs_flow.py`.
+Expected: `test_programs_live_signals.py` and `test_adaptation.py` may still fail — they construct logs without a session and are fixed in Task 9.1. Everything else passes. Report which suites fail and why; do not relax the NOT NULL constraint.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix && docker-compose exec backend black .
-git add backend/app/api/v1/endpoints/sessions.py backend/app/crud/logging.py backend/app/schemas/session.py backend/tests/test_sessions_api.py
-git commit -m "feat(sessions): add set-log, readiness, and complete endpoints"
+git add -A backend
+git commit -m "feat(sessions): make session-scoped logging the only path"
+```
+
+---
+
+# Phase 1b — Live signals
+
+These three tasks remove the last places where the codebase infers a session from a
+timestamp. They change inputs to the progression engine, so each one ends by running the
+engine's own suites.
+
+## Task 9.1: Session-scoped signal queries
+
+**Files:**
+- Modify: `backend/app/crud/logging.py`
+- Modify: `backend/app/api/v1/endpoints/programs.py:115-123`
+- Test: `backend/tests/test_signal_queries.py`
+
+**Interfaces:**
+- Consumes: `WorkoutSession` (Task 1).
+- Produces:
+  - `get_set_logs_for_sessions(db, program_id: int, user_id: int, since: date) -> list[WorkoutSetLog]`
+  - `get_readiness_for_sessions(db, program_id: int, user_id: int, since: date) -> list[UserWorkoutLog]`
+
+  Both join `WorkoutSetLog.session_id` / `UserWorkoutLog.session_id` to `WorkoutSession.id` and filter on `WorkoutSession.program_id`, so a log can only ever influence the program whose session it belongs to.
+- Removes: `get_set_logs_for_workouts`, `get_workout_logs_for_workouts`.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `backend/tests/test_signal_queries.py`:
+
+```python
+from datetime import date, datetime, timedelta
+
+import pytest
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.crud.logging import get_readiness_for_sessions, get_set_logs_for_sessions
+from app.models import (
+    ProgramStatus,
+    User,
+    UserWorkoutLog,
+    Workout,
+    WorkoutProgram,
+    WorkoutSession,
+    WorkoutSetLog,
+)
+from app.services.program.scheduling import materialize_sessions
+
+
+async def _program(db: AsyncSession, user_id: int, name: str) -> WorkoutProgram:
+    program = WorkoutProgram(
+        user_id=user_id,
+        template_id=1,
+        environment_id=1,
+        name=name,
+        status=ProgramStatus.ACTIVE,
+        duration_weeks=2,
+        days_per_week=1,
+        start_date=date.today(),
+        constraints={},
+    )
+    db.add(program)
+    await db.flush()
+    db.add(Workout(program_id=program.id, key="a", name="Day A", order=0))
+    await db.commit()
+    await db.refresh(program, ["workouts"])
+    await materialize_sessions(db, program)
+    return program
+
+
+@pytest_asyncio.fixture
+async def two_programs(db_session: AsyncSession, test_user: User) -> tuple[WorkoutProgram, WorkoutProgram]:
+    return await _program(db_session, test_user.id, "A"), await _program(db_session, test_user.id, "B")
+
+
+async def _log_set(db: AsyncSession, user_id: int, session: WorkoutSession, rpe: float) -> None:
+    db.add(
+        WorkoutSetLog(
+            user_id=user_id,
+            session_id=session.id,
+            workout_id=session.workout_id,
+            workout_exercise_id=1,
+            set_number=1,
+            actual_rpe=rpe,
+            effort_method="rpe",
+        )
+    )
+    await db.commit()
+
+
+@pytest.mark.asyncio
+async def test_set_logs_are_scoped_to_one_program(
+    db_session: AsyncSession, test_user: User, two_programs: tuple[WorkoutProgram, WorkoutProgram]
+) -> None:
+    program_a, program_b = two_programs
+    sessions_a = (await db_session.execute(
+        WorkoutSession.__table__.select().where(WorkoutSession.program_id == program_a.id)
+    )).fetchall()
+    session_a_id = sessions_a[0].id
+    session_a = await db_session.get(WorkoutSession, session_a_id)
+    assert session_a is not None
+    await _log_set(db_session, test_user.id, session_a, 8.0)
+
+    from_a = await get_set_logs_for_sessions(db_session, program_a.id, test_user.id, date.today() - timedelta(days=14))
+    from_b = await get_set_logs_for_sessions(db_session, program_b.id, test_user.id, date.today() - timedelta(days=14))
+
+    assert len(from_a) == 1
+    assert from_b == []
+
+
+@pytest.mark.asyncio
+async def test_set_logs_exclude_another_user(
+    db_session: AsyncSession, test_user: User, two_programs: tuple[WorkoutProgram, WorkoutProgram]
+) -> None:
+    program_a, _ = two_programs
+    session = (await db_session.execute(
+        WorkoutSession.__table__.select().where(WorkoutSession.program_id == program_a.id)
+    )).fetchall()[0]
+    resolved = await db_session.get(WorkoutSession, session.id)
+    assert resolved is not None
+    await _log_set(db_session, test_user.id, resolved, 8.0)
+
+    assert await get_set_logs_for_sessions(db_session, program_a.id, 999, date.today() - timedelta(days=14)) == []
+
+
+@pytest.mark.asyncio
+async def test_readiness_is_scoped_to_one_program(
+    db_session: AsyncSession, test_user: User, two_programs: tuple[WorkoutProgram, WorkoutProgram]
+) -> None:
+    program_a, program_b = two_programs
+    session = (await db_session.execute(
+        WorkoutSession.__table__.select().where(WorkoutSession.program_id == program_a.id)
+    )).fetchall()[0]
+    resolved = await db_session.get(WorkoutSession, session.id)
+    assert resolved is not None
+    db_session.add(
+        UserWorkoutLog(
+            user_id=test_user.id,
+            session_id=resolved.id,
+            workout_id=resolved.workout_id,
+            session_date=datetime.now(),
+            readiness=2,
+        )
+    )
+    await db_session.commit()
+
+    since = date.today() - timedelta(days=14)
+    assert len(await get_readiness_for_sessions(db_session, program_a.id, test_user.id, since)) == 1
+    assert await get_readiness_for_sessions(db_session, program_b.id, test_user.id, since) == []
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `docker-compose exec backend pytest tests/test_signal_queries.py -v`
+Expected: FAIL — `ImportError: cannot import name 'get_set_logs_for_sessions'`
+
+- [ ] **Step 3: Write the queries**
+
+In `backend/app/crud/logging.py`, delete `get_set_logs_for_workouts` and `get_workout_logs_for_workouts`, and add:
+
+```python
+async def get_set_logs_for_sessions(
+    db: AsyncSession, program_id: int, user_id: int, since: date
+) -> list[WorkoutSetLog]:
+    """Set logs for one program's sessions, windowed to the reactive-deload lookback.
+
+    Joining through workout_sessions is what scopes this to a single program -
+    workout_id alone is shared across every week of the program that owns it.
+    """
+    stmt = (
+        select(WorkoutSetLog)
+        .join(WorkoutSession, WorkoutSession.id == WorkoutSetLog.session_id)
+        .where(
+            and_(
+                WorkoutSession.program_id == program_id,
+                WorkoutSetLog.user_id == user_id,
+                WorkoutSetLog.created_at >= since,
+            )
+        )
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_readiness_for_sessions(
+    db: AsyncSession, program_id: int, user_id: int, since: date
+) -> list[UserWorkoutLog]:
+    """Readiness logs for one program's sessions, for the reactive-deload window."""
+    stmt = (
+        select(UserWorkoutLog)
+        .join(WorkoutSession, WorkoutSession.id == UserWorkoutLog.session_id)
+        .where(
+            and_(
+                WorkoutSession.program_id == program_id,
+                UserWorkoutLog.user_id == user_id,
+                UserWorkoutLog.session_date >= since,
+            )
+        )
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+```
+
+Add `from app.models.session import WorkoutSession` to the imports.
+
+- [ ] **Step 4: Rewire `_preview_out`**
+
+In `backend/app/api/v1/endpoints/programs.py`, change the import on line 19 to the two new names, and replace the signal-loading block (lines 115-123) with:
+
+```python
+    set_logs_by_exercise: dict[int, list[WorkoutSetLog]] | None = None
+    readiness_logs: list[UserWorkoutLog] | None = None
+    if current_week is not None:
+        since = date.today() - timedelta(days=DELOAD_LOOKBACK_DAYS)
+        set_logs_by_exercise = {}
+        for log in await get_set_logs_for_sessions(db, program.id, user.id, since):
+            set_logs_by_exercise.setdefault(log.workout_exercise_id, []).append(log)
+        readiness_logs = await get_readiness_for_sessions(db, program.id, user.id, since)
+```
+
+The `workout_ids` local is now unused — delete it.
+
+- [ ] **Step 5: Run tests to verify they pass**
+
+Run: `docker-compose exec backend pytest tests/test_signal_queries.py tests/test_programs_live_signals.py -v`
+Expected: `test_signal_queries.py` PASS (3 tests). `test_programs_live_signals.py` builds logs without a session and will need each construction updated to create a `WorkoutSession` and pass its id — do that, keeping every existing assertion about which weeks receive signals unchanged.
+
+- [ ] **Step 6: Commit**
+
+```bash
+docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix
+git add -A backend
+git commit -m "feat(signals): scope live-signal queries through sessions"
+```
+
+---
+
+## Task 9.2: Group autoregulation by session
+
+**Files:**
+- Modify: `backend/app/services/progression/autoregulation.py:52-82`
+- Test: `backend/tests/test_adaptation.py`
+
+**Interfaces:**
+- Consumes: `WorkoutSetLog.session_id` (Task 1).
+- Produces: `compute_adjustment` groups EWMA samples by `log.session_id` instead of `log.created_at.date()`. Its signature, `MIN_SESSIONS`, EWMA parameters, and clamp range are unchanged.
+
+- [ ] **Step 1: Write the failing test**
+
+Append to `backend/tests/test_adaptation.py`:
+
+```python
+def test_two_sessions_on_one_day_count_as_two_samples() -> None:
+    from datetime import datetime
+
+    from app.models import WorkoutSetLog
+    from app.services.progression.autoregulation import compute_adjustment
+
+    same_day = datetime(2026, 7, 27, 9, 0)
+    logs = [
+        WorkoutSetLog(
+            user_id=1, session_id=s, workout_id=1, workout_exercise_id=1,
+            set_number=1, actual_rpe=9.5, effort_method="rpe", created_at=same_day,
+        )
+        for s in (1, 2, 3)
+    ]
+
+    factor, reason = compute_adjustment(logs, exercise_id=1, model_key="linear", target_rpe=8.0)
+
+    assert "insufficient history" not in reason
+    assert factor < 1.0
+
+
+def test_one_session_spanning_midnight_counts_as_one_sample() -> None:
+    from datetime import datetime
+
+    from app.models import WorkoutSetLog
+    from app.services.progression.autoregulation import compute_adjustment
+
+    logs = [
+        WorkoutSetLog(
+            user_id=1, session_id=1, workout_id=1, workout_exercise_id=1,
+            set_number=n, actual_rpe=9.5, effort_method="rpe", created_at=ts,
+        )
+        for n, ts in enumerate(
+            [datetime(2026, 7, 27, 23, 50), datetime(2026, 7, 28, 0, 10)], start=1
+        )
+    ]
+
+    factor, reason = compute_adjustment(logs, exercise_id=1, model_key="linear", target_rpe=8.0)
+
+    assert "insufficient history" in reason
+    assert factor == 1.0
+```
+
+The first test currently fails because three same-day sessions collapse to one date key; the second fails because one session split across midnight looks like two.
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `docker-compose exec backend pytest tests/test_adaptation.py -v -k "one_day or midnight"`
+Expected: FAIL on both.
+
+- [ ] **Step 3: Change the grouping key**
+
+In `backend/app/services/progression/autoregulation.py`, replace `_session_key` and its use:
+
+```python
+def _session_key(log: WorkoutSetLog) -> int:
+    return log.session_id
+```
+
+and change the `sessions` dict annotation in `compute_adjustment` from `dict[date, list[float]]` to `dict[int, list[float]]`.
+
+`ordered_keys = sorted(sessions.keys())` still orders correctly: session ids are monotonic in creation order, and a program's sessions are inserted week-ascending by `materialize_sessions`. Update the module docstring's description of how sessions are identified, and drop the now-unused `date`/`datetime` imports if nothing else needs them.
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `docker-compose exec backend pytest tests/test_adaptation.py -v`
+Expected: PASS. Existing tests in this file construct logs without `session_id`; give each the session id its date key previously implied, preserving what each test was asserting about sample counts.
+
+- [ ] **Step 5: Commit**
+
+```bash
+docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix
+git add -A backend
+git commit -m "fix(autoregulation): group EWMA samples by session, not calendar date"
+```
+
+---
+
+## Task 9.3: Live-signal regression sweep
+
+**Files:**
+- Modify: `backend/tests/test_programs_live_signals.py`, `backend/tests/test_progression_deload.py`, `backend/tests/harness/` as needed
+- Test: the whole backend suite
+
+**Interfaces:**
+- Consumes: everything from Tasks 1-9.2.
+- Produces: a green backend suite with the session model fully in place.
+
+- [ ] **Step 1: Run the full suite and inventory the failures**
+
+Run: `docker-compose exec backend pytest -x -q 2>&1 | tail -40`
+
+Every remaining failure should be a test constructing a `WorkoutSetLog` or `UserWorkoutLog` without a `session_id`. List them before fixing anything.
+
+- [ ] **Step 2: Fix each failing test at the fixture level**
+
+For each, create the `WorkoutSession` the log belongs to and pass its id. Preserve every existing assertion — these suites encode the progression engine's contract, and this task must not change what they assert, only how their fixtures are built.
+
+If a test genuinely cannot be expressed under the new model, stop and report it rather than weakening the assertion. That would mean the session model contradicts the engine's contract, which is a plan-level problem.
+
+- [ ] **Step 3: Verify the deload trigger is untouched**
+
+Run: `docker-compose exec backend pytest tests/test_progression_deload.py -v`
+Expected: PASS with no edits to `deload.py`. `compute_deload_trigger` keeps its 14-day time window and its signature; only the sourcing of `readiness_logs` changed, in Task 9.1.
+
+- [ ] **Step 4: Run the whole suite**
+
+Run: `docker-compose exec backend pytest`
+Expected: PASS, everything.
+
+- [ ] **Step 5: Commit**
+
+```bash
+docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix && docker-compose exec backend black .
+git add -A backend
+git commit -m "test(signals): anchor engine test fixtures to sessions"
 ```
 
 ---
@@ -3569,15 +4105,15 @@ Add `import { useTodaySession } from '@/hooks/useSchedule';`, and replace the "T
 
 Delete the now-unused `getTodayWorkout`, `displayWeekNumber`, and `activeProgramId`, and change the "This Week" section's guard from `activeProgramId && program` to `program`.
 
-- [ ] **Step 5: Point the legacy API modules at sessions**
+- [ ] **Step 5: Delete the legacy API modules**
 
-`frontend/src/api/logging.ts` and `frontend/src/api/workouts.ts` are now unused by the tracking page. Delete `logSetLog` and `postWorkoutReadiness` if nothing else imports them:
+The backend routes these call were deleted in Task 9, so they are dead code pointing at 404s. Confirm nothing still imports them:
 
 ```bash
-docker-compose exec frontend grep -rn "logSetLog\|postWorkoutReadiness" src/
+docker-compose exec frontend grep -rn "logSetLog\|postWorkoutReadiness\|api/logging\|api/workouts" src/
 ```
 
-Delete each function with no remaining callers, and delete the file if it ends up empty. Leave anything still referenced alone.
+Then `rm frontend/src/api/logging.ts frontend/src/api/workouts.ts` along with any test files covering them. If the grep finds a live caller, fix that caller to use `@/api/sessions` — do not keep the module alive.
 
 - [ ] **Step 6: Run the full frontend suite**
 
@@ -3630,11 +4166,20 @@ docker-compose exec backend python -m app.db.seed.seed_exercises
 ```
 Expected: migration applies cleanly to a fresh database; `alembic heads` reports one head.
 
-- [ ] **Step 5: Walk the flow by hand**
+- [ ] **Step 5: Verify no path back to workout-scoped logging survives**
+
+```bash
+docker-compose exec backend grep -rn "WorkoutSetLogCreate\|get_set_logs_for_workouts\|get_workout_logs_for_workouts\|users_workout_router" app/ tests/
+docker-compose exec frontend grep -rn "api/logging\|api/workouts\|useWorkoutDetails" src/
+```
+
+Expected: both empty. Any hit is a leftover route into the ambiguity this plan removed.
+
+- [ ] **Step 6: Walk the flow by hand**
 
 Create a program, accept it, then confirm: `/schedule` lists the current week with correct dates; prev/next moves weeks and the URL `?week=` follows; tapping a session opens `/sessions/:id` with the right prescription for that week; Start opens the tracker; logging a set then reloading `/sessions/:id` shows it as in progress with the set recorded; completing returns to `/` and the session reads done; a past unstarted session reads missed.
 
-- [ ] **Step 6: Report**
+- [ ] **Step 7: Report**
 
 State plainly which of the above passed and which did not. Do not mark the plan complete with any step failing.
 
@@ -3645,4 +4190,5 @@ State plainly which of the above passed and which did not. Do not mark the plan 
 - **`workout_id` is a template id, not a session id.** If you find yourself keying anything user-facing off `workout_id` alone, stop — that is the bug this whole plan exists to remove.
 - **`_load` in `programs.py` is the reference** for turning a program into a `(program, definition)` pair. Reuse it; do not reimplement template resolution.
 - **The `useSchedule` mock in the page tests uses `importActual`** so that `weekRange` and `toIsoDate` stay real while `useSchedule` is stubbed. Keep that shape — stubbing the whole module breaks the week arithmetic under test.
-- **Pre-existing wart, leave alone:** `backend/app/api/v1/endpoints/logging.py` exposes two routers (`router` and `users_workout_router`) with overlapping responsibilities. Not in scope.
+- **`session_id` NOT NULL is the point.** Several existing test fixtures build logs without one and will fail loudly from Task 1 onward. That is the constraint doing its job. Fix the fixtures (Tasks 9, 9.1, 9.3); never make the column nullable to get a suite green.
+- **Do not change what the engine asserts.** Tasks 9.1-9.3 change how the progression engine's inputs are *sourced*, not what it computes. `test_progression_deload.py` should pass with no edit to `deload.py`. If an engine test can only pass by weakening its assertion, stop and report — that means the session model contradicts the engine's contract.

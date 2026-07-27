@@ -144,10 +144,63 @@ scheduler or worker is introduced.
 
 ### Unchanged
 
-`current_week` in `programs.py:110-113` stays as-is — program preview still needs it. The
-legacy `/workouts/{id}/sets` and `/workouts/{id}/logs` routes remain; the frontend simply
-stops calling the two it uses. The split-router duplication in `logging.py:19-20` is a
-pre-existing wart and is not folded into this change.
+`current_week` in `programs.py:110-113` stays as-is — program preview still needs it.
+
+## Session Anchoring (scope extension)
+
+The sections above make sessions the anchor for *scheduling*. This section makes them the
+anchor for *logging* too, removing the timestamp inference that currently stands in for
+it. Decided after the initial design, on the principle that dev-stage code should be
+made correct rather than preserved.
+
+### Both log tables become session-scoped
+
+`WorkoutSetLog.session_id` and `UserWorkoutLog.session_id` are **NOT NULL** FKs. A log
+that cannot name its session cannot be written. This is what makes the week-ambiguity
+problem structurally impossible rather than merely avoided by convention.
+
+Consequently these are **deleted**, not deprecated:
+
+- `POST/GET /workouts/{id}/sets`, `POST /workouts/{id}/logs`, `GET /workouts/{id}/logs/{log_id}`
+- `POST /users/me/workouts/{id}/set-logs`, `POST /users/me/workouts/{id}/readiness`
+- `schemas.logging.WorkoutSetLogCreate` (superseded by `SessionSetLogCreate`)
+- the duplicate `router` / `users_workout_router` split in `logging.py:19-20`
+
+Session-scoped routes are the only way to log. With `WorkoutSetLogCreate` gone there is no
+second validator set to duplicate or share.
+
+### The live-signal queries stop inferring
+
+Two heuristics exist today only because logs could not name their session:
+
+**`compute_adjustment` groups by calendar date.** `_session_key`
+(`autoregulation.py:52-54`) buckets set logs by `created_at.date()`. Two sessions on one
+day merge into a single EWMA sample; one session spanning midnight splits into two. It
+groups by `log.session_id` instead — exact by construction.
+
+**`_preview_out` fans out by `workout_id` + a date window.**
+`get_set_logs_for_workouts` and `get_workout_logs_for_workouts` (`programs.py:115-123`)
+take every workout id in the program and filter on `created_at >= today - 14d`. They are
+replaced by session-scoped queries keyed on `program_id` and a week window:
+
+```
+get_set_logs_for_sessions(db, program_id, user_id, since)  -> dict[int, list[WorkoutSetLog]]
+get_readiness_for_sessions(db, program_id, user_id, since) -> list[UserWorkoutLog]
+```
+
+Both join through `workout_sessions`, so a log can only ever influence the program whose
+session it belongs to.
+
+### What deliberately does not change
+
+`DELOAD_LOOKBACK_DAYS = 14` stays a **time** window, and `compute_deload_trigger` keeps
+its current signature and semantics. Recent fatigue is genuinely a function of elapsed
+time, not of session count — the defect was never the window, only which logs the window
+could see. Fixing the sourcing without redefining the policy keeps
+`test_progression_deload.py` meaningful.
+
+`compute_adjustment`'s EWMA parameters, `MIN_SESSIONS`, and clamping range are likewise
+untouched. Only its grouping key changes.
 
 ## Frontend
 
@@ -235,6 +288,12 @@ TDD, per project convention.
 - Status transitions: first set log, complete, complete-again.
 - Ownership 404s on every session endpoint.
 - Schedule range query returns exactly the sessions in `[start, end]`.
+- `session_id` is NOT NULL on both log tables — a write without one fails.
+- `compute_adjustment` treats two same-day sessions as two EWMA samples, and one session
+  spanning midnight as one.
+- The session-scoped signal queries never return logs from another program or user.
+- `test_programs_live_signals.py` still passes: current week gets signals, adjacent weeks
+  stay nominal, draft/archived/future/overrun programs get none.
 
 **Frontend**
 
@@ -245,7 +304,12 @@ TDD, per project convention.
 
 ## Sequencing
 
-One spec, two implementation phases with the commit boundary between them:
+One spec, three implementation phases with commit boundaries between them:
 
-1. Backend — model, migration, materialization, missed-flip, endpoints.
-2. Frontend — routes, screens, hooks, dashboard rewire, folded-in fixes.
+1. Backend — model, migration, materialization, missed-flip, endpoints, legacy route removal.
+2. Live signals — session-scoped signal queries, `compute_adjustment` grouping.
+3. Frontend — routes, screens, hooks, dashboard rewire, folded-in fixes.
+
+Phase 2 is the riskiest: it changes inputs to the progression engine, which has its own
+spec and test suite. It is sequenced after the session model exists and before the
+frontend, so any engine regression surfaces against a stable backend.
