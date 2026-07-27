@@ -11,7 +11,6 @@ from .injury import InjuryRecordCreate, InjuryRecordResponse, InjuryRecordUpdate
 from .logging import (
     UserWorkoutLogCreate,
     UserWorkoutLogOut,
-    WorkoutSetLogCreate,
     WorkoutSetLogOut,
 )
 from .program import (
@@ -94,6 +93,5 @@ __all__ = [
     "SlotExplanationOut",
     "UserWorkoutLogCreate",
     "UserWorkoutLogOut",
-    "WorkoutSetLogCreate",
     "WorkoutSetLogOut",
 ]

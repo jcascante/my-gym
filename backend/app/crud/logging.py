@@ -5,17 +5,42 @@ from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.logging import UserWorkoutLog, WorkoutSetLog
+from app.models.session import WorkoutSession
 from app.models.user import _utcnow
-from app.schemas.logging import UserWorkoutLogCreate, WorkoutSetLogCreate
+from app.schemas.logging import UserWorkoutLogCreate
+from app.schemas.session import SessionSetLogCreate
+
+
+async def append_set_log(
+    db: AsyncSession, user_id: int, session: WorkoutSession, data: SessionSetLogCreate
+) -> WorkoutSetLog:
+    """Append a set log, anchored to the session that produced it."""
+    log = WorkoutSetLog(
+        user_id=user_id,
+        session_id=session.id,
+        workout_id=session.workout_id,
+        workout_exercise_id=data.workout_exercise_id,
+        set_number=data.set_number,
+        actual_weight=data.actual_weight,
+        actual_reps=data.actual_reps,
+        actual_rpe=data.actual_rpe,
+        effort_method=data.effort_method,
+    )
+    db.add(log)
+    await db.flush()
+    await db.commit()
+    await db.refresh(log)
+    return log
 
 
 async def create_workout_log(
-    db: AsyncSession, user_id: int, workout_id: int, data: UserWorkoutLogCreate
+    db: AsyncSession, user_id: int, session: WorkoutSession, data: UserWorkoutLogCreate
 ) -> UserWorkoutLog:
-    """Create a new workout session log."""
+    """Create a readiness log, anchored to the session it describes."""
     log = UserWorkoutLog(
         user_id=user_id,
-        workout_id=workout_id,
+        session_id=session.id,
+        workout_id=session.workout_id,
         session_date=_utcnow(),
         readiness=data.readiness,
         notes=data.notes,
@@ -47,25 +72,6 @@ async def get_user_workout_logs(
     )
     result = await db.execute(stmt)
     return list(result.scalars().all())
-
-
-async def append_set_log(db: AsyncSession, user_id: int, data: WorkoutSetLogCreate) -> WorkoutSetLog:
-    """Append a new set log to a workout session."""
-    log = WorkoutSetLog(
-        user_id=user_id,
-        workout_id=data.workout_id,
-        workout_exercise_id=data.workout_exercise_id,
-        set_number=data.set_number,
-        actual_weight=data.actual_weight,
-        actual_reps=data.actual_reps,
-        actual_rpe=data.actual_rpe,
-        effort_method=data.effort_method,
-    )
-    db.add(log)
-    await db.flush()
-    await db.commit()
-    await db.refresh(log)
-    return log
 
 
 async def get_set_logs(db: AsyncSession, workout_id: int, user_id: int) -> list[WorkoutSetLog]:

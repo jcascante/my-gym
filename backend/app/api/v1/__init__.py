@@ -2,12 +2,10 @@ from .endpoints import (
     auth_router,
     exercises_router,
     injuries_router,
-    logging_router,
     programs_router,
     templates_router,
     training_environments_router,
     users_router,
-    users_workout_router,
 )
 
 __all__ = [
@@ -18,6 +16,4 @@ __all__ = [
     "templates_router",
     "programs_router",
     "injuries_router",
-    "logging_router",
-    "users_workout_router",
 ]

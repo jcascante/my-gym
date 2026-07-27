@@ -29,6 +29,7 @@ class UserWorkoutLog(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     workout_id: Mapped[int] = mapped_column(ForeignKey("workouts.id"), nullable=False, index=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("workout_sessions.id"), nullable=False, index=True)
     session_date: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
     readiness: Mapped[int | None] = mapped_column(Integer)  # 1-5 scale, nullable if not provided
     notes: Mapped[str | None] = mapped_column(Text)
@@ -47,6 +48,7 @@ class WorkoutSetLog(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     workout_id: Mapped[int] = mapped_column(ForeignKey("workouts.id"), nullable=False, index=True)
     workout_exercise_id: Mapped[int] = mapped_column(ForeignKey("workout_exercises.id"), nullable=False, index=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("workout_sessions.id"), nullable=False, index=True)
     set_number: Mapped[int] = mapped_column(Integer, nullable=False)
     actual_weight: Mapped[float | None] = mapped_column(Float)
     actual_reps: Mapped[int | None] = mapped_column(Integer)

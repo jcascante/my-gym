@@ -1,8 +1,6 @@
 from .auth import router as auth_router
 from .exercises import router as exercises_router
 from .injuries import router as injuries_router
-from .logging import router as logging_router
-from .logging import users_workout_router
 from .programs import router as programs_router
 from .templates import router as templates_router
 from .training_environments import router as training_environments_router
@@ -16,6 +14,4 @@ __all__ = [
     "templates_router",
     "programs_router",
     "injuries_router",
-    "logging_router",
-    "users_workout_router",
 ]

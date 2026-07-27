@@ -48,8 +48,10 @@ from app.services.program.checkin import apply_check_in
 from app.services.program.drafting import build_draft
 from app.services.program.engine_config import EngineConfig, get_engine_config
 from app.services.program.explain import explain_slot, explain_template
+from app.services.program.loading import load_program_with_definition
 from app.services.program.matching import MatchInput, rank_templates
 from app.services.program.preview import derive_week
+from app.services.program.scheduling import materialize_sessions
 from app.services.program.selection import (
     SelectionContext,
     contraindication_tag_for_region,
@@ -291,13 +293,7 @@ async def draft(
 
 
 async def _load(db: AsyncSession, user: User, program_id: int) -> tuple[WorkoutProgram, TemplateDefinition]:
-    program = await get_program(db, user.id, program_id)
-    if program is None:
-        raise ProgramNotFoundError()
-    template = await get_template(db, program.template_id)
-    definition = TemplateDefinition.from_orm_template(template)
-    style = program.constraints.get("progression_style", "consistent")
-    return program, apply_progression_style(definition, style)
+    return await load_program_with_definition(db, user.id, program_id)
 
 
 @router.get("/active/current", response_model=ProgramPreviewOut)
@@ -402,7 +398,10 @@ async def accept(
     program, definition = await _load(db, user, program_id)
     program.status = ProgramStatus.ACTIVE
     await save_program(db, program)
+    # save_program's bare db.refresh() expires relationships, so re-fetch with the
+    # eager-loaded workouts materialize_sessions needs before touching program.workouts.
     program = cast(WorkoutProgram, await get_program(db, user.id, program_id))
+    await materialize_sessions(db, program)
     return await _preview_out(db, program, definition, user)
 
 

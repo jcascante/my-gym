@@ -11,6 +11,7 @@ from .program import (  # noqa: F401
     WorkoutExercise,
     WorkoutProgram,
 )
+from .session import SessionStatus, WorkoutSession
 from .telemetry import EngineEvent
 from .training_environment import EnvironmentType, TrainingEnvironment
 from .user import (
@@ -52,4 +53,6 @@ __all__ = [
     "CheckInStatus",
     "UserWorkoutLog",
     "WorkoutSetLog",
+    "SessionStatus",
+    "WorkoutSession",
 ]
