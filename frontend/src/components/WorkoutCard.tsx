@@ -1,12 +1,12 @@
 import { WorkoutPreview } from '@/types/program';
-import { Button, Card } from '@/components';
+import { Card } from '@/components';
 
 export interface WorkoutCardProps {
   workout: WorkoutPreview;
   programName: string;
   weekNumber: number;
   durationMin?: number;
-  onStartClick?: () => void;
+  onStartClick: () => void;
 }
 
 export function WorkoutCard({
@@ -17,56 +17,35 @@ export function WorkoutCard({
   onStartClick,
 }: WorkoutCardProps) {
   const exerciseCount = workout.slots.length;
+  const exerciseLabel = `${exerciseCount} ${exerciseCount === 1 ? 'exercise' : 'exercises'}`;
+  const meta = `${programName} • Week ${weekNumber} • ${exerciseLabel} • ${durationMin} min`;
 
   return (
-    <Card padding="lg" className="border-l-4 border-primary-600">
-      <div className="mb-4">
-        <h2 className="heading-lg text-neutral-900 dark:text-neutral-50">{workout.name}</h2>
-        <p className="body-sm text-neutral-600 dark:text-neutral-400 mt-1">
-          {programName} • Week {weekNumber}
-        </p>
-      </div>
-
-      <div className="flex items-center gap-5 mb-6 body-sm text-neutral-600 dark:text-neutral-400">
-        <div className="flex items-center gap-1.5">
-          <span className="text-base leading-none" aria-hidden="true">
-            📋
-          </span>
-          <span>
-            {exerciseCount} {exerciseCount === 1 ? 'exercise' : 'exercises'}
+    <button
+      type="button"
+      onClick={onStartClick}
+      aria-label={`Start ${workout.name}, ${exerciseLabel}, ${durationMin} minutes`}
+      className="block w-full text-left rounded-lg transition-smooth focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
+    >
+      <Card padding="md" className="border-l-4 border-primary-600">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="label-sm text-primary-700 dark:text-primary-400 uppercase tracking-wide">
+              Today
+            </p>
+            <h2 className="heading-lg text-neutral-900 dark:text-neutral-50 truncate">
+              {workout.name}
+            </h2>
+            <p className="body-sm text-neutral-600 dark:text-neutral-400 mt-1 truncate">{meta}</p>
+          </div>
+          <span
+            aria-hidden="true"
+            className="shrink-0 body-sm font-medium text-primary-700 dark:text-primary-400"
+          >
+            Start →
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-base leading-none" aria-hidden="true">
-            ⏱️
-          </span>
-          <span>{durationMin} min</span>
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <p className="label-sm text-neutral-600 dark:text-neutral-400 mb-3">Exercises</p>
-        <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
-          {workout.slots.map((slot) => (
-            <div
-              key={slot.workout_exercise_id}
-              className="flex items-center justify-between gap-4 body-sm py-3 first:pt-0 last:pb-0"
-            >
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                {slot.exercise_name}
-              </span>
-              <span className="shrink-0 font-variant-numeric tabular-nums text-neutral-600 dark:text-neutral-400 text-sm">
-                {slot.sets} × {slot.reps}
-                {slot.load ? ` @ ${slot.load} lb` : ''}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Button variant="primary" size="lg" className="w-full" onClick={onStartClick}>
-        Start Workout
-      </Button>
-    </Card>
+      </Card>
+    </button>
   );
 }
