@@ -21,16 +21,19 @@ export default function DashboardPage() {
   const getTodayWorkout = () => {
     if (!program?.weeks) return null;
 
-    const weekKeys = Object.keys(program.weeks).sort();
+    const weekKeys = Object.keys(program.weeks).sort((a, b) => Number(a) - Number(b));
     if (weekKeys.length === 0) return null;
 
-    const firstWeekWorkouts = program.weeks[weekKeys[0]];
-    if (firstWeekWorkouts.length === 0) return null;
+    const currentWeekKey =
+      program.current_week != null ? String(program.current_week) : weekKeys[0];
+    const currentWeekWorkouts = program.weeks[currentWeekKey] ?? program.weeks[weekKeys[0]];
+    if (!currentWeekWorkouts || currentWeekWorkouts.length === 0) return null;
 
-    return firstWeekWorkouts[0];
+    return currentWeekWorkouts[0];
   };
 
   const todayWorkout = getTodayWorkout();
+  const displayWeekNumber = program?.current_week ?? 1;
 
   return (
     <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900 py-8 px-4">
@@ -57,7 +60,7 @@ export default function DashboardPage() {
               <WorkoutCard
                 workout={todayWorkout}
                 programName={program?.name || 'Your Program'}
-                weekNumber={1}
+                weekNumber={displayWeekNumber}
                 durationMin={userProfile?.workout_duration_min || 45}
                 onStartClick={() =>
                   navigate(`/workouts/${todayWorkout.workout_id}?programId=${activeProgramId}`)
