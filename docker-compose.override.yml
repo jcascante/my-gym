@@ -1,0 +1,16 @@
+services:
+  postgres:
+    ports:
+      - "5434:5432"
+
+  backend:
+    ports:
+      - "8001:8000"
+    environment:
+      BACKEND_CORS_ORIGINS: '["http://localhost:5174"]'
+
+  frontend:
+    ports:
+      - "5174:5173"
+    environment:
+      VITE_API_URL: http://localhost:8001
