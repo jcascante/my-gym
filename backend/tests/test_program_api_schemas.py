@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.program_api import DraftRequest, MatchRequest
+from app.schemas.program_api import Advisory, DraftRequest, MatchRequest, ProgramPreviewOut
 
 
 def _base_kwargs():
@@ -29,6 +29,7 @@ def test_draft_request_carries_required_inputs():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
         required_inputs={"squat_start": 80},
     )
     assert r.required_inputs["squat_start"] == 80
@@ -43,6 +44,7 @@ def test_draft_request_defaults_to_consistent_progression():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
     )
     assert r.progression_style.value == "consistent"
 
@@ -56,6 +58,7 @@ def test_draft_request_accepts_variable_progression():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
         progression_style="variable",
     )
     assert r.progression_style.value == "variable"
@@ -70,6 +73,7 @@ def test_draft_request_defaults_effort_method_to_none():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
     )
     assert r.effort_method is None
 
@@ -83,6 +87,7 @@ def test_draft_request_accepts_percent_1rm_effort_method():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
         effort_method="percent_1rm",
     )
     assert r.effort_method.value == "percent_1rm"
@@ -115,6 +120,7 @@ def test_draft_request_inherits_new_signals():
         fitness_focus="strength",
         weight_unit="kg",
         duration_weeks=8,
+        start_date="2026-01-05",
         variety_preference="high",
     )
     assert req.variety_preference.value == "high"
@@ -128,3 +134,40 @@ def test_match_request_accepts_movement_preferences_at_boundaries():
 def test_match_request_rejects_negative_movement_preference():
     with pytest.raises(ValidationError):
         MatchRequest(**_base_kwargs(), movement_preferences={"barbell": -0.1})
+
+
+def test_advisory_round_trips():
+    a = Advisory(code="VOLUME_BELOW_MEV", severity="warning", message="Chest is low.", subject="chest")
+    dumped = a.model_dump()
+    restored = Advisory.model_validate(dumped)
+    assert restored == a
+
+
+def test_advisory_subject_defaults_to_none():
+    a = Advisory(code="VOLUME_BELOW_MEV", severity="warning", message="Chest is low.")
+    assert a.subject is None
+
+
+def test_advisory_rejects_invalid_severity():
+    with pytest.raises(ValidationError):
+        Advisory(code="X", severity="success", message="m")  # not in {info, warning, error}
+
+
+def test_program_preview_out_defaults_advisories_to_empty_list():
+    out = ProgramPreviewOut(program_id=1, name="Test", status="draft", duration_weeks=8, weeks={})
+    assert out.advisories == []
+
+
+def test_program_preview_out_serializes_advisories():
+    out = ProgramPreviewOut(
+        program_id=1,
+        name="Test",
+        status="draft",
+        duration_weeks=8,
+        weeks={},
+        advisories=[Advisory(code="VOLUME_ABOVE_MRV", severity="warning", message="m", subject="quads")],
+    )
+    dumped = out.model_dump()
+    assert dumped["advisories"] == [
+        {"code": "VOLUME_ABOVE_MRV", "severity": "warning", "message": "m", "subject": "quads"}
+    ]

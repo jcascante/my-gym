@@ -22,6 +22,8 @@ dependencies = [
     "asyncpg>=0.31.0",
     "pre-commit>=4.0.1",
     "python-multipart>=0.0.20",
+    "pyyaml>=6.0.2",
+    "scikit-learn>=1.9.0",
 ]
 
 [dependency-groups]
@@ -36,6 +38,8 @@ dev = [
     "types-passlib==1.7.7.20250516",
     "types-pyjwt==1.7.1",
     "pre-commit==4.0.1",
+    "types-pyyaml==6.0.12.20260518",
+    "pytest-cov>=7.1.0",
 ]
 
 [tool.black]
@@ -74,6 +78,7 @@ module = [
     "jose.*",
     "aiopg.*",
     "aiosqlite.*",
+    "sklearn.*",
 ]
 ignore_missing_imports = true
 disallow_untyped_imports = false

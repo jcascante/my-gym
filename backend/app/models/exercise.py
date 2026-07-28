@@ -112,6 +112,24 @@ class Contraindication(str, enum.Enum):
     WRIST = "wrist"
 
 
+class Provocation(str, enum.Enum):
+    """Movement/loading demands that can aggravate a matching InjuryRecord.provocations
+    entry (proposal §5.1) - finer-grained than the region-level Contraindication tags."""
+
+    OVERHEAD = "overhead"
+    LOADED_SPINAL_FLEXION = "loaded_spinal_flexion"
+    LOADED_SPINAL_EXTENSION = "loaded_spinal_extension"
+    AXIAL_LOADING = "axial_loading"
+    DEEP_KNEE_FLEXION = "deep_knee_flexion"
+    DEEP_HIP_FLEXION = "deep_hip_flexion"
+    HEAVY_GRIP = "heavy_grip"
+    HIGH_IMPACT = "high_impact"
+    BALLISTIC_LOADING = "ballistic_loading"
+    END_RANGE_SHOULDER_ROTATION = "end_range_shoulder_rotation"
+    WRIST_EXTENSION_LOAD = "wrist_extension_load"
+    UNILATERAL_LOADING = "unilateral_loading"
+
+
 class Exercise(Base):
     __tablename__ = "exercises"
 
@@ -129,6 +147,7 @@ class Exercise(Base):
     form_cues: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     safety_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     contraindications: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    provocation_tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     is_unilateral: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_compound: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

@@ -22,6 +22,7 @@ def _base_kwargs(**overrides: object) -> dict[str, object]:
         "form_cues": [],
         "safety_notes": None,
         "contraindications": ["knee"],
+        "provocation_tags": ["axial_loading"],
         "is_unilateral": False,
         "is_compound": True,
         "created_at": datetime(2026, 1, 1),
@@ -40,3 +41,8 @@ def test_exercise_response_accepts_valid_tags():
 def test_exercise_response_rejects_unknown_equipment_tag():
     with pytest.raises(ValidationError):
         ExerciseResponse(**_base_kwargs(equipment_tags=["not-a-real-tag"]))
+
+
+def test_exercise_response_rejects_unknown_provocation_tag():
+    with pytest.raises(ValidationError):
+        ExerciseResponse(**_base_kwargs(provocation_tags=["not-a-real-provocation"]))

@@ -30,10 +30,12 @@ export function ProgramWizardStep1({
   onCancel,
   initialValues,
 }: ProgramWizardStep1Props) {
+  const today = new Date().toISOString().slice(0, 10);
   const [daysPerWeek, setDaysPerWeek] = useState(initialValues?.days_per_week.toString() ?? '3');
   const [sessionDurationMin, setSessionDurationMin] = useState(
     initialValues?.session_duration_min.toString() ?? '60',
   );
+  const [startDate, setStartDate] = useState(initialValues?.start_date ?? today);
   const [weightUnit, setWeightUnit] = useState<WeightUnit>(initialValues?.weight_unit ?? 'kg');
   const [progressionStyle, setProgressionStyle] = useState<ProgressionStyle>(
     initialValues?.progression_style ?? 'consistent',
@@ -62,6 +64,7 @@ export function ProgramWizardStep1({
     if (initialValues) {
       setDaysPerWeek(initialValues.days_per_week.toString());
       setSessionDurationMin(initialValues.session_duration_min.toString());
+      setStartDate(initialValues.start_date);
       setWeightUnit(initialValues.weight_unit);
       setProgressionStyle(initialValues.progression_style);
       setEffortMethod(initialValues.effort_method);
@@ -89,6 +92,7 @@ export function ProgramWizardStep1({
       environment_id: environmentId,
       days_per_week: parseInt(daysPerWeek, 10),
       session_duration_min: parseInt(sessionDurationMin, 10),
+      start_date: startDate,
       weight_unit: weightUnit,
       progression_style: progressionStyle,
       effort_method: effortMethod,
@@ -157,6 +161,17 @@ export function ProgramWizardStep1({
           min="15"
           max="300"
           step="15"
+          required
+        />
+
+        {/* Start Date */}
+        <FormField
+          label="Start Date"
+          type="date"
+          name="start_date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          min={today}
           required
         />
 

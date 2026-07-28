@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useAuthStore } from '@/store/auth';
 import { saveUserProfile } from '@/api/auth';
 import { getErrorMessage } from '@/api/errors';
-import { Button, FormField, Card, Alert } from '@/components';
+import { useCreateInjuryRecord, useDeleteInjuryRecord, useInjuries } from '@/hooks/useInjuries';
+import { Button, FormField, Card, Alert, InjuryRecordCard, InjuryRecordForm } from '@/components';
 import type { UserProfile } from '@/store/auth';
+import type { InjuryRecordPayload } from '@/types/injury';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
@@ -14,6 +16,31 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: injuries = [] } = useInjuries();
+  const createInjury = useCreateInjuryRecord();
+  const deleteInjury = useDeleteInjuryRecord();
+  const [showAddInjury, setShowAddInjury] = useState(false);
+  const [injuryError, setInjuryError] = useState<string | null>(null);
+
+  const handleAddInjury = async (payload: InjuryRecordPayload) => {
+    setInjuryError(null);
+    try {
+      await createInjury.mutateAsync(payload);
+      setShowAddInjury(false);
+    } catch (err) {
+      setInjuryError(getErrorMessage(err));
+    }
+  };
+
+  const handleDeleteInjury = async (id: number) => {
+    setInjuryError(null);
+    try {
+      await deleteInjury.mutateAsync(id);
+    } catch (err) {
+      setInjuryError(getErrorMessage(err));
+    }
+  };
 
   const handleEditClick = () => {
     setFormData({
@@ -26,7 +53,6 @@ export default function ProfilePage() {
       experience_level: userProfile?.experience_level,
       days_per_week: userProfile?.days_per_week,
       workout_duration_min: userProfile?.workout_duration_min,
-      injuries_limitations: userProfile?.injuries_limitations,
       short_term_goals: userProfile?.short_term_goals,
       medium_term_goals: userProfile?.medium_term_goals,
     });
@@ -83,7 +109,6 @@ export default function ProfilePage() {
         experience_level: parseStringOrNull(formData.experience_level),
         days_per_week: parseNumOrNull(formData.days_per_week),
         workout_duration_min: parseNumOrNull(formData.workout_duration_min),
-        injuries_limitations: parseStringOrNull(formData.injuries_limitations),
         short_term_goals: parseStringOrNull(formData.short_term_goals),
         medium_term_goals: parseStringOrNull(formData.medium_term_goals),
       };
@@ -293,23 +318,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
               )}
-
-              {/* Additional Info Section */}
-              {userProfile.injuries_limitations && (
-                <div className="sm:col-span-2">
-                  <h3 className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-3">
-                    Additional Information
-                  </h3>
-                  <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-500">
-                      Injuries or Limitations
-                    </p>
-                    <p className="text-base font-medium text-neutral-900 dark:text-neutral-50">
-                      {userProfile.injuries_limitations}
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             // Edit mode
@@ -479,27 +487,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Additional Info */}
-              <div>
-                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-4">
-                  Additional Information
-                </h3>
-                <div className="input-group">
-                  <label htmlFor="injuries" className="input-label">
-                    Injuries or Limitations
-                  </label>
-                  <textarea
-                    id="injuries"
-                    name="injuries_limitations"
-                    value={formData?.injuries_limitations || ''}
-                    onChange={handleChange}
-                    placeholder="Let us know about any injuries or physical limitations..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-md bg-white text-neutral-900 placeholder-neutral-400 transition-colors dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-50 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-neutral-900"
-                  />
-                </div>
-              </div>
-
               <div className="flex gap-3 pt-4">
                 <Button type="submit" variant="primary" isLoading={loading} className="flex-1">
                   Save Changes
@@ -518,6 +505,48 @@ export default function ProfilePage() {
           )}
         </Card>
       )}
+
+      {/* Injuries & Limitations */}
+      <Card padding="lg" className="mt-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">
+            Injuries & Limitations
+          </h2>
+          {!showAddInjury && (
+            <Button variant="secondary" size="sm" onClick={() => setShowAddInjury(true)}>
+              Add Injury
+            </Button>
+          )}
+        </div>
+
+        {injuryError && (
+          <Alert type="error" dismissible onDismiss={() => setInjuryError(null)} className="mb-6">
+            {injuryError}
+          </Alert>
+        )}
+
+        {injuries.length > 0 && (
+          <div className="space-y-3 mb-4">
+            {injuries.map((injury) => (
+              <InjuryRecordCard
+                key={injury.id}
+                injury={injury}
+                onDelete={() => handleDeleteInjury(injury.id)}
+              />
+            ))}
+          </div>
+        )}
+
+        {showAddInjury ? (
+          <InjuryRecordForm onSubmit={handleAddInjury} onCancel={() => setShowAddInjury(false)} />
+        ) : (
+          injuries.length === 0 && (
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              No injuries or limitations on file.
+            </p>
+          )
+        )}
+      </Card>
     </div>
   );
 }

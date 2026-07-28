@@ -1,10 +1,12 @@
 import pytest
 from httpx import AsyncClient
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import hash_password
 from app.crud.user import create_or_update_user_profile, get_user_profile
 from app.models import User
+from app.schemas.user import UserProfileRequest
 
 
 @pytest.mark.asyncio
@@ -232,3 +234,53 @@ async def test_update_profile_set_field_to_null(authenticated_client: AsyncClien
     data = response.json()
     assert data["profile"]["age"] == 30
     assert data["profile"]["fitness_focus"] is None
+
+
+def test_user_profile_request_rejects_goal_weights_out_of_range():
+    with pytest.raises(ValidationError):
+        UserProfileRequest(goal_weights={"strength": 1.5})
+
+
+def test_user_profile_request_rejects_negative_goal_weight():
+    with pytest.raises(ValidationError):
+        UserProfileRequest(goal_weights={"strength": -0.1})
+
+
+def test_user_profile_request_accepts_goal_weights_at_boundaries():
+    req = UserProfileRequest(goal_weights={"strength": 0.0, "weight_loss": 1.0})
+    assert req.goal_weights == {"strength": 0.0, "weight_loss": 1.0}
+
+
+@pytest.mark.asyncio
+async def test_create_user_profile_with_goal_weights_round_trips(authenticated_client: AsyncClient):
+    profile_payload = {
+        "fitness_focus": "strength",
+        "goal_weights": {"strength": 0.6, "muscle_gain": 0.4},
+    }
+
+    response = await authenticated_client.post("/api/v1/users/profile", json=profile_payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["profile"]["goal_weights"] == {"strength": 0.6, "muscle_gain": 0.4}
+
+
+@pytest.mark.asyncio
+async def test_update_user_profile_goal_weights(authenticated_client: AsyncClient, test_user: User, db: AsyncSession):
+    await create_or_update_user_profile(db, test_user.id, {"fitness_focus": "strength", "goal_weights": None})
+
+    response = await authenticated_client.post(
+        "/api/v1/users/profile", json={"goal_weights": {"weight_loss": 0.7, "strength": 0.3}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["profile"]["goal_weights"] == {"weight_loss": 0.7, "strength": 0.3}
+
+
+@pytest.mark.asyncio
+async def test_user_profile_goal_weights_defaults_to_none(authenticated_client: AsyncClient):
+    profile_payload = {"fitness_focus": "strength"}
+
+    response = await authenticated_client.post("/api/v1/users/profile", json=profile_payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["profile"]["goal_weights"] is None

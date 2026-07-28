@@ -32,7 +32,7 @@ repos:
         types: [python]
         files: ^backend/app/.*\.py$
         pass_filenames: false
-        additional_dependencies: ['mypy==1.14.1', 'types-python-jose==3.5.0.20260408', 'types-passlib==1.7.7.20250516', 'types-pyjwt==1.7.1', 'fastapi>=0.115.2', 'pydantic>=2.10.4', 'pydantic-settings>=2.4.0', 'sqlalchemy>=2.0.37', 'python-jose[cryptography]>=3.3.0', 'pyjwt>=2.10.1']
+        additional_dependencies: ['mypy==1.14.1', 'types-python-jose==3.5.0.20260408', 'types-passlib==1.7.7.20250516', 'types-pyjwt==1.7.1', 'types-pyyaml==6.0.12.20260518', 'fastapi>=0.115.2', 'pydantic>=2.10.4', 'pydantic-settings>=2.4.0', 'sqlalchemy>=2.0.37', 'python-jose[cryptography]>=3.3.0', 'pyjwt>=2.10.1', 'pyyaml>=6.0.2']
 
       - id: eslint
         name: eslint

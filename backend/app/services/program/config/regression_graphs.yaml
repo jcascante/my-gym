@@ -1,0 +1,105 @@
+# Regression/progression graphs (plan §3.3, proposal §5.1/§5.2). Reviewed via PR,
+# deployable without a code change.
+#
+# Scoped to the six movement patterns active templates actually schedule (squat, hinge,
+# horizontal_push, vertical_push, horizontal_pull, vertical_pull - see
+# scripts/lint_library.py's `_active_template_patterns`). Each pattern's edges start
+# from that pattern's heaviest/most commonly-programmed "primary" exercise and list:
+#   - >=2 `regression` edges: same-pattern substitutes, tried first, ordered
+#     nearest-first (least disruptive to the slot's intent).
+#   - >=1 `cross_pattern` edge: a different-pattern substitute, tried only if no
+#     regression relieves the offending provocation - deliberately trades template
+#     specificity for actually being safe to perform.
+# Linter-enforced (scripts/lint_library.py): every `from`/`to` slug exists in the
+# exercise library, every `relieves` value is a real Provocation, and every pattern
+# above has >=2 regressions + >=1 cross_pattern edge.
+config_version: "1"
+
+# Applied to a substituted slot's base_load when the triggering InjuryRecord is
+# `rehabilitating` (plan §3.3's "load cap + slower ramp on substituted slots").
+rehabilitating_load_multiplier: 0.8
+
+patterns:
+  squat:
+    - from: barbell-back-squat
+      to: goblet-squat-dumbbell
+      kind: regression
+      relieves: [axial_loading]
+    - from: barbell-back-squat
+      to: bodyweight-squat
+      kind: regression
+      relieves: [axial_loading]
+    - from: barbell-back-squat
+      to: barbell-hip-thrust
+      kind: cross_pattern
+      relieves: [deep_knee_flexion]
+
+  hinge:
+    - from: barbell-deadlift
+      to: dumbbell-deadlift
+      kind: regression
+      relieves: [axial_loading, heavy_grip]
+    - from: barbell-deadlift
+      to: kettlebell-deadlift
+      kind: regression
+      relieves: [axial_loading, heavy_grip]
+    - from: barbell-deadlift
+      to: bodyweight-reverse-lunge
+      kind: cross_pattern
+      relieves: [loaded_spinal_flexion]
+
+  horizontal_push:
+    - from: barbell-bench-press
+      to: push-up
+      kind: regression
+      relieves: [wrist_extension_load]
+    - from: barbell-bench-press
+      to: resistance-band-chest-press
+      kind: regression
+      relieves: [wrist_extension_load]
+    - from: barbell-bench-press
+      to: machine-row
+      kind: cross_pattern
+      relieves: [wrist_extension_load]
+
+  vertical_push:
+    - from: barbell-overhead-press
+      to: machine-shoulder-press
+      kind: regression
+      relieves: [overhead]
+    - from: barbell-overhead-press
+      to: seated-dumbbell-overhead-press
+      kind: regression
+      relieves: [overhead]
+    - from: barbell-overhead-press
+      to: machine-chest-press
+      kind: cross_pattern
+      relieves: [overhead]
+
+  horizontal_pull:
+    - from: barbell-bent-over-row
+      to: seated-cable-row
+      kind: regression
+      relieves: [heavy_grip]
+    - from: barbell-bent-over-row
+      to: chest-supported-dumbbell-row
+      kind: regression
+      relieves: [loaded_spinal_flexion]
+    - from: barbell-bent-over-row
+      to: machine-assisted-pull-up
+      kind: cross_pattern
+      relieves: [loaded_spinal_flexion]
+
+  vertical_pull:
+    - from: pull-up
+      to: machine-assisted-pull-up
+      kind: regression
+      relieves: [heavy_grip]
+    - from: pull-up
+      to: wide-grip-lat-pulldown
+      kind: regression
+      relieves: [heavy_grip]
+    - from: pull-up
+      to: seated-cable-row
+      kind: cross_pattern
+      relieves: [overhead]

@@ -67,3 +67,20 @@ class TemplateDefinition(BaseModel):
             schemes={k: SchemeDef(**v) for k, v in schemes.items()},
             required_inputs=[RequiredInput(**r) for r in t.required_inputs],
         )
+
+
+class TemplateOut(BaseModel):
+    """Response schema for a single template in list view."""
+
+    slug: str
+    name: str
+    description: str
+    goals: list[str]
+    experience_levels: list[str]
+    days_per_week_min: int
+    days_per_week_max: int
+    session_duration_min: int
+    session_duration_max: int
+    split: dict[str, Any]
+    progression_ref: dict[str, Any]
+    required_inputs: list[dict[str, Any]]

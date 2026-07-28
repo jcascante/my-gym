@@ -83,6 +83,7 @@ export function ProgramCreationForm({
       environment_id: environmentId,
       days_per_week: parseInt(daysPerWeek, 10),
       session_duration_min: parseInt(sessionDurationMin, 10),
+      start_date: new Date().toISOString().slice(0, 10),
       weight_unit: weightUnit,
       progression_style: progressionStyle,
       effort_method: effortMethod,

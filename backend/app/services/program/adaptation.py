@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.exceptions import ValidationError
 from app.models.exercise import Exercise
@@ -23,16 +24,27 @@ def _find_slot(program: WorkoutProgram, we_id: int) -> tuple[Workout | None, Wor
     return None, None
 
 
-def _reselect(program: WorkoutProgram, we_id: int, ctx: SelectionContext, exercises: list[Exercise]) -> None:
-    _, ex = _find_slot(program, we_id)
-    if ex is None or ex.is_locked:
+def _reselect_exercise(
+    program: WorkoutProgram, ex: WorkoutExercise, ctx: SelectionContext, exercises: list[Exercise]
+) -> None:
+    """Core reselection logic, operating directly on an already-located WorkoutExercise
+    object rather than looking it up by id -- id-based lookup breaks for unsaved drafts,
+    where every row's id is None until the program is persisted (see _find_slot)."""
+    if ex.is_locked:
         return
     rule = SlotRule(**ex.fills_rule)
     excluded = set(program.constraints.get("excluded_exercise_ids", []))
-    locked = program.constraints.get("swaps", {}).get(str(we_id))
+    locked = program.constraints.get("swaps", {}).get(str(ex.id))
     chosen = select_for_slot(exercises, rule, ctx, locked, excluded)
     if chosen is not None:
         ex.exercise_id = chosen.id
+
+
+def _reselect(program: WorkoutProgram, we_id: int, ctx: SelectionContext, exercises: list[Exercise]) -> None:
+    _, ex = _find_slot(program, we_id)
+    if ex is None:
+        return
+    _reselect_exercise(program, ex, ctx, exercises)
 
 
 def apply_feedback(
@@ -83,8 +95,10 @@ def apply_feedback(
                 for ex in w.exercises:
                     ex.sets = max(1, ex.sets + action.delta)
 
-    # SQLAlchemy needs a new dict object to detect the JSON mutation
-    program.constraints = dict(c)
+    # c is program.constraints itself (mutated in place above, not a copy) so a plain
+    # reassignment is a same-content no-op that SQLAlchemy's change tracking ignores -
+    # flag_modified forces the JSON column into the next UPDATE regardless.
+    flag_modified(program, "constraints")
     return program
 
 

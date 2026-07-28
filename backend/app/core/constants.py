@@ -73,8 +73,10 @@ ENVIRONMENT_TYPE_EQUIPMENT_PRESETS: dict[str, list[str]] = {
         "assault_bike",
         "pull_up_bar",
         "resistance_bands",
+        "none",
+        "ab_wheel",
     ],
-    "home": ["dumbbells", "kettlebell", "resistance_bands", "bench", "pull_up_bar", "none"],
+    "home": ["dumbbells", "kettlebell", "resistance_bands", "bench", "pull_up_bar", "none", "ab_wheel"],
     "bodyweight": ["none", "pull_up_bar", "resistance_bands"],
     "crossfit_box": [
         "barbell",
@@ -90,9 +92,19 @@ ENVIRONMENT_TYPE_EQUIPMENT_PRESETS: dict[str, list[str]] = {
         "sled",
         "rowing_machine",
         "assault_bike",
+        "none",
     ],
-    "powerlifting_gym": ["barbell", "squat_rack", "bench", "ez_bar", "sled"],
-    "strength_gym": ["barbell", "squat_rack", "bench", "dumbbells", "kettlebell", "pull_up_bar", "resistance_bands"],
+    "powerlifting_gym": ["barbell", "squat_rack", "bench", "ez_bar", "sled", "none", "pull_up_bar"],
+    "strength_gym": [
+        "barbell",
+        "squat_rack",
+        "bench",
+        "dumbbells",
+        "kettlebell",
+        "pull_up_bar",
+        "resistance_bands",
+        "none",
+    ],
     "other": [],
 }
 
@@ -136,3 +148,42 @@ ALLOWED_CONTRAINDICATION_TAGS: list[str] = [
     "neck",
     "ankle",
 ]
+
+# Mirrors app.models.exercise.Provocation - shared vocabulary between
+# Exercise.provocation_tags and InjuryRecord.provocations so the two can be
+# matched against each other (Phase 3.2+).
+ALLOWED_PROVOCATION_TAGS: list[str] = [
+    "overhead",
+    "loaded_spinal_flexion",
+    "loaded_spinal_extension",
+    "axial_loading",
+    "deep_knee_flexion",
+    "deep_hip_flexion",
+    "heavy_grip",
+    "high_impact",
+    "ballistic_loading",
+    "end_range_shoulder_rotation",
+    "wrist_extension_load",
+    "unilateral_loading",
+]
+
+# Reactive deload trigger (Phase 4 plan, Task 4.3) - readiness-based, independent of the
+# template's scheduled every-N-weeks deload (app.services.program.progression.deload)
+# and of the EWMA autoregulation controller (app.services.progression.autoregulation).
+# See app.services.progression.deload.compute_deload_trigger.
+DELOAD_READINESS_THRESHOLD = 2  # readiness (1-5 scale) at/below this counts as "low"
+DELOAD_MIN_LOW_READINESS_SESSIONS = 2  # occurrences within the lookback window to trigger
+DELOAD_LOOKBACK_DAYS = 14
+DELOAD_LOAD_FACTOR = 0.6  # matches apply_deload's existing scheduled-deload reduction
+
+# Template/model versioning (Phase 4, Task 4.5) - stamped onto WorkoutProgram at
+# generation time so a re-derived week always uses the same progression-pipeline
+# logic and exercise-ranking weights the program was originally built with, even
+# after either is later bumped. Bump CURRENT_PROGRESSION_MODEL_VERSION when
+# derive_week's/build_draft's prescription logic changes in a way that would alter
+# output for existing programs.
+CURRENT_PROGRESSION_MODEL_VERSION = "1.0"
+
+# Fallback used when a ranking-weights artifact is missing, unreadable, or predates
+# Task 4.5's `_metadata.weights_version` field - never blocks generation.
+DEFAULT_RANKING_WEIGHTS_VERSION = "unversioned"

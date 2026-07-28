@@ -46,6 +46,7 @@
   input[type='email'],
   input[type='password'],
   input[type='number'],
+  input[type='date'],
   textarea,
   select {
     @apply w-full px-3 py-2 border border-neutral-300 rounded-lg bg-white text-neutral-900 placeholder-neutral-400 transition-colors;
@@ -58,6 +59,18 @@
     &:disabled {
       @apply bg-neutral-100 text-neutral-500 cursor-not-allowed dark:bg-neutral-700;
     }
+  }
+
+  /* Native date-picker chrome (calendar icon/popup) is drawn by the OS/browser
+     using its own light/dark heuristics, not our CSS - color-scheme is the only
+     way to tell it which palette to draw with, otherwise dark mode gets a
+     black-on-black calendar icon. */
+  input[type='date'] {
+    color-scheme: light;
+  }
+
+  .dark input[type='date'] {
+    color-scheme: dark;
   }
 }
 

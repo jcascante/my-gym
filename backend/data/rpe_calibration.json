@@ -1,0 +1,26 @@
+{
+  "calibration_function": [
+    {
+      "calibrated_rpe": 0.0,
+      "predicted_rpe": 0.0
+    },
+    {
+      "calibrated_rpe": 5.0,
+      "predicted_rpe": 5.0
+    },
+    {
+      "calibrated_rpe": 10.0,
+      "predicted_rpe": 10.0
+    }
+  ],
+  "fit_details": {
+    "algorithm": "isotonic_regression",
+    "error": "empty_or_mismatched_input"
+  },
+  "fit_residuals": {},
+  "generated_at": "2026-07-23T21:04:31.159211+00:00",
+  "reason": "no_data",
+  "source_sessions": 0,
+  "sufficient_data": false,
+  "version": "2026-07-23_210431_v1"
+}

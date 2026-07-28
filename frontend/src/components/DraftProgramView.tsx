@@ -3,7 +3,9 @@ import { WeekTabs } from './WeekTabs';
 import { SessionCard } from './SessionCard';
 import { ExerciseAlternativesModal } from './ExerciseAlternativesModal';
 import { ExercisePreviewModal } from './ExercisePreviewModal';
-import { useSubmitFeedback } from '@/hooks/usePrograms';
+import { Alert } from './Alert';
+import { TemplateExplanationPanel } from './TemplateExplanationPanel';
+import { useProgramPreview, useSubmitFeedback } from '@/hooks/usePrograms';
 import { useExercises } from '@/hooks/useExercises';
 import type { FeedbackAction, ProgramPreview } from '@/types/program';
 import type { Exercise, ExerciseResponse } from '@/types/exercise';
@@ -37,12 +39,18 @@ function mapExerciseResponse(response: ExerciseResponse): Exercise {
 }
 
 export function DraftProgramView({
-  program,
+  program: initialProgram,
   programId,
 }: {
   program: ProgramPreview;
   programId: number;
 }) {
+  // Feedback actions (swap/exclude/lock/regenerate) write their response into the
+  // programKeys.preview(programId) cache entry via useSubmitFeedback's onSuccess -
+  // reading through that same query (seeded with the caller's already-fetched draft)
+  // is what makes the UI pick up those updates, instead of rendering the draft prop
+  // frozen at the moment the draft was first created.
+  const { data: program = initialProgram } = useProgramPreview(programId, initialProgram);
   const weeks = Object.keys(program.weeks)
     .map(Number)
     .sort((a, b) => a - b);
@@ -70,12 +78,23 @@ export function DraftProgramView({
             Review the generated program and make adjustments as needed
           </p>
         </div>
+        <TemplateExplanationPanel programId={programId} />
+        {program.advisories.length > 0 && (
+          <div className="space-y-2">
+            {program.advisories.map((advisory, i) => (
+              <Alert key={i} type={advisory.severity}>
+                {advisory.message}
+              </Alert>
+            ))}
+          </div>
+        )}
         <WeekTabs weeks={weeks} active={active} onSelect={setActive} />
         <div className="space-y-4">
           {(program.weeks[String(active)] ?? []).map((w) => (
             <SessionCard
               key={w.workout_id}
               workout={w}
+              programId={programId}
               onAction={onAction}
               onSwap={setSwapFor}
               onPreview={setPreviewExerciseId}

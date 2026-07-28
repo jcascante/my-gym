@@ -14,6 +14,10 @@ import EnvironmentsPage from '@/pages/EnvironmentsPage';
 import ProgramBuilderPage from '@/pages/ProgramBuilderPage';
 import ProgramPreviewPage from '@/pages/ProgramPreviewPage';
 import ProgramsListPage from '@/pages/ProgramsListPage';
+import TemplatesPage from '@/pages/TemplatesPage';
+import WorkoutTrackingPage from '@/pages/WorkoutTrackingPage';
+import SchedulePage from '@/pages/SchedulePage';
+import SessionDetailPage from '@/pages/SessionDetailPage';
 
 export default function App() {
   useDarkMode();
@@ -59,6 +63,10 @@ export default function App() {
             <Route path="/programs" element={<ProgramsListPage />} />
             <Route path="/programs/new/:environmentId?" element={<ProgramBuilderPage />} />
             <Route path="/programs/:id" element={<ProgramPreviewPage />} />
+            <Route path="/sessions/:sessionId/track" element={<WorkoutTrackingPage />} />
+            <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/schedule" element={<SchedulePage />} />
+            <Route path="/sessions/:sessionId" element={<SessionDetailPage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </>
         ) : (

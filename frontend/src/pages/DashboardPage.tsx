@@ -1,16 +1,17 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
-import { useProgramPreview } from '@/hooks/usePrograms';
-import { Card, WorkoutCard, ProgressBar, StatCard } from '@/components';
+import { useActiveProgram } from '@/hooks/usePrograms';
+import { useTodaySession } from '@/hooks/useSchedule';
+import { Button, Card, WorkoutCard, ProgressBar, StatCard, Spinner } from '@/components';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const userProfile = useAuthStore((state) => state.userProfile);
-  const [activeProgramId] = useState<number | null>(null);
 
-  const { data: program, isLoading } = useProgramPreview(activeProgramId);
+  const { data: program, isLoading: programLoading } = useActiveProgram();
+  const { session: todaySession, isLoading } = useTodaySession();
+
+  if (programLoading) return <Spinner />;
 
   const today = new Date();
   const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
@@ -18,20 +19,6 @@ export default function DashboardPage() {
     month: 'short',
     day: 'numeric',
   });
-
-  const getTodayWorkout = () => {
-    if (!program?.weeks) return null;
-
-    const weekKeys = Object.keys(program.weeks).sort();
-    if (weekKeys.length === 0) return null;
-
-    const firstWeekWorkouts = program.weeks[weekKeys[0]];
-    if (firstWeekWorkouts.length === 0) return null;
-
-    return firstWeekWorkouts[0];
-  };
-
-  const todayWorkout = getTodayWorkout();
 
   return (
     <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900 py-8 px-4">
@@ -47,42 +34,43 @@ export default function DashboardPage() {
         </div>
 
         {/* Today's Workout Section */}
-        {activeProgramId ? (
-          isLoading ? (
-            <div className="card card-elevated p-8 text-center">
-              <p className="text-neutral-600 dark:text-neutral-400">Loading workout...</p>
-            </div>
-          ) : todayWorkout ? (
-            <div className="mb-8">
-              <WorkoutCard
-                workout={todayWorkout}
-                programName={program?.name || 'Your Program'}
-                weekNumber={1}
-                durationMin={userProfile?.workout_duration_min || 45}
-                onStartClick={() => navigate(`/workouts/${todayWorkout.workout_id}/track`)}
-              />
-            </div>
-          ) : (
-            <div className="card card-elevated border-l-4 border-neutral-300 dark:border-neutral-600 mb-8 p-6">
-              <p className="body-md text-neutral-600 dark:text-neutral-400">
-                No workouts scheduled for today.
-              </p>
-            </div>
-          )
-        ) : (
-          <div className="card card-elevated border-l-4 border-secondary-600 mb-8 p-6">
+        {!program ? (
+          <Card padding="lg" className="mb-8 border-l-4 border-secondary-600">
             <h2 className="heading-lg mb-2">Get Started</h2>
             <p className="body-md text-neutral-600 dark:text-neutral-400 mb-4">
               Create your first workout program to get started.
             </p>
-            <button onClick={() => navigate('/programs/new')} className="btn btn-secondary">
+            <Button variant="primary" onClick={() => navigate('/programs/new')}>
               Create Program
-            </button>
+            </Button>
+          </Card>
+        ) : isLoading ? (
+          <Card padding="lg" className="mb-8 flex items-center justify-center gap-3">
+            <Spinner size="sm" />
+            <p className="body-md text-neutral-600 dark:text-neutral-400">Loading workout...</p>
+          </Card>
+        ) : todaySession ? (
+          <div className="mb-8">
+            <h2 className="sr-only">Today&apos;s workout</h2>
+            <WorkoutCard
+              entry={todaySession}
+              programName={program.name}
+              onSelect={() => navigate(`/sessions/${todaySession.session_id}`)}
+            />
           </div>
+        ) : (
+          <Card padding="lg" className="mb-8 border-l-4 border-neutral-300 dark:border-neutral-600">
+            <p className="body-md text-neutral-600 dark:text-neutral-400 mb-4">
+              Nothing scheduled today.
+            </p>
+            <Button variant="secondary" onClick={() => navigate('/schedule')}>
+              View schedule →
+            </Button>
+          </Card>
         )}
 
         {/* This Week Section */}
-        {activeProgramId && program && (
+        {program && (
           <Card className="mb-8">
             <h2 className="heading-lg mb-6">This Week</h2>
             <ProgressBar completed={0} total={5} showPercentage label="Weekly Progress" />

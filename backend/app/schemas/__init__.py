@@ -4,7 +4,15 @@ from .auth import (
     TokenResponse,
     UserResponse,
 )
+from .checkin import CheckInCreate, CheckInResponse, CheckInResultResponse
 from .exercise import ExerciseResponse
+from .explain import LedgerContributionOut, SlotExplanationOut, TemplateExplanationOut
+from .injury import InjuryRecordCreate, InjuryRecordResponse, InjuryRecordUpdate
+from .logging import (
+    UserWorkoutLogCreate,
+    UserWorkoutLogOut,
+    WorkoutSetLogOut,
+)
 from .program import (
     DayOfWeek,
     FocusArea,
@@ -54,6 +62,9 @@ __all__ = [
     "TrainingEnvironmentUpdate",
     "TrainingEnvironmentResponse",
     "ExerciseResponse",
+    "InjuryRecordCreate",
+    "InjuryRecordUpdate",
+    "InjuryRecordResponse",
     "FocusArea",
     "WeightUnit",
     "ProgressionStyle",
@@ -74,4 +85,13 @@ __all__ = [
     "WorkoutPreviewOut",
     "ProgramPreviewOut",
     "AlternativeOut",
+    "CheckInCreate",
+    "CheckInResponse",
+    "CheckInResultResponse",
+    "TemplateExplanationOut",
+    "LedgerContributionOut",
+    "SlotExplanationOut",
+    "UserWorkoutLogCreate",
+    "UserWorkoutLogOut",
+    "WorkoutSetLogOut",
 ]

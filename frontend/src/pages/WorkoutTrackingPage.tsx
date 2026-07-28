@@ -1,172 +1,226 @@
-import { useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { SetLogger, CompletedSets, Toast, Button, Card } from '@/components';
-import type { SlotPreview } from '@/types/program';
-
-interface LoggedSet {
-  setNumber: number;
-  weight: number;
-  reps: number;
-  timestamp: Date;
-}
-
-interface ExerciseProgress {
-  exercise: SlotPreview;
-  completedSets: LoggedSet[];
-  isCurrentExercise: boolean;
-}
-
-// Mock data for demonstration
-const mockExercises: SlotPreview[] = [
-  {
-    workout_exercise_id: 1,
-    exercise_id: 1,
-    exercise_name: 'Bench Press',
-    sets: 4,
-    reps: 6,
-    load: 185,
-    rest_seconds: 180,
-    note: null,
-    is_locked: false,
-    is_user_swapped: false,
-    effort_target: null,
-    rotation_pool: [1],
-  },
-  {
-    workout_exercise_id: 2,
-    exercise_id: 2,
-    exercise_name: 'Incline Dumbbell Press',
-    sets: 3,
-    reps: 8,
-    load: 70,
-    rest_seconds: 120,
-    note: null,
-    is_locked: false,
-    is_user_swapped: false,
-    effort_target: null,
-    rotation_pool: [2],
-  },
-  {
-    workout_exercise_id: 3,
-    exercise_id: 3,
-    exercise_name: 'Barbell Rows',
-    sets: 4,
-    reps: 6,
-    load: 225,
-    rest_seconds: 180,
-    note: null,
-    is_locked: false,
-    is_user_swapped: false,
-    effort_target: null,
-    rotation_pool: [3],
-  },
-];
+import { ExerciseSection, Toast, Button, ReadinessModal, Spinner, Alert } from '@/components';
+import type { EffortMethod } from '@/types/programCreation';
+import { useAuthStore } from '@/store/auth';
+import { useSession } from '@/hooks/useSession';
+import { useSessionProgress } from '@/hooks/useSessionProgress';
+import { logSessionSet, postSessionReadiness, completeSession } from '@/api/sessions';
 
 export default function WorkoutTrackingPage() {
   const navigate = useNavigate();
-  useParams<{ workoutId?: string }>();
+  const { sessionId } = useParams<{ sessionId?: string }>();
+  const sessionIdNum = sessionId ? Number(sessionId) : null;
+  const { data: session, isLoading, error } = useSession(sessionIdNum);
+  const { userProfile } = useAuthStore();
 
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [exercises, setExercises] = useState<ExerciseProgress[]>(
-    mockExercises.map((ex) => ({
-      exercise: ex,
-      completedSets: [],
-      isCurrentExercise: false,
-    })),
-  );
+  const rawEffortMethod = userProfile?.effort_method;
+  const effortMethod: EffortMethod =
+    rawEffortMethod === 'rpe' || rawEffortMethod === 'rir' || rawEffortMethod === 'borg'
+      ? rawEffortMethod
+      : 'rpe';
+
+  const {
+    exercises,
+    totalSets,
+    completedSetsTotal,
+    completedExercises,
+    progressPercentage,
+    recordSet,
+  } = useSessionProgress(session?.slots ?? [], session?.logged_sets ?? []);
+
+  const [openIds, setOpenIds] = useState<Set<number>>(new Set());
+  const seededSessionRef = useRef<number | null>(null);
   const [toast, setToast] = useState<{ message: string; icon?: string } | null>(null);
+  const [readinessOpen, setReadinessOpen] = useState<'pre' | 'post' | null>(null);
+  const [deloadBannerDismissed, setDeloadBannerDismissed] = useState(false);
+  const [confirmIncomplete, setConfirmIncomplete] = useState(false);
+  // Tracks whether the modal is closing as a direct result of a rating attempt
+  // (success or failure) so the fallback completion path in handleReadinessClose
+  // never double-fires alongside handleSubmitReadiness's own completion call.
+  const ratingInFlightRef = useRef(false);
 
-  exercises[currentExerciseIndex].isCurrentExercise = true;
+  // Seeds the open sections once per session ("first incomplete open, rest
+  // collapsed") - guarded by session_id so a reload re-seeds but toggling
+  // sections afterward (or logging a set) never resets the user's choices.
+  useEffect(() => {
+    if (!session || exercises.length === 0) return;
+    if (seededSessionRef.current === session.session_id) return;
+    seededSessionRef.current = session.session_id;
+    // When nothing is incomplete (e.g. resuming an already fully-logged session),
+    // fall back to opening the first exercise rather than leaving everything
+    // collapsed with no way to see/correct the logged sets.
+    const firstIncomplete =
+      exercises.find((ex) => ex.completedSets.length < ex.sets) ?? exercises[0];
+    setOpenIds(new Set(firstIncomplete ? [firstIncomplete.workout_exercise_id] : []));
+  }, [session, exercises]);
 
-  const currentExerciseProgress = exercises[currentExerciseIndex];
-  const currentExercise = currentExerciseProgress.exercise;
-  const completedSetsCount = currentExerciseProgress.completedSets.length;
-  const totalSets = currentExercise.sets;
-  const isExerciseComplete = completedSetsCount >= totalSets;
-  const repsRemaining = totalSets - completedSetsCount;
+  if (isLoading) return <Spinner />;
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Failed to load workout: {error.message}</p>
+          <Button onClick={() => navigate(-1)}>Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
-  const handleLogSet = (weight: number, reps: number) => {
-    const newSet: LoggedSet = {
-      setNumber: completedSetsCount + 1,
-      weight,
-      reps,
-      timestamp: new Date(),
-    };
+  if (!session) return <Spinner />;
 
-    const newExercises = [...exercises];
-    newExercises[currentExerciseIndex].completedSets.push(newSet);
-    setExercises(newExercises);
+  const unloggedCount = Math.max(0, totalSets - completedSetsTotal);
 
-    // Show celebratory toast
-    if (isExerciseComplete) {
-      setToast({
-        message: `Great! ${currentExercise.exercise_name} complete! 💪`,
-        icon: '🎉',
-      });
-
-      // Auto-advance to next exercise after 1.5s
-      setTimeout(() => {
-        if (currentExerciseIndex < exercises.length - 1) {
-          setCurrentExerciseIndex(currentExerciseIndex + 1);
-          setToast({
-            message: `Next up: ${mockExercises[currentExerciseIndex + 1].exercise_name}`,
-            icon: '▶️',
-          });
-        }
-      }, 1500);
-    } else {
-      setToast({
-        message: `Set logged! ${repsRemaining - 1} more to go! 💪`,
-        icon: '✓',
-      });
-    }
+  const toggleSection = (workoutExerciseId: number) => {
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(workoutExerciseId)) {
+        next.delete(workoutExerciseId);
+      } else {
+        next.add(workoutExerciseId);
+      }
+      return next;
+    });
   };
 
-  const handleSkipExercise = () => {
-    if (currentExerciseIndex < exercises.length - 1) {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-      setToast({
-        message: `Skipped ${currentExercise.exercise_name}. Moving to next exercise.`,
-        icon: '⏭️',
+  const handleLogSet = async (
+    workoutExerciseId: number,
+    setNumber: number,
+    data: { weight?: number; reps?: number; effort: number; effort_method: EffortMethod },
+  ) => {
+    if (!sessionIdNum) throw new Error('No active session');
+
+    try {
+      await logSessionSet(sessionIdNum, {
+        workout_exercise_id: workoutExerciseId,
+        set_number: setNumber,
+        actual_weight: data.weight,
+        actual_reps: data.reps,
+        actual_rpe: data.effort,
+        effort_method: effortMethod,
       });
+
+      recordSet(workoutExerciseId, setNumber, {
+        weight: data.weight,
+        reps: data.reps,
+        effort: data.effort,
+        effort_method: data.effort_method,
+      });
+
+      setToast({ message: `Set ${setNumber} logged! 💪`, icon: '✓' });
+    } catch (err) {
+      console.error('Failed to log set:', err);
+      setToast({ message: 'Failed to log set. Please try again.', icon: '⚠️' });
+      throw err;
     }
   };
 
   const handleCompleteWorkout = () => {
-    navigate('/workouts/summary', { state: { exercises } });
+    setConfirmIncomplete(false);
+    ratingInFlightRef.current = false;
+    setReadinessOpen('post');
   };
 
-  const totalExercises = exercises.length;
-  const completedExercises = exercises.filter(
-    (ex) => ex.completedSets.length >= ex.exercise.sets,
-  ).length;
-  const progressPercentage = (completedExercises / totalExercises) * 100;
+  const handleCompleteWorkoutClick = () => {
+    if (unloggedCount > 0) {
+      setConfirmIncomplete(true);
+      return;
+    }
+    handleCompleteWorkout();
+  };
+
+  const handleSubmitReadiness = async (readiness: number) => {
+    if (!sessionIdNum) return;
+    ratingInFlightRef.current = true;
+    const phase = readinessOpen === 'pre' ? 'pre' : 'post';
+
+    try {
+      await postSessionReadiness(sessionIdNum, readiness, phase);
+      setToast({ message: `Readiness recorded: ${readiness}/5`, icon: '✓' });
+
+      if (phase === 'post') {
+        await completeSession(sessionIdNum);
+        navigate('/');
+      }
+    } catch (err) {
+      // Whether postSessionReadiness or completeSession failed, this attempt did
+      // not complete the session - clear the flag so handleReadinessClose's own
+      // fallback (fired next, via ReadinessModal's onClose-after-onRate) retries
+      // completion instead of assuming this function already handled it.
+      ratingInFlightRef.current = false;
+      console.error('Failed to record readiness:', err);
+      setToast({ message: 'Failed to record readiness. Please try again.', icon: '⚠️' });
+    } finally {
+      setReadinessOpen(null);
+    }
+  };
+
+  const handleReadinessClose = async () => {
+    const wasRatingAttempt = ratingInFlightRef.current;
+    ratingInFlightRef.current = false;
+
+    if (readinessOpen === 'post' && !wasRatingAttempt && sessionIdNum) {
+      try {
+        await completeSession(sessionIdNum);
+        navigate('/');
+      } catch (err) {
+        console.error('Failed to complete workout:', err);
+        setToast({ message: 'Failed to complete workout. Please try again.', icon: '⚠️' });
+      }
+    }
+
+    setReadinessOpen(null);
+  };
 
   return (
     <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900 flex flex-col">
       {/* Header */}
-      <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 p-4 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto">
+      <div className="sticky top-0 z-10 bg-neutral-50 dark:bg-neutral-900">
+        <div className="max-w-2xl mx-auto bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-sm mt-4 p-4">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="label-sm text-neutral-600 dark:text-neutral-400">
-                Exercise {currentExerciseIndex + 1} of {totalExercises}
+              <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                {session.workout_name}
               </p>
-              <h1 className="heading-lg">{currentExercise.exercise_name}</h1>
+              <h1 className="text-2xl font-bold">
+                {completedSetsTotal}/{totalSets} sets
+              </h1>
             </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setReadinessOpen('pre')}
+                className="px-3 py-1 text-sm bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 rounded hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors"
+              >
+                Check In
+              </button>
+              <button
+                onClick={() => navigate(-1)}
+                className="text-2xl text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mb-3">
             <button
-              onClick={() => navigate(-1)}
-              className="text-2xl text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
+              onClick={() => setOpenIds(new Set(exercises.map((ex) => ex.workout_exercise_id)))}
+              className="flex-1 px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
             >
-              ✕
+              Expand All
+            </button>
+            <button
+              onClick={() => setOpenIds(new Set())}
+              className="flex-1 px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+            >
+              Collapse All
             </button>
           </div>
 
-          {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                {completedExercises}/{totalExercises} exercises
+                {completedExercises}/{exercises.length} exercises
               </p>
               <p className="text-xs text-neutral-600 dark:text-neutral-400">
                 {Math.round(progressPercentage)}%
@@ -185,73 +239,38 @@ export default function WorkoutTrackingPage() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto p-4 pb-24">
-          {/* Set Logger */}
-          <Card className="mb-8">
-            <SetLogger
-              exerciseName={currentExercise.exercise_name}
-              suggestedWeight={currentExercise.load ?? 0}
-              suggestedReps={currentExercise.reps}
-              currentSet={completedSetsCount + 1}
-              totalSets={totalSets}
-              onLogSet={handleLogSet}
-              onSkipExercise={handleSkipExercise}
-            />
-          </Card>
-
-          {/* Completed Sets */}
-          {completedSetsCount > 0 && (
-            <Card className="mb-8">
-              <CompletedSets
-                sets={currentExerciseProgress.completedSets.map((s) => ({
-                  setNumber: s.setNumber,
-                  weight: s.weight,
-                  reps: s.reps,
-                }))}
-              />
-            </Card>
+          {session.reactive_deload && !deloadBannerDismissed && session.deload_reason && (
+            <Alert
+              type="info"
+              dismissible
+              onDismiss={() => setDeloadBannerDismissed(true)}
+              className="mb-4"
+            >
+              {session.deload_reason}
+            </Alert>
           )}
 
-          {/* Exercise Info */}
-          <Card className="mb-8">
-            <div className="space-y-3">
-              <p className="label-sm text-neutral-600 dark:text-neutral-400">Rest Time</p>
-              <p className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-                {Math.floor(currentExercise.rest_seconds / 60)}:
-                {String(currentExercise.rest_seconds % 60).padStart(2, '0')}
-              </p>
-
-              {currentExercise.note && (
-                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                  <p className="label-sm text-neutral-600 dark:text-neutral-400 mb-2">Note</p>
-                  <p className="body-sm text-neutral-700 dark:text-neutral-300">
-                    {currentExercise.note}
-                  </p>
-                </div>
-              )}
-            </div>
-          </Card>
+          {exercises.map((exercise) => (
+            <ExerciseSection
+              key={exercise.workout_exercise_id}
+              exercise={exercise}
+              effort_method={effortMethod}
+              isOpen={openIds.has(exercise.workout_exercise_id)}
+              onToggle={() => toggleSection(exercise.workout_exercise_id)}
+              onLogSet={(setNumber, data) =>
+                handleLogSet(exercise.workout_exercise_id, setNumber, data)
+              }
+            />
+          ))}
         </div>
       </div>
 
       {/* Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700 p-4">
-        <div className="max-w-2xl mx-auto">
-          {isExerciseComplete && currentExerciseIndex === totalExercises - 1 ? (
-            <Button className="w-full btn btn-success" onClick={handleCompleteWorkout}>
-              Complete Workout
-            </Button>
-          ) : isExerciseComplete ? (
-            <Button
-              className="w-full btn btn-primary"
-              onClick={() => setCurrentExerciseIndex(currentExerciseIndex + 1)}
-            >
-              Next Exercise
-            </Button>
-          ) : (
-            <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-              {repsRemaining} {repsRemaining === 1 ? 'set' : 'sets'} remaining
-            </p>
-          )}
+      <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 dark:bg-neutral-900">
+        <div className="max-w-2xl mx-auto bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-sm mb-4 p-4">
+          <Button className="w-full" onClick={handleCompleteWorkoutClick}>
+            Complete Workout
+          </Button>
         </div>
       </div>
 
@@ -264,6 +283,42 @@ export default function WorkoutTrackingPage() {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Incomplete-workout confirmation */}
+      {confirmIncomplete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-neutral-800 p-6 rounded-lg shadow-lg max-w-sm">
+            <h2 className="text-lg font-semibold mb-2 text-neutral-900 dark:text-neutral-100">
+              Finish anyway?
+            </h2>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
+              {unloggedCount} {unloggedCount === 1 ? 'set is' : 'sets are'} not logged.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmIncomplete(false)}
+                className="flex-1 px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCompleteWorkout}
+                className="flex-1 px-4 py-2 bg-primary-600 dark:bg-primary-700 text-white rounded hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors font-medium"
+              >
+                Finish anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Readiness Modal */}
+      <ReadinessModal
+        title={readinessOpen === 'pre' ? 'How are you feeling?' : 'How was that workout?'}
+        isOpen={readinessOpen !== null}
+        onRate={handleSubmitReadiness}
+        onClose={handleReadinessClose}
+      />
     </div>
   );
 }

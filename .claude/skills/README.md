@@ -22,6 +22,7 @@ Specialized guides for developing MyGym (React 19 + FastAPI + PostgreSQL + Docke
 - **[docker-workflows](./docker-workflows/SKILL.md)** — Docker Compose setup, local development, debugging containers, deployment patterns
 - **[code-quality](./code-quality/SKILL.md)** — Linting (Ruff), formatting (Black), type checking (mypy), pre-commit hooks
 - **[token-optimization](./token-optimization/SKILL.md)** — Token usage optimization strategies for Claude Code and API efficiency
+- **[pause-session](./pause-session/SKILL.md)** — Save/resume progress across sessions via a small per-branch handoff file
 
 ## How to Use
 
@@ -74,6 +75,7 @@ Each skill is a directory with a `SKILL.md` file:
 | Setup Docker Compose | `docker-workflows` |
 | Run linting/formatting | `code-quality` |
 | Optimize token usage | `token-optimization` |
+| Pause/resume work across sessions | `pause-session` |
 
 ## Quick Reference
 

@@ -1,12 +1,20 @@
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Protocol
+import math
+from dataclasses import dataclass, field, replace
+from typing import Any, Callable, Literal, Protocol
 
-from app.schemas.template import SlotRule, TemplateDefinition
+from app.models.exercise import Muscle
+from app.schemas.program_api import Advisory
+from app.schemas.template import SessionDef, SlotRule, TemplateDefinition
+from app.services.program.engine_config import EngineConfig, MatchConfig
 from app.services.program.preferences import movement_preference_weight
 from app.services.program.selection import _matches_rule
+from app.services.program.taxonomy import muscle_group_for
 
 logger = logging.getLogger(__name__)
+
+_TIER_BEST_MAX_GAP = 5
+_TIER_STRONG_MAX_GAP = 15
 
 _PATTERN_REGION: dict[str, str] = {
     "squat": "lower_body",
@@ -23,6 +31,25 @@ _PATTERN_REGION: dict[str, str] = {
     "locomotion": "full_body",
     "mobility": "full_body",
 }
+
+
+def _tier_for(fit_pct: int, top_fit_pct: int) -> Literal["best", "strong", "possible"]:
+    """Derive presentation tier from fit percentage relative to top match.
+
+    Args:
+        fit_pct: The match's fit percentage score.
+        top_fit_pct: The maximum fit percentage in the returned list.
+
+    Returns:
+        One of "best", "strong", or "possible" based on the gap from top.
+    """
+    gap = top_fit_pct - fit_pct
+    if gap <= _TIER_BEST_MAX_GAP:
+        return "best"
+    if gap <= _TIER_STRONG_MAX_GAP:
+        return "strong"
+    return "possible"
+
 
 _PERIODIZATION_CONSISTENT_MODELS = {"linear_load", "double_progression"}
 _PERIODIZATION_VARIABLE_MODELS = {"weekly_undulating"}
@@ -61,6 +88,32 @@ class HeuristicTemplateScorer:
 
 
 @dataclass(frozen=True)
+class ConstraintTemplateScorer:
+    """Constraint-tiered scorer (plan §1.3).
+
+    `fit = max(goal, ε)^α · max(experience, ε)^β · soft`, where `soft` is the
+    renormalized weighted average of the 5 soft factors. Goal/experience act as
+    multiplicative gates (floored at ε) rather than additive terms.
+    """
+
+    config: MatchConfig = field(default_factory=MatchConfig)
+
+    def score(self, features: dict[str, float]) -> float:
+        c = self.config
+        weight_sum = c.days + c.duration + c.movement_preference + c.focus_complement + c.periodization
+        soft = (
+            c.days * features["days"]
+            + c.duration * features["duration"]
+            + c.movement_preference * features["movement_preference"]
+            + c.focus_complement * features["focus_complement"]
+            + c.periodization * features["periodization"]
+        ) / weight_sum
+        goal = max(features["goal"], c.epsilon) ** c.alpha
+        experience = max(features["experience"], c.epsilon) ** c.beta
+        return float(goal * experience * soft)
+
+
+@dataclass(frozen=True)
 class MatchInput:
     fitness_focus: str
     experience_level: str
@@ -70,6 +123,7 @@ class MatchInput:
     movement_preferences: dict[str, float] = field(default_factory=dict)
     complementary_focus: bool = True
     progression_style: str = "consistent"
+    goal_vector: dict[str, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -79,6 +133,15 @@ class TemplateMatch:
     name: str
     fit_pct: int
     factors: dict[str, float]
+    tier: Literal["best", "strong", "possible"]
+    # True only when returned via the all-infeasible best-effort fallback.
+    # Phase 2 (plan §2.5) will fold this into the general Advisory list.
+    all_infeasible: bool = False
+    advisories: list[Advisory] = field(default_factory=list)
+
+
+def _goal_factor(t_goals: list[str], goal_vector: dict[str, float]) -> float:
+    return sum(goal_vector.get(g, 0.0) for g in t_goals)
 
 
 def _range_fit(value: int, low: int, high: int) -> float:
@@ -86,6 +149,25 @@ def _range_fit(value: int, low: int, high: int) -> float:
         return 1.0
     distance = low - value if value < low else value - high
     return max(0.0, 1.0 - distance / max(low, 1))
+
+
+def _gaussian_range_fit(value: int, low: int, high: int, sigma: float) -> float:
+    """Gaussian kernel for range fitting.
+
+    Returns exp(-(d/sigma)^2) where d = max(0, low - value, value - high).
+    When d == 0 (value in range), returns 1.0.
+    Handles sigma <= 0: returns 1.0 if d == 0, else 0.0.
+    """
+    if low <= value <= high:
+        distance = 0
+    elif value < low:
+        distance = low - value
+    else:
+        distance = value - high
+
+    if sigma <= 0:
+        return 1.0 if distance == 0 else 0.0
+    return math.exp(-((distance / sigma) ** 2))
 
 
 def _slot_region(slot: SlotRule) -> str:
@@ -128,6 +210,63 @@ def _periodization_feature(model_key: str, progression_style: str) -> float:
     return 0.3
 
 
+def _session_primary_groups(session: SessionDef, exercises: list[Any], equipment: list[str]) -> set[str]:
+    """Taxonomy groups reachable via a primary slot in this session (plan §2.5, proposal §4.3).
+
+    "Reachable" means at least one candidate exercise matches the slot's pattern/region/muscles
+    (`_matches_rule`) and its equipment is available. This is a structural proxy for "this
+    template intends non-trivial direct volume here" — no exercises are actually picked yet at
+    match time.
+    """
+    groups: set[str] = set()
+    for slot in session.slots:
+        if slot.priority != "primary":
+            continue
+        for ex in exercises:
+            if not _matches_rule(ex, slot):
+                continue
+            if not set(ex.equipment_tags) <= set(equipment):
+                continue
+            for m in ex.primary_muscles:
+                group = muscle_group_for(Muscle(m))
+                if group is not None:
+                    groups.add(group)
+    return groups
+
+
+def _frequency_advisories_for_template(
+    sessions: list[SessionDef], exercises: list[Any], equipment: list[str]
+) -> list[Advisory]:
+    """Structural frequency-reachability check (plan §2.5, proposal §4.3's "Frequency check").
+
+    A group is frequency-infeasible iff it is reachable in at least 1 session (the template
+    intends to load it) and in fewer than 2 distinct sessions (structurally capped at 1 training
+    day, regardless of which exercises get selected later). Deliberately coarser than the
+    post-draft ledger check (Task 2.5a) — no MEV/MRV comparison here, just slot-structure reach.
+    """
+    session_groups: dict[str, set[str]] = {
+        session.key: _session_primary_groups(session, exercises, equipment) for session in sessions
+    }
+    all_groups = {group for groups in session_groups.values() for group in groups}
+    advisories: list[Advisory] = []
+    for group in sorted(all_groups):
+        reachable_session_count = sum(1 for groups in session_groups.values() if group in groups)
+        if reachable_session_count < 2:
+            advisories.append(
+                Advisory(
+                    code="FREQUENCY_STRUCTURALLY_LIMITED",
+                    severity="info",
+                    subject=group,
+                    message=(
+                        f"{group.replace('_', ' ').title()} is only reachable on 1 training day in this "
+                        f"split — most muscles respond better to a training frequency of 2+ days per week "
+                        f"when carrying meaningful weekly volume."
+                    ),
+                )
+            )
+    return advisories
+
+
 def rank_templates(
     templates: list[Any],
     inp: MatchInput,
@@ -135,8 +274,28 @@ def rank_templates(
     definitions: dict[int, TemplateDefinition] | None = None,
     all_exercises: list[Any] | None = None,
     scorer: TemplateScorer | None = None,
+    safety_feasible: Callable[[Any], bool] | None = None,
+    config: EngineConfig | None = None,
 ) -> list[TemplateMatch]:
-    scorer = scorer or HeuristicTemplateScorer()
+    """Score and rank templates, excluding infeasible ones.
+
+    `safety_feasible` is a hook point for Phase 3 (plan §3.3) to layer
+    safety-driven infeasibility on top of equipment/pool-based feasibility.
+    It is a no-op until then: when omitted, no template is excluded on its
+    account.
+
+    `config` opts into the constraint-tiered scorer (plan §1.3/§1.4): when
+    supplied with `flags.use_constraint_scorer` on, the default scorer becomes
+    `ConstraintTemplateScorer` and days/duration use the Gaussian kernel. An
+    explicitly-passed `scorer` always wins over the config-driven default.
+    """
+    use_constraint = config is not None and config.flags.use_constraint_scorer
+    use_frequency_advisories = config is not None and config.flags.use_frequency_advisories
+    if scorer is None:
+        if config is not None and use_constraint:
+            scorer = ConstraintTemplateScorer(config.match)
+        else:
+            scorer = HeuristicTemplateScorer()
     definitions = definitions or {}
     exercises = all_exercises or []
     logger.info(
@@ -145,8 +304,9 @@ def rank_templates(
         f"equipment={inp.environment_equipment}"
     )
     matches: list[TemplateMatch] = []
+    feasible_matches: list[TemplateMatch] = []
     for t in templates:
-        is_feasible = feasibility.get(t.id, False)
+        is_feasible = feasibility.get(t.id, False) and (safety_feasible is None or safety_feasible(t))
         definition = definitions.get(t.id)
         if definition is not None:
             sessions = definition.split.sessions
@@ -155,23 +315,57 @@ def rank_templates(
             )
             focus_complement = _focus_complement_feature(sessions, inp.complementary_focus)
             periodization = _periodization_feature(definition.progression.model_key, inp.progression_style)
+            if use_frequency_advisories:
+                frequency_advisories = _frequency_advisories_for_template(
+                    sessions, exercises, inp.environment_equipment
+                )
+            else:
+                frequency_advisories = []
         else:
             movement_preference = 0.5
             focus_complement = 0.5
             periodization = 0.3
+            frequency_advisories = []
+        goal_vector = inp.goal_vector or {inp.fitness_focus: 1.0}
+        if config is not None and use_constraint:
+            days = _gaussian_range_fit(
+                inp.days_per_week, t.days_per_week_min, t.days_per_week_max, config.match.sigma_days
+            )
+            duration = _gaussian_range_fit(
+                inp.session_duration_min, t.session_duration_min, t.session_duration_max, config.match.sigma_duration
+            )
+        else:
+            days = _range_fit(inp.days_per_week, t.days_per_week_min, t.days_per_week_max)
+            duration = _range_fit(inp.session_duration_min, t.session_duration_min, t.session_duration_max)
         factors = {
-            "goal": 1.0 if inp.fitness_focus in t.goals else 0.0,
+            "goal": _goal_factor(t.goals, goal_vector),
             "experience": 1.0 if inp.experience_level in t.experience_levels else 0.3,
-            "days": _range_fit(inp.days_per_week, t.days_per_week_min, t.days_per_week_max),
-            "duration": _range_fit(inp.session_duration_min, t.session_duration_min, t.session_duration_max),
+            "days": days,
+            "duration": duration,
             "movement_preference": movement_preference,
             "focus_complement": focus_complement,
             "periodization": periodization,
         }
         score = scorer.score(factors)
-        matches.append(TemplateMatch(t.id, t.slug, t.name, round(score * 100), factors))
+        match = TemplateMatch(
+            t.id, t.slug, t.name, round(score * 100), factors, tier="possible", advisories=frequency_advisories
+        )
+        matches.append(match)
+        if is_feasible:
+            feasible_matches.append(match)
         logger.debug(f"Template {t.slug}: score={round(score * 100)}, feasible={is_feasible}, factors={factors}")
-    matches.sort(key=lambda m: m.fit_pct, reverse=True)
-    top_3 = matches[:3]
-    logger.info(f"Top 3 matches: {[(m.slug, m.fit_pct) for m in top_3]}")
-    return top_3
+
+    all_infeasible = bool(matches) and not feasible_matches
+    candidates = matches if all_infeasible else feasible_matches
+    candidates = sorted(candidates, key=lambda m: m.fit_pct, reverse=True)
+
+    # Compute tiers based on global top fit_pct for consistency
+    top_fit_pct = candidates[0].fit_pct if candidates else 0
+    candidates = [replace(m, tier=_tier_for(m.fit_pct, top_fit_pct)) for m in candidates]
+
+    if all_infeasible:
+        candidates = [replace(m, all_infeasible=True) for m in candidates]
+        logger.warning(f"All templates infeasible; returning best-effort matches: {[m.slug for m in candidates[:3]]}")
+
+    logger.info(f"Returning all {len(candidates)} ranked matches")
+    return candidates

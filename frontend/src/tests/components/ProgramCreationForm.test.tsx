@@ -68,6 +68,7 @@ describe('ProgramCreationForm', () => {
       weight_unit: 'lbs' as const,
       progression_style: 'consistent' as const,
       effort_method: '' as const,
+      start_date: '2026-01-05',
     };
 
     render(
@@ -131,6 +132,7 @@ describe('ProgramCreationForm', () => {
       weight_unit: 'kg' as const,
       progression_style: 'consistent' as const,
       effort_method: '' as const,
+      start_date: '2026-01-05',
     };
 
     const { rerender } = render(
@@ -151,6 +153,7 @@ describe('ProgramCreationForm', () => {
       weight_unit: 'lbs' as const,
       progression_style: 'consistent' as const,
       effort_method: '' as const,
+      start_date: '2026-01-05',
     };
 
     rerender(
