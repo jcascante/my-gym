@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.endpoints.programs import _preview_out
@@ -9,14 +10,17 @@ from app.crud.program import get_program
 from app.models import (
     ProgramStatus,
     ProgramTemplate,
+    SessionStatus,
     User,
     UserWorkoutLog,
     Workout,
     WorkoutExercise,
     WorkoutProgram,
+    WorkoutSession,
     WorkoutSetLog,
 )
 from app.schemas.template import TemplateDefinition
+from app.services.program.scheduling import materialize_sessions
 
 
 async def _build_program(
@@ -27,7 +31,7 @@ async def _build_program(
     status: ProgramStatus,
     start_date: date | None,
     duration_weeks: int = 8,
-) -> tuple[WorkoutProgram, Workout, WorkoutExercise]:
+) -> tuple[WorkoutProgram, Workout, WorkoutExercise, WorkoutSession]:
     program = WorkoutProgram(
         user_id=test_user.id,
         template_id=template.id,
@@ -67,19 +71,59 @@ async def _build_program(
 
     saved = await get_program(db_session, test_user.id, program.id)
     assert saved is not None
-    return saved, workout, exercise
+
+    # materialize_sessions is a no-op without a start_date; these fixtures still
+    # need a real session row to satisfy session_id NOT NULL, so build one by hand
+    # when there's no date to schedule against (current_week is None regardless).
+    if start_date is not None:
+        await materialize_sessions(db_session, saved)
+        result = await db_session.execute(
+            select(WorkoutSession).where(WorkoutSession.program_id == saved.id).order_by(WorkoutSession.week)
+        )
+        session = result.scalars().first()
+        assert session is not None
+    else:
+        session = WorkoutSession(
+            program_id=saved.id,
+            workout_id=workout.id,
+            week=1,
+            scheduled_date=date.today(),
+            status=SessionStatus.SCHEDULED,
+        )
+        db_session.add(session)
+        await db_session.commit()
+        await db_session.refresh(session)
+
+    return saved, workout, exercise, session
 
 
 async def _add_high_rpe_set_logs(
-    db_session: AsyncSession, test_user: User, workout: Workout, exercise: WorkoutExercise
-) -> None:
-    for days_ago in (2, 5):
+    db_session: AsyncSession, test_user: User, session: WorkoutSession, exercise: WorkoutExercise
+) -> list[int]:
+    """Create logs at multiple time points (different sessions) with high RPE.
+    Returns the list of session IDs used. Uses different sessions for each time point."""
+    # Query for sessions in this program, ordered by week ascending to get different weeks
+    result = await db_session.execute(
+        select(WorkoutSession)
+        .where(WorkoutSession.program_id == session.program_id)
+        .order_by(WorkoutSession.week.asc())
+        .limit(3)
+    )
+    available_sessions = list(result.scalars().all())
+
+    session_ids = []
+    for idx, days_ago in enumerate((2, 5), 1):
+        # Use different sessions for different time points (week by week)
+        sess = available_sessions[min(idx, len(available_sessions) - 1)]
+        session_ids.append(sess.id)
+
         db_session.add(
             WorkoutSetLog(
                 user_id=test_user.id,
-                workout_id=workout.id,
+                session_id=sess.id,
+                workout_id=sess.workout_id,
                 workout_exercise_id=exercise.id,
-                set_number=1,
+                set_number=idx,
                 actual_weight=100.0,
                 actual_reps=5,
                 actual_rpe=9.5,
@@ -88,14 +132,18 @@ async def _add_high_rpe_set_logs(
             )
         )
     await db_session.commit()
+    return session_ids
 
 
-async def _add_low_readiness_logs(db_session: AsyncSession, test_user: User, workout: Workout) -> None:
-    for days_ago in (2, 5):
+async def _add_low_readiness_logs(
+    db_session: AsyncSession, test_user: User, session_ids: list[int], workout_id: int
+) -> None:
+    for session_id, days_ago in zip(session_ids, (2, 5)):
         db_session.add(
             UserWorkoutLog(
                 user_id=test_user.id,
-                workout_id=workout.id,
+                session_id=session_id,
+                workout_id=workout_id,
                 session_date=datetime.utcnow() - timedelta(days=days_ago),
                 readiness=1,
             )
@@ -108,11 +156,11 @@ async def test_current_week_gets_live_signals_but_adjacent_weeks_stay_nominal(
     db_session: AsyncSession, test_user: User, sample_template_orm: ProgramTemplate
 ):
     start_date = date.today() - timedelta(weeks=2)  # lands on week 3 of an 8-week program
-    program, workout, exercise = await _build_program(
+    program, workout, exercise, session = await _build_program(
         db_session, test_user, sample_template_orm, status=ProgramStatus.ACTIVE, start_date=start_date
     )
-    await _add_high_rpe_set_logs(db_session, test_user, workout, exercise)
-    await _add_low_readiness_logs(db_session, test_user, workout)
+    session_ids = await _add_high_rpe_set_logs(db_session, test_user, session, exercise)
+    await _add_low_readiness_logs(db_session, test_user, session_ids, workout.id)
 
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     result = await _preview_out(db_session, program, definition, test_user)
@@ -137,11 +185,11 @@ async def test_draft_and_archived_programs_never_get_live_signals(
 ):
     start_date = date.today() - timedelta(weeks=2)
     for status in (ProgramStatus.DRAFT, ProgramStatus.ARCHIVED):
-        program, workout, exercise = await _build_program(
+        program, workout, exercise, session = await _build_program(
             db_session, test_user, sample_template_orm, status=status, start_date=start_date
         )
-        await _add_high_rpe_set_logs(db_session, test_user, workout, exercise)
-        await _add_low_readiness_logs(db_session, test_user, workout)
+        session_ids = await _add_high_rpe_set_logs(db_session, test_user, session, exercise)
+        await _add_low_readiness_logs(db_session, test_user, session_ids, workout.id)
 
         definition = TemplateDefinition.from_orm_template(sample_template_orm)
         result = await _preview_out(db_session, program, definition, test_user)
@@ -158,11 +206,11 @@ async def test_future_start_date_yields_no_current_week_and_no_signals(
     db_session: AsyncSession, test_user: User, sample_template_orm: ProgramTemplate
 ):
     start_date = date.today() + timedelta(days=5)
-    program, workout, exercise = await _build_program(
+    program, workout, exercise, session = await _build_program(
         db_session, test_user, sample_template_orm, status=ProgramStatus.ACTIVE, start_date=start_date
     )
-    await _add_high_rpe_set_logs(db_session, test_user, workout, exercise)
-    await _add_low_readiness_logs(db_session, test_user, workout)
+    session_ids = await _add_high_rpe_set_logs(db_session, test_user, session, exercise)
+    await _add_low_readiness_logs(db_session, test_user, session_ids, workout.id)
 
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     result = await _preview_out(db_session, program, definition, test_user)
@@ -179,7 +227,7 @@ async def test_overrun_start_date_yields_no_current_week_and_no_signals(
     db_session: AsyncSession, test_user: User, sample_template_orm: ProgramTemplate
 ):
     start_date = date.today() - timedelta(weeks=20)
-    program, workout, exercise = await _build_program(
+    program, workout, exercise, session = await _build_program(
         db_session,
         test_user,
         sample_template_orm,
@@ -187,8 +235,8 @@ async def test_overrun_start_date_yields_no_current_week_and_no_signals(
         start_date=start_date,
         duration_weeks=8,
     )
-    await _add_high_rpe_set_logs(db_session, test_user, workout, exercise)
-    await _add_low_readiness_logs(db_session, test_user, workout)
+    session_ids = await _add_high_rpe_set_logs(db_session, test_user, session, exercise)
+    await _add_low_readiness_logs(db_session, test_user, session_ids, workout.id)
 
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     result = await _preview_out(db_session, program, definition, test_user)
@@ -205,11 +253,11 @@ async def test_overrun_start_date_yields_no_current_week_and_no_signals(
 async def test_exact_week_one_boundary_gets_signals_only_on_week_one(
     db_session: AsyncSession, test_user: User, sample_template_orm: ProgramTemplate
 ):
-    program, workout, exercise = await _build_program(
+    program, workout, exercise, session = await _build_program(
         db_session, test_user, sample_template_orm, status=ProgramStatus.ACTIVE, start_date=date.today()
     )
-    await _add_high_rpe_set_logs(db_session, test_user, workout, exercise)
-    await _add_low_readiness_logs(db_session, test_user, workout)
+    session_ids = await _add_high_rpe_set_logs(db_session, test_user, session, exercise)
+    await _add_low_readiness_logs(db_session, test_user, session_ids, workout.id)
 
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     result = await _preview_out(db_session, program, definition, test_user)
@@ -223,11 +271,11 @@ async def test_exact_week_one_boundary_gets_signals_only_on_week_one(
 async def test_null_start_date_falls_back_to_nominal_without_error(
     db_session: AsyncSession, test_user: User, sample_template_orm: ProgramTemplate
 ):
-    program, workout, exercise = await _build_program(
+    program, workout, exercise, session = await _build_program(
         db_session, test_user, sample_template_orm, status=ProgramStatus.ACTIVE, start_date=None
     )
-    await _add_high_rpe_set_logs(db_session, test_user, workout, exercise)
-    await _add_low_readiness_logs(db_session, test_user, workout)
+    session_ids = await _add_high_rpe_set_logs(db_session, test_user, session, exercise)
+    await _add_low_readiness_logs(db_session, test_user, session_ids, workout.id)
 
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     result = await _preview_out(db_session, program, definition, test_user)
@@ -247,11 +295,11 @@ async def test_get_program_endpoint_surfaces_live_signals_over_http(
 ):
     """End-to-end proof the wiring reaches an actual HTTP response, not just _preview_out."""
     start_date = date.today() - timedelta(weeks=2)  # lands on week 3 of an 8-week program
-    program, workout, exercise = await _build_program(
+    program, workout, exercise, session = await _build_program(
         db_session, test_user, sample_template_orm, status=ProgramStatus.ACTIVE, start_date=start_date
     )
-    await _add_high_rpe_set_logs(db_session, test_user, workout, exercise)
-    await _add_low_readiness_logs(db_session, test_user, workout)
+    session_ids = await _add_high_rpe_set_logs(db_session, test_user, session, exercise)
+    await _add_low_readiness_logs(db_session, test_user, session_ids, workout.id)
 
     response = await authenticated_client.get(f"/api/v1/programs/{program.id}")
 

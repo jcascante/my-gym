@@ -90,30 +90,42 @@ async def get_set_logs(db: AsyncSession, workout_id: int, user_id: int) -> list[
     return list(result.scalars().all())
 
 
-async def get_set_logs_for_workouts(
-    db: AsyncSession, workout_ids: list[int], user_id: int, since: date
+async def get_set_logs_for_sessions(
+    db: AsyncSession, program_id: int, user_id: int, since: date
 ) -> list[WorkoutSetLog]:
-    """Set logs for a specific program's workouts, windowed to the reactive-deload lookback."""
-    stmt = select(WorkoutSetLog).where(
-        and_(
-            WorkoutSetLog.workout_id.in_(workout_ids),
-            WorkoutSetLog.user_id == user_id,
-            WorkoutSetLog.created_at >= since,
+    """Set logs for one program's sessions, windowed to the reactive-deload lookback.
+
+    Joining through workout_sessions is what scopes this to a single program -
+    workout_id alone is shared across every week of the program that owns it.
+    """
+    stmt = (
+        select(WorkoutSetLog)
+        .join(WorkoutSession, WorkoutSession.id == WorkoutSetLog.session_id)
+        .where(
+            and_(
+                WorkoutSession.program_id == program_id,
+                WorkoutSetLog.user_id == user_id,
+                WorkoutSetLog.created_at >= since,
+            )
         )
     )
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
 
-async def get_workout_logs_for_workouts(
-    db: AsyncSession, workout_ids: list[int], user_id: int, since: date
+async def get_readiness_for_sessions(
+    db: AsyncSession, program_id: int, user_id: int, since: date
 ) -> list[UserWorkoutLog]:
-    """Readiness logs for a specific program's workouts, for the reactive-deload window."""
-    stmt = select(UserWorkoutLog).where(
-        and_(
-            UserWorkoutLog.workout_id.in_(workout_ids),
-            UserWorkoutLog.user_id == user_id,
-            UserWorkoutLog.session_date >= since,
+    """Readiness logs for one program's sessions, for the reactive-deload window."""
+    stmt = (
+        select(UserWorkoutLog)
+        .join(WorkoutSession, WorkoutSession.id == UserWorkoutLog.session_id)
+        .where(
+            and_(
+                WorkoutSession.program_id == program_id,
+                UserWorkoutLog.user_id == user_id,
+                UserWorkoutLog.session_date >= since,
+            )
         )
     )
     result = await db.execute(stmt)

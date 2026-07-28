@@ -20,9 +20,11 @@ def _log(
     effort_method: str = "rpe",
     exercise_id: int = EXERCISE_ID,
     set_number: int = 1,
+    session_id: int | None = None,
 ) -> WorkoutSetLog:
     return WorkoutSetLog(
         user_id=1,
+        session_id=session_id if session_id is not None else day,
         workout_id=1,
         workout_exercise_id=exercise_id,
         set_number=set_number,
@@ -182,3 +184,46 @@ def test_describe_adjustment_at_min_factor_boundary():
 
 def test_describe_adjustment_at_max_factor_boundary():
     assert describe_adjustment(MAX_FACTOR) == "Recent sessions had room to spare — load increased 5%"
+
+
+def test_two_sessions_on_one_day_count_as_two_samples() -> None:
+    same_day = datetime(2026, 7, 27, 9, 0)
+    logs = [
+        WorkoutSetLog(
+            user_id=1,
+            session_id=s,
+            workout_id=1,
+            workout_exercise_id=1,
+            set_number=1,
+            actual_rpe=9.5,
+            effort_method="rpe",
+            created_at=same_day,
+        )
+        for s in (1, 2, 3)
+    ]
+
+    factor, reason = compute_adjustment(logs, exercise_id=1, model_key="linear", target_rpe=8.0)
+
+    assert "insufficient history" not in reason
+    assert factor < 1.0
+
+
+def test_one_session_spanning_midnight_counts_as_one_sample() -> None:
+    logs = [
+        WorkoutSetLog(
+            user_id=1,
+            session_id=1,
+            workout_id=1,
+            workout_exercise_id=1,
+            set_number=n,
+            actual_rpe=9.5,
+            effort_method="rpe",
+            created_at=ts,
+        )
+        for n, ts in enumerate([datetime(2026, 7, 27, 23, 50), datetime(2026, 7, 28, 0, 10)], start=1)
+    ]
+
+    factor, reason = compute_adjustment(logs, exercise_id=1, model_key="linear", target_rpe=8.0)
+
+    assert "insufficient history" in reason
+    assert factor == 1.0

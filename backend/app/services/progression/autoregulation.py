@@ -22,9 +22,10 @@ the program's designed effort anchor for the slot (`WorkoutExercise.target_rpe`,
 constant for the exercise across the mesocycle), which the plan lists as a separate
 consumed input, and which the caller already has in hand while iterating slots in
 `derive_week` - so it's passed in explicitly rather than re-derived here.
-"""
 
-from datetime import date, datetime
+Sessions are identified by `WorkoutSetLog.session_id` (monotonic in creation order);
+per-session RPE values are averaged across all sets within the same session.
+"""
 
 from app.models import WorkoutSetLog
 
@@ -49,9 +50,8 @@ def _to_rpe_scale(value: float, effort_method: str) -> float:
     return value
 
 
-def _session_key(log: WorkoutSetLog) -> date:
-    created = log.created_at
-    return created.date() if isinstance(created, datetime) else created
+def _session_key(log: WorkoutSetLog) -> int:
+    return log.session_id
 
 
 def _clamp(value: float, lower: float, upper: float) -> float:
@@ -73,7 +73,7 @@ def compute_adjustment(
     exercise. `model_key` does not affect the computation - it is threaded through for
     traceability (surfaced in `reason`) since callers operate per progression model.
     """
-    sessions: dict[date, list[float]] = {}
+    sessions: dict[int, list[float]] = {}
     for log in session_logs:
         if log.workout_exercise_id != exercise_id or log.actual_rpe is None:
             continue

@@ -695,6 +695,7 @@ async def test_derive_week_does_not_cap_load_ramp_for_intermediate_experience(sa
 def _set_log(workout_exercise_id: int, day: int, actual_rpe: float) -> WorkoutSetLog:
     return WorkoutSetLog(
         user_id=1,
+        session_id=day,
         workout_id=1,
         workout_exercise_id=workout_exercise_id,
         set_number=1,
