@@ -133,6 +133,11 @@ export default function WorkoutTrackingPage() {
         navigate('/');
       }
     } catch (err) {
+      // Whether postSessionReadiness or completeSession failed, this attempt did
+      // not complete the session - clear the flag so handleReadinessClose's own
+      // fallback (fired next, via ReadinessModal's onClose-after-onRate) retries
+      // completion instead of assuming this function already handled it.
+      ratingInFlightRef.current = false;
       console.error('Failed to record readiness:', err);
       setToast({ message: 'Failed to record readiness. Please try again.', icon: '⚠️' });
     } finally {

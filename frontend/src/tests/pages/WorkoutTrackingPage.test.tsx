@@ -7,10 +7,11 @@ import WorkoutTrackingPage from '@/pages/WorkoutTrackingPage';
 const navigateMock = vi.fn();
 const completeSessionMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 const logSessionSetMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+const postSessionReadinessMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 
 vi.mock('@/api/sessions', () => ({
   logSessionSet: (...args: unknown[]): Promise<unknown> => logSessionSetMock(...args),
-  postSessionReadiness: vi.fn().mockResolvedValue(undefined),
+  postSessionReadiness: (...args: unknown[]): Promise<unknown> => postSessionReadinessMock(...args),
   completeSession: (...args: unknown[]): Promise<unknown> => completeSessionMock(...args),
 }));
 
@@ -70,6 +71,7 @@ describe('WorkoutTrackingPage', () => {
     navigateMock.mockClear();
     completeSessionMock.mockClear().mockResolvedValue({});
     logSessionSetMock.mockClear().mockResolvedValue(undefined);
+    postSessionReadinessMock.mockClear().mockResolvedValue(undefined);
   });
 
   it('logs the current exercise from the session slots', () => {
@@ -100,6 +102,34 @@ describe('WorkoutTrackingPage', () => {
     await userEvent.click(dialogButton);
     await userEvent.click(screen.getByRole('button', { name: /submit/i }));
 
+    await waitFor(() => expect(completeSessionMock).toHaveBeenCalledWith(9));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/'));
+    // A submitted rating must complete the session exactly once - the
+    // ratingInFlightRef guard exists specifically to stop ReadinessModal's own
+    // post-onRate onClose() call from re-completing it a second time.
+    expect(completeSessionMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('still completes the session if the readiness POST itself fails', async () => {
+    postSessionReadinessMock.mockRejectedValue(new Error('network error'));
+
+    render(
+      <MemoryRouter>
+        <WorkoutTrackingPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.type(screen.getByLabelText('RPE (1–10)'), '7');
+    await userEvent.click(screen.getByRole('button', { name: /log set/i }));
+
+    await userEvent.click(await screen.findByRole('button', { name: /complete workout/i }));
+    const dialogButton = await screen.findByRole('button', { name: '4' });
+    await userEvent.click(dialogButton);
+    await userEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+    // The rating attempt failed, but the workout must not be left permanently
+    // stuck in-progress: ReadinessModal's own onClose (fired after the failed
+    // onRate) should trigger the same fallback completion Skip uses.
     await waitFor(() => expect(completeSessionMock).toHaveBeenCalledWith(9));
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/'));
   });
