@@ -223,6 +223,10 @@ async def test_range_query_returns_only_sessions_in_the_window(
     db_session: AsyncSession, three_day_program: WorkoutProgram
 ) -> None:
     three_day_program.user_id = 1
+    # get_sessions_in_range only considers ACTIVE programs (archived/draft programs'
+    # sessions shouldn't bleed into /schedule) - this test is about window filtering,
+    # not program status, so make the fixture program active.
+    three_day_program.status = ProgramStatus.ACTIVE
     await materialize_sessions(db_session, three_day_program)
 
     found = await get_sessions_in_range(db_session, 1, date(2026, 7, 27), date(2026, 8, 2))

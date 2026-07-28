@@ -135,6 +135,33 @@ it('displays exercise names and effort targets', () => {
   expect(screen.getByText('Go heavy')).toBeInTheDocument();
 });
 
+it('shows Start Tracking only for an active program', () => {
+  render(
+    <MemoryRouter initialEntries={['/programs/1']}>
+      <QueryClientProvider client={new QueryClient()}>
+        <Routes>
+          <Route path="/programs/:id" element={<ProgramPreviewPage />} />
+        </Routes>
+      </QueryClientProvider>
+    </MemoryRouter>,
+  );
+  expect(screen.getByRole('button', { name: /start tracking/i })).toBeInTheDocument();
+});
+
+it('hides Start Tracking for a non-active program', () => {
+  programStatus = 'draft';
+  render(
+    <MemoryRouter initialEntries={['/programs/1']}>
+      <QueryClientProvider client={new QueryClient()}>
+        <Routes>
+          <Route path="/programs/:id" element={<ProgramPreviewPage />} />
+        </Routes>
+      </QueryClientProvider>
+    </MemoryRouter>,
+  );
+  expect(screen.queryByRole('button', { name: /start tracking/i })).not.toBeInTheDocument();
+});
+
 it('displays lock icon for locked exercises', () => {
   render(
     <MemoryRouter initialEntries={['/programs/1']}>

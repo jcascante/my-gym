@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -6,9 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.v1.dependencies import get_current_user
+from app.core.constants import DELOAD_LOOKBACK_DAYS
 from app.core.database import get_db
 from app.crud import logging as crud_logging
 from app.crud.exercise import get_exercises_by_ids
+from app.crud.logging import get_readiness_for_sessions, get_set_logs_for_sessions
 from app.crud.session import get_session, get_sessions_in_range, set_session_status
 from app.models.logging import UserWorkoutLog, WorkoutSetLog
 from app.models.program import Workout
@@ -86,7 +88,21 @@ async def _session_detail(db: AsyncSession, session: WorkoutSession, user: User)
     program, definition = await load_program_with_definition(db, user.id, session.program_id)
     exercise_ids = [ex.exercise_id for w in program.workouts for ex in w.exercises]
     exercises = await get_exercises_by_ids(db, exercise_ids) if exercise_ids else {}
-    week_days = derive_week(program, definition, session.week, exercises)
+
+    since = date.today() - timedelta(days=DELOAD_LOOKBACK_DAYS)
+    set_logs_by_exercise: dict[int, list[WorkoutSetLog]] = {}
+    for log in await get_set_logs_for_sessions(db, program.id, user.id, since):
+        set_logs_by_exercise.setdefault(log.workout_exercise_id, []).append(log)
+    readiness_logs = await get_readiness_for_sessions(db, program.id, user.id, since)
+
+    week_days = derive_week(
+        program,
+        definition,
+        session.week,
+        exercises,
+        set_logs_by_exercise=set_logs_by_exercise,
+        readiness_logs=readiness_logs,
+    )
     day = next((d for d in week_days if d["workout_id"] == session.workout_id), None)
     preview = WorkoutPreviewOut(**day) if day else None
 
@@ -145,7 +161,7 @@ async def create_session_set_log(
 
     log = await crud_logging.append_set_log(db, user.id, session, data)
 
-    if session.status == SessionStatus.SCHEDULED:
+    if session.status in (SessionStatus.SCHEDULED, SessionStatus.MISSED):
         await set_session_status(db, session, SessionStatus.IN_PROGRESS)
 
     return log

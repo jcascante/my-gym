@@ -23,13 +23,15 @@ export default function ProgramPreviewPage() {
           <Card key={w.workout_id}>
             <div className="flex items-start justify-between mb-4">
               <h3 className="font-semibold">{w.name}</h3>
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() => navigate(`/schedule?week=${active}`)}
-              >
-                Start Tracking
-              </Button>
+              {data.status === 'active' && (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => navigate(`/schedule?week=${active}`)}
+                >
+                  Start Tracking
+                </Button>
+              )}
             </div>
             {w.slots.map((s) => (
               <SlotRow key={s.workout_exercise_id} slot={s} readOnly={true} />

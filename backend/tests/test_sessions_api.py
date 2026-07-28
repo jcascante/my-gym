@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import hash_password
-from app.models import ProgramStatus, User, Workout, WorkoutProgram
+from app.models import ProgramStatus, User, Workout, WorkoutProgram, WorkoutSetLog
 from app.services.auth import create_tokens
 from app.services.program.scheduling import materialize_sessions
 
@@ -152,6 +152,74 @@ async def test_session_detail_slots_come_from_the_sessions_own_week(
     # Regression: _session_detail must resolve real exercise names, not fall back
     # to the "Exercise #{id}" placeholder derive_week uses when exercises isn't passed.
     assert not detail_1["slots"][0]["exercise_name"].startswith("Exercise #")
+
+
+@pytest.mark.asyncio
+async def test_session_detail_surfaces_autoregulation_signals(
+    authenticated_client: AsyncClient,
+    db_session: AsyncSession,
+    test_user: User,
+    seeded_templates,
+    seeded_exercises,
+    user_environment,
+) -> None:
+    """Regression: _session_detail must source set_logs_by_exercise/readiness_logs
+    the same way _preview_out does, so a session's own adjustment signals surface
+    (previously derive_week was called with none, so slots[0].adjustment_reason
+    was always None regardless of logged history)."""
+    draft = await authenticated_client.post(
+        "/api/v1/programs/draft",
+        json={
+            "environment_id": user_environment.id,
+            "days_per_week": 3,
+            "session_duration_min": 60,
+            "fitness_focus": "general_fitness",
+            "weight_unit": "kg",
+            "duration_weeks": 4,
+            "template_id": 1,
+            "required_inputs": {"squat_start": 60.0, "bench_start": 40.0},
+            "progression_style": "consistent",
+            "effort_method": "rpe",
+            "start_date": date.today().isoformat(),
+        },
+    )
+    program_id = draft.json()["program_id"]
+    await authenticated_client.post(f"/api/v1/programs/{program_id}/accept")
+
+    schedule = await authenticated_client.get(
+        f"/api/v1/users/me/schedule?start={date.today().isoformat()}&end=2027-01-01"
+    )
+    entries = schedule.json()
+    week_1 = next(e for e in entries if e["week"] == 1)
+    week_2 = next(e for e in entries if e["week"] == 2 and e["workout_id"] == week_1["workout_id"])
+
+    detail_1 = (await authenticated_client.get(f"/api/v1/users/me/sessions/{week_1['session_id']}")).json()
+    workout_exercise_id = detail_1["slots"][0]["workout_exercise_id"]
+
+    # Two high-RPE entries against two *different* sessions of the same exercise,
+    # matching the pattern reactive-deload/autoregulation requires history across
+    # sessions, not just multiple sets within one.
+    for session_entry in (week_1, week_2):
+        db_session.add(
+            WorkoutSetLog(
+                user_id=test_user.id,
+                session_id=session_entry["session_id"],
+                workout_id=session_entry["workout_id"],
+                workout_exercise_id=workout_exercise_id,
+                set_number=1,
+                actual_weight=100.0,
+                actual_reps=5,
+                actual_rpe=9.5,
+                effort_method="rpe",
+            )
+        )
+    await db_session.commit()
+
+    response = await authenticated_client.get(f"/api/v1/users/me/sessions/{week_1['session_id']}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["slots"][0]["adjustment_reason"] is not None
 
 
 @pytest.mark.asyncio

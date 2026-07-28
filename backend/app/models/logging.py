@@ -8,6 +8,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -43,6 +44,11 @@ class WorkoutSetLog(Base):
     """
 
     __tablename__ = "workout_set_logs"
+    __table_args__ = (
+        UniqueConstraint(
+            "session_id", "workout_exercise_id", "set_number", name="uq_workout_set_log_session_exercise_set"
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)

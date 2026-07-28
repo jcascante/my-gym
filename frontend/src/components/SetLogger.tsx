@@ -10,13 +10,14 @@ interface SetLoggerProps {
     reps?: number;
     effort: number;
     effort_method: EffortMethod;
-  }) => void;
+  }) => Promise<void> | void;
 }
 
 export const SetLogger: React.FC<SetLoggerProps> = ({ effort_method, onSetLogged }) => {
   const [weight, setWeight] = useState<number | ''>('');
   const [reps, setReps] = useState<number | ''>('');
   const [effort, setEffort] = useState<number | ''>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getEffortBounds = () => {
     switch (effort_method) {
@@ -48,24 +49,29 @@ export const SetLogger: React.FC<SetLoggerProps> = ({ effort_method, onSetLogged
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (effort === '') return;
+    if (effort === '' || isSubmitting) return;
 
     const { min, max } = getEffortBounds();
     const effortVal = clamp(Number(effort), min, max);
 
-    onSetLogged({
-      weight: weight !== '' ? weight : undefined,
-      reps: reps !== '' ? reps : undefined,
-      effort: effortVal,
-      effort_method,
-    });
+    setIsSubmitting(true);
+    try {
+      await onSetLogged({
+        weight: weight !== '' ? weight : undefined,
+        reps: reps !== '' ? reps : undefined,
+        effort: effortVal,
+        effort_method,
+      });
 
-    // Reset form
-    setWeight('');
-    setReps('');
-    setEffort('');
+      // Reset form
+      setWeight('');
+      setReps('');
+      setEffort('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const { label } = getEffortBounds();
@@ -104,7 +110,12 @@ export const SetLogger: React.FC<SetLoggerProps> = ({ effort_method, onSetLogged
         placeholder="0"
       />
 
-      <Button type="submit" variant="primary" disabled={effort === ''} className="w-full">
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={effort === '' || isSubmitting}
+        className="w-full"
+      >
         Log Set
       </Button>
     </form>

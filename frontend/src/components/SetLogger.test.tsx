@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SetLogger } from './SetLogger';
 
 describe('SetLogger', () => {
@@ -56,7 +56,7 @@ describe('SetLogger', () => {
     expect((repsInput as HTMLInputElement).value).toBe('');
   });
 
-  it('calls onSetLogged with valid input on submit', () => {
+  it('calls onSetLogged with valid input on submit', async () => {
     render(<SetLogger effort_method="rpe" onSetLogged={mockOnSetLogged} />);
     const weightInput = screen.getByLabelText(/weight/i);
     const repsInput = screen.getByLabelText(/reps/i);
@@ -74,9 +74,11 @@ describe('SetLogger', () => {
       effort: 8.5,
       effort_method: 'rpe',
     });
+
+    await waitFor(() => expect((submitBtn as HTMLButtonElement).disabled).toBe(true));
   });
 
-  it('resets form after submit', () => {
+  it('resets form after submit', async () => {
     render(<SetLogger effort_method="rpe" onSetLogged={mockOnSetLogged} />);
     const weightInput = screen.getByLabelText(/weight/i);
     const repsInput = screen.getByLabelText(/reps/i);
@@ -88,8 +90,30 @@ describe('SetLogger', () => {
     fireEvent.change(rpeInput, { target: { value: '8.5' } });
     fireEvent.click(submitBtn);
 
-    expect((weightInput as HTMLInputElement).value).toBe('');
+    await waitFor(() => expect((weightInput as HTMLInputElement).value).toBe(''));
     expect((repsInput as HTMLInputElement).value).toBe('');
     expect((rpeInput as HTMLInputElement).value).toBe('');
+  });
+
+  it('disables the submit button while a log request is in flight', async () => {
+    let resolveLog: () => void = () => {};
+    const pending = new Promise<void>((resolve) => {
+      resolveLog = resolve;
+    });
+    const slowOnSetLogged = vi.fn().mockReturnValue(pending);
+    render(<SetLogger effort_method="rpe" onSetLogged={slowOnSetLogged} />);
+    const rpeInput = screen.getByLabelText(/rpe/i);
+    const submitBtn = screen.getByRole('button', { name: /log set/i });
+
+    fireEvent.change(rpeInput, { target: { value: '8' } });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => expect((submitBtn as HTMLButtonElement).disabled).toBe(true));
+    expect(slowOnSetLogged).toHaveBeenCalledTimes(1);
+
+    resolveLog();
+    await waitFor(() => expect(slowOnSetLogged).toHaveBeenCalledTimes(1));
+    fireEvent.change(rpeInput, { target: { value: '8' } });
+    await waitFor(() => expect((submitBtn as HTMLButtonElement).disabled).toBe(false));
   });
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   SetLogger,
@@ -26,10 +26,7 @@ export default function WorkoutTrackingPage() {
 
   const rawEffortMethod = userProfile?.effort_method;
   const effortMethod: EffortMethod =
-    rawEffortMethod === 'rpe' ||
-    rawEffortMethod === 'rir' ||
-    rawEffortMethod === 'borg' ||
-    rawEffortMethod === 'percent_1rm'
+    rawEffortMethod === 'rpe' || rawEffortMethod === 'rir' || rawEffortMethod === 'borg'
       ? rawEffortMethod
       : 'rpe';
 
@@ -49,6 +46,10 @@ export default function WorkoutTrackingPage() {
   const [toast, setToast] = useState<{ message: string; icon?: string } | null>(null);
   const [readinessOpen, setReadinessOpen] = useState<'pre' | 'post' | null>(null);
   const [deloadBannerDismissed, setDeloadBannerDismissed] = useState(false);
+  // Tracks whether the modal is closing as a direct result of a rating attempt
+  // (success or failure) so the fallback completion path in handleReadinessClose
+  // never double-fires alongside handleSubmitReadiness's own completion call.
+  const ratingInFlightRef = useRef(false);
 
   if (isLoading) return <Spinner />;
   if (error) {
@@ -114,11 +115,13 @@ export default function WorkoutTrackingPage() {
   };
 
   const handleCompleteWorkout = () => {
+    ratingInFlightRef.current = false;
     setReadinessOpen('post');
   };
 
   const handleSubmitReadiness = async (readiness: number) => {
     if (!sessionIdNum) return;
+    ratingInFlightRef.current = true;
     const phase = readinessOpen === 'pre' ? 'pre' : 'post';
 
     try {
@@ -135,6 +138,23 @@ export default function WorkoutTrackingPage() {
     } finally {
       setReadinessOpen(null);
     }
+  };
+
+  const handleReadinessClose = async () => {
+    const wasRatingAttempt = ratingInFlightRef.current;
+    ratingInFlightRef.current = false;
+
+    if (readinessOpen === 'post' && !wasRatingAttempt && sessionIdNum) {
+      try {
+        await completeSession(sessionIdNum);
+        navigate('/');
+      } catch (err) {
+        console.error('Failed to complete workout:', err);
+        setToast({ message: 'Failed to complete workout. Please try again.', icon: '⚠️' });
+      }
+    }
+
+    setReadinessOpen(null);
   };
 
   return (
@@ -289,7 +309,7 @@ export default function WorkoutTrackingPage() {
         title={readinessOpen === 'pre' ? 'How are you feeling?' : 'How was that workout?'}
         isOpen={readinessOpen !== null}
         onRate={handleSubmitReadiness}
-        onClose={() => setReadinessOpen(null)}
+        onClose={handleReadinessClose}
       />
     </div>
   );

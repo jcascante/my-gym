@@ -3,7 +3,7 @@ from datetime import date
 from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.program import WorkoutProgram
+from app.models.program import ProgramStatus, WorkoutProgram
 from app.models.session import SessionStatus, WorkoutSession
 from app.models.user import _utcnow
 
@@ -29,7 +29,17 @@ async def flip_missed(db: AsyncSession, program_id: int, today: date) -> None:
 
 
 async def get_sessions_in_range(db: AsyncSession, user_id: int, start: date, end: date) -> list[WorkoutSession]:
-    program_ids = (await db.execute(select(WorkoutProgram.id).where(WorkoutProgram.user_id == user_id))).scalars().all()
+    program_ids = (
+        (
+            await db.execute(
+                select(WorkoutProgram.id).where(
+                    and_(WorkoutProgram.user_id == user_id, WorkoutProgram.status == ProgramStatus.ACTIVE)
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
     if not program_ids:
         return []
 

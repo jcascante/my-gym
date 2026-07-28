@@ -103,4 +103,23 @@ describe('WorkoutTrackingPage', () => {
     await waitFor(() => expect(completeSessionMock).toHaveBeenCalledWith(9));
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/'));
   });
+
+  it('completes the session and navigates home when Skip is clicked on the post-workout modal', async () => {
+    render(
+      <MemoryRouter>
+        <WorkoutTrackingPage />
+      </MemoryRouter>,
+    );
+
+    // The single slot has 1 set, so log it through SetLogger first to reach
+    // exercise completion (and thus the "Complete Workout" button).
+    await userEvent.type(screen.getByLabelText('RPE (1–10)'), '7');
+    await userEvent.click(screen.getByRole('button', { name: /log set/i }));
+
+    await userEvent.click(await screen.findByRole('button', { name: /complete workout/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /skip/i }));
+
+    await waitFor(() => expect(completeSessionMock).toHaveBeenCalledWith(9));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/'));
+  });
 });
