@@ -319,3 +319,30 @@ async def test_a_set_log_is_always_anchored_to_its_session(
     logs = (await db_session.execute(select(WorkoutSetLog))).scalars().all()
     assert [log.session_id for log in logs] == [entry["session_id"]]
     assert [log.workout_id for log in logs] == [entry["workout_id"]]
+
+
+@pytest.mark.asyncio
+async def test_correcting_a_logged_set_updates_the_session_detail(
+    authenticated_client: AsyncClient, active_program: WorkoutProgram
+) -> None:
+    start = date.today().isoformat()
+    session_id = (await authenticated_client.get(f"/api/v1/users/me/schedule?start={start}&end={start}")).json()[0][
+        "session_id"
+    ]
+
+    await authenticated_client.post(
+        f"/api/v1/users/me/sessions/{session_id}/set-logs",
+        json={"workout_exercise_id": 1, "set_number": 1, "actual_reps": 8, "actual_rpe": 7.0},
+    )
+    response = await authenticated_client.post(
+        f"/api/v1/users/me/sessions/{session_id}/set-logs",
+        json={"workout_exercise_id": 1, "set_number": 1, "actual_reps": 10, "actual_rpe": 9.0},
+    )
+
+    assert response.status_code == 201
+
+    detail = await authenticated_client.get(f"/api/v1/users/me/sessions/{session_id}")
+    logged = detail.json()["logged_sets"]
+    assert len(logged) == 1
+    assert logged[0]["actual_reps"] == 10
+    assert logged[0]["actual_rpe"] == 9.0
