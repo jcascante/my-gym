@@ -48,4 +48,10 @@ jobs:
         run: uv sync --frozen
 
       - name: Run library lint test
+        env:
+          # The test only touches an in-memory SQLite session (conftest's
+          # db_session fixture) - these are never connected to, but Settings()
+          # requires them to be present at import time.
+          DATABASE_URL: "postgresql+asyncpg://ci:ci@localhost:5432/ci"
+          SECRET_KEY: "ci-only-not-a-real-secret"
         run: uv run pytest tests/test_library_lint.py -v
