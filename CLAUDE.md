@@ -13,36 +13,16 @@ See [PROJECT_SCOPE.md](./PROJECT_SCOPE.md) for full data models and features.
 ## Quick Commands
 
 ```bash
-# Start development (all services with Docker Compose)
-docker-compose up
-
-# Backend
-docker-compose exec backend pytest                                        # Run tests
-docker-compose exec backend ruff check . --fix                            # Lint
-docker-compose exec backend black .                                       # Format
-docker-compose exec backend mypy app/                                     # Type check
-docker-compose exec backend alembic upgrade head                          # Migrations
+# Seed database (after `docker-compose up`, run in this order)
 docker-compose exec backend python -m app.db.seed.seed_exercises         # Seed/update exercise library
 docker-compose exec backend python -m app.db.seed.seed_program_templates # Seed program templates (run after seed_exercises)
-
-# Frontend
-docker-compose exec frontend npm run test:watch # Tests
-docker-compose exec frontend npm run lint -- --fix # Lint
-docker-compose exec frontend npm run format     # Format
-docker-compose exec frontend npm run type-check # Type check
-
-# Database
-docker-compose exec postgres psql -U postgres -d app_db
 ```
 
 ## Key Patterns
 
-- **Async/await**: All I/O (database, HTTP, file)
-- **Type hints**: Strict mypy on backend, TypeScript on frontend
 - **Testing**: TDD (test first), >80% coverage, factories + mocks
 - **API**: REST v1 at `/api/v1/`, JWT auth, consistent responses
 - **Migrations**: Alembic for schema, always test up/down
-- **Errors**: Custom exceptions with clear context
 - **Program Generation**: Rules-based (template selection → exercise assignment → progression)
 - **Workout Tracking**: Immutable logs (append-only for audit trail)
 
