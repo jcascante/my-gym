@@ -1,11 +1,13 @@
 from datetime import date
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import hash_password
 from app.crud import logging as crud_logging
 from app.models import ProgramStatus, User, Workout, WorkoutExercise, WorkoutProgram
+from app.models.logging import WorkoutSetLog
 from app.models.session import WorkoutSession
 from app.schemas.logging import UserWorkoutLogCreate
 from app.schemas.session import SessionSetLogCreate
@@ -337,3 +339,58 @@ async def test_readiness_validation_accepted_range():
     for readiness in range(1, 6):
         schema = UserWorkoutLogCreate(readiness=readiness)
         assert schema.readiness == readiness
+
+
+@pytest.mark.asyncio
+async def test_get_set_logs_dedupes_a_corrected_set(
+    db_session: AsyncSession, test_user: User, test_program_with_workout: tuple, test_session: WorkoutSession
+):
+    """A second append for the same set is a correction - get_set_logs must surface
+    only the latest value, while the original row stays in the table for audit."""
+    _, workout, exercise = test_program_with_workout
+
+    original = SessionSetLogCreate(
+        workout_exercise_id=exercise.id, set_number=1, actual_weight=60.0, actual_reps=10, actual_rpe=7.0
+    )
+    await crud_logging.append_set_log(db_session, test_user.id, test_session, original)
+
+    corrected = SessionSetLogCreate(
+        workout_exercise_id=exercise.id, set_number=1, actual_weight=65.0, actual_reps=9, actual_rpe=8.0
+    )
+    await crud_logging.append_set_log(db_session, test_user.id, test_session, corrected)
+
+    logs = await crud_logging.get_set_logs(db_session, workout.id, test_user.id)
+
+    assert len(logs) == 1
+    assert logs[0].actual_weight == 65.0
+    assert logs[0].actual_reps == 9
+
+    all_rows = (await db_session.execute(select(WorkoutSetLog))).scalars().all()
+    assert len(all_rows) == 2
+
+
+@pytest.mark.asyncio
+async def test_get_set_logs_for_sessions_dedupes_a_corrected_set(
+    db_session: AsyncSession, test_user: User, test_program_with_workout: tuple, test_session: WorkoutSession
+):
+    """Same dedupe guarantee for the program-scoped query used by reactive deload."""
+    from datetime import timedelta
+
+    program, _, exercise = test_program_with_workout
+
+    original = SessionSetLogCreate(
+        workout_exercise_id=exercise.id, set_number=1, actual_weight=60.0, actual_reps=10, actual_rpe=7.0
+    )
+    await crud_logging.append_set_log(db_session, test_user.id, test_session, original)
+
+    corrected = SessionSetLogCreate(
+        workout_exercise_id=exercise.id, set_number=1, actual_weight=65.0, actual_reps=9, actual_rpe=8.0
+    )
+    await crud_logging.append_set_log(db_session, test_user.id, test_session, corrected)
+
+    logs = await crud_logging.get_set_logs_for_sessions(
+        db_session, program.id, test_user.id, since=date.today() - timedelta(days=1)
+    )
+
+    assert len(logs) == 1
+    assert logs[0].actual_weight == 65.0
