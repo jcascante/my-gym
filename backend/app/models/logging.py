@@ -8,7 +8,6 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -41,14 +40,12 @@ class WorkoutSetLog(Base):
     """
     Immutable per-set performance log.
     Appended during/after each completed set; tracks actual weight, reps, RPE.
+    A correction is a second row for the same set, not an update - readers
+    (get_set_logs, get_set_logs_for_sessions, get_set_logs_for_session) dedupe to
+    the highest id per (workout_exercise_id, set_number).
     """
 
     __tablename__ = "workout_set_logs"
-    __table_args__ = (
-        UniqueConstraint(
-            "session_id", "workout_exercise_id", "set_number", name="uq_workout_set_log_session_exercise_set"
-        ),
-    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
