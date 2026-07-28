@@ -394,3 +394,43 @@ async def test_get_set_logs_for_sessions_dedupes_a_corrected_set(
 
     assert len(logs) == 1
     assert logs[0].actual_weight == 65.0
+
+
+@pytest.mark.asyncio
+async def test_get_set_logs_for_sessions_preserves_logs_across_different_sessions(
+    db_session: AsyncSession, test_user: User, test_program_with_workout: tuple
+):
+    """Dedupe must NOT collapse logs from different sessions even if they have
+    the same workout_exercise_id and set_number. This is critical for autoregulation,
+    which needs to track performance trends across multiple workout sessions."""
+    from datetime import timedelta
+
+    program, workout, exercise = test_program_with_workout
+    program.start_date = date.today()
+    await db_session.flush()
+    await db_session.refresh(program, ["workouts"])
+
+    # Materialize multiple sessions from the same program/workout
+    sessions = await materialize_sessions(db_session, program)
+    session_1 = sessions[0]
+    session_2 = sessions[1]
+
+    # Append a set log with the same exercise and set_number to each session
+    log_1 = SessionSetLogCreate(
+        workout_exercise_id=exercise.id, set_number=1, actual_weight=60.0, actual_reps=10, actual_rpe=7.0
+    )
+    await crud_logging.append_set_log(db_session, test_user.id, session_1, log_1)
+
+    log_2 = SessionSetLogCreate(
+        workout_exercise_id=exercise.id, set_number=1, actual_weight=65.0, actual_reps=9, actual_rpe=8.0
+    )
+    await crud_logging.append_set_log(db_session, test_user.id, session_2, log_2)
+
+    # Query logs across the program - should return BOTH logs, not collapsed
+    logs = await crud_logging.get_set_logs_for_sessions(
+        db_session, program.id, test_user.id, since=date.today() - timedelta(days=1)
+    )
+
+    assert len(logs) == 2, "Logs from different sessions must not be deduped even with same exercise+set_number"
+    assert logs[0].session_id == session_1.id
+    assert logs[1].session_id == session_2.id
