@@ -44,7 +44,7 @@ export default function WorkoutTrackingPage() {
     isLastExercise,
     recordSet,
     goToNext,
-  } = useSessionProgress(session?.slots ?? []);
+  } = useSessionProgress(session?.slots ?? [], session?.logged_sets ?? []);
 
   const [toast, setToast] = useState<{ message: string; icon?: string } | null>(null);
   const [readinessOpen, setReadinessOpen] = useState<'pre' | 'post' | null>(null);

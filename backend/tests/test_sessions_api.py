@@ -149,6 +149,9 @@ async def test_session_detail_slots_come_from_the_sessions_own_week(
     assert detail_1["slots"][0]["workout_exercise_id"] == detail_4["slots"][0]["workout_exercise_id"]
     # Same template slot, different week: linear progression must move the load.
     assert detail_1["slots"][0]["load"] != detail_4["slots"][0]["load"]
+    # Regression: _session_detail must resolve real exercise names, not fall back
+    # to the "Exercise #{id}" placeholder derive_week uses when exercises isn't passed.
+    assert not detail_1["slots"][0]["exercise_name"].startswith("Exercise #")
 
 
 @pytest.mark.asyncio

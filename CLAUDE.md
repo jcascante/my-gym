@@ -23,6 +23,7 @@ docker-compose exec backend black .                                       # Form
 docker-compose exec backend mypy app/                                     # Type check
 docker-compose exec backend alembic upgrade head                          # Migrations
 docker-compose exec backend python -m app.db.seed.seed_exercises         # Seed/update exercise library
+docker-compose exec backend python -m app.db.seed.seed_program_templates # Seed program templates (run after seed_exercises)
 
 # Frontend
 docker-compose exec frontend npm run test:watch # Tests

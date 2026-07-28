@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from app.api.v1.dependencies import get_current_user
 from app.core.database import get_db
 from app.crud import logging as crud_logging
+from app.crud.exercise import get_exercises_by_ids
 from app.crud.session import get_session, get_sessions_in_range, set_session_status
 from app.models.logging import UserWorkoutLog, WorkoutSetLog
 from app.models.program import Workout
@@ -83,7 +84,9 @@ async def _owned_session(db: AsyncSession, session_id: int, user: User) -> Worko
 async def _session_detail(db: AsyncSession, session: WorkoutSession, user: User) -> SessionDetailOut:
     workout = await _workout_for(db, session)
     program, definition = await load_program_with_definition(db, user.id, session.program_id)
-    week_days = derive_week(program, definition, session.week)
+    exercise_ids = [ex.exercise_id for w in program.workouts for ex in w.exercises]
+    exercises = await get_exercises_by_ids(db, exercise_ids) if exercise_ids else {}
+    week_days = derive_week(program, definition, session.week, exercises)
     day = next((d for d in week_days if d["workout_id"] == session.workout_id), None)
     preview = WorkoutPreviewOut(**day) if day else None
 
