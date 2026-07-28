@@ -5,12 +5,13 @@ import type { SlotPreview } from '@/types/program';
 import type { LoggedSet } from '@/types/session';
 
 const loggedSet = (
+  id: number,
   workoutExerciseId: number,
   setNumber: number,
   weight: number,
   reps: number,
 ): LoggedSet => ({
-  id: workoutExerciseId * 100 + setNumber,
+  id,
   workout_exercise_id: workoutExerciseId,
   set_number: setNumber,
   actual_weight: weight,
@@ -38,96 +39,83 @@ const slot = (id: number, name: string, sets: number): SlotPreview => ({
 });
 
 describe('useSessionProgress', () => {
-  it('starts on the first exercise with nothing logged', () => {
+  it('returns every exercise up front, none logged', () => {
     const { result } = renderHook(() =>
       useSessionProgress([slot(1, 'Bench', 2), slot(2, 'Row', 2)]),
     );
 
-    expect(result.current.currentExercise?.exercise_name).toBe('Bench');
-    expect(result.current.completedSetsCount).toBe(0);
+    expect(result.current.exercises.map((ex) => ex.exercise_name)).toEqual(['Bench', 'Row']);
+    expect(result.current.totalSets).toBe(4);
+    expect(result.current.completedSetsTotal).toBe(0);
     expect(result.current.progressPercentage).toBe(0);
   });
 
-  it('reports completion once the target set count is reached', () => {
+  it('logs a set out of order without touching other sets', () => {
+    const { result } = renderHook(() => useSessionProgress([slot(1, 'Bench', 3)]));
+
+    act(() => {
+      result.current.recordSet(1, 3, { weight: 90, reps: 6, effort: 9, effort_method: 'rpe' });
+    });
+
+    expect(result.current.exercises[0].completedSets).toEqual([
+      expect.objectContaining({ setNumber: 3, weight: 90, reps: 6 }),
+    ]);
+    expect(result.current.completedSetsTotal).toBe(1);
+  });
+
+  it('marks an exercise complete once every set is logged, in any order', () => {
     const { result } = renderHook(() => useSessionProgress([slot(1, 'Bench', 2)]));
 
     act(() => {
-      result.current.recordSet({ weight: 80, reps: 8 });
+      result.current.recordSet(1, 2, { weight: 80, reps: 8, effort: 8, effort_method: 'rpe' });
     });
-    expect(result.current.isExerciseComplete).toBe(false);
+    expect(result.current.completedExercises).toBe(0);
 
     act(() => {
-      result.current.recordSet({ weight: 80, reps: 8 });
+      result.current.recordSet(1, 1, { weight: 80, reps: 8, effort: 8, effort_method: 'rpe' });
     });
-    expect(result.current.isExerciseComplete).toBe(true);
+    expect(result.current.completedExercises).toBe(1);
     expect(result.current.progressPercentage).toBe(100);
   });
 
-  it('advances to the next exercise', () => {
-    const { result } = renderHook(() =>
-      useSessionProgress([slot(1, 'Bench', 1), slot(2, 'Row', 1)]),
-    );
-
-    act(() => {
-      result.current.goToNext();
-    });
-
-    expect(result.current.currentExercise?.exercise_name).toBe('Row');
-    expect(result.current.isLastExercise).toBe(true);
-  });
-
-  it('does not advance past the last exercise', () => {
+  it('overwrites a set when it is logged again (a correction)', () => {
     const { result } = renderHook(() => useSessionProgress([slot(1, 'Bench', 1)]));
 
     act(() => {
-      result.current.goToNext();
+      result.current.recordSet(1, 1, { weight: 80, reps: 8, effort: 7, effort_method: 'rpe' });
     });
-
-    expect(result.current.currentIndex).toBe(0);
-  });
-
-  it('resumes already-logged sets instead of restarting at zero', () => {
-    const { result } = renderHook(() =>
-      useSessionProgress([slot(1, 'Bench', 2)], [loggedSet(1, 1, 80, 8)]),
-    );
-
-    expect(result.current.completedSetsCount).toBe(1);
-    expect(result.current.isExerciseComplete).toBe(false);
-
     act(() => {
-      result.current.recordSet({ weight: 80, reps: 8 });
+      result.current.recordSet(1, 1, { weight: 85, reps: 6, effort: 9, effort_method: 'rpe' });
     });
 
-    // The next logged set continues from set_number 2, not 1 again.
-    expect(result.current.currentExercise?.completedSets).toEqual([
-      expect.objectContaining({ setNumber: 1, weight: 80, reps: 8 }),
-      expect.objectContaining({ setNumber: 2, weight: 80, reps: 8 }),
+    expect(result.current.exercises[0].completedSets).toEqual([
+      expect.objectContaining({ setNumber: 1, weight: 85, reps: 6, effort: 9 }),
     ]);
-    expect(result.current.isExerciseComplete).toBe(true);
+    expect(result.current.completedSetsTotal).toBe(1);
   });
 
-  it('resumes on the first incomplete exercise when an earlier one is already done', () => {
+  it('resumes already-logged sets from the server instead of starting at zero', () => {
+    const { result } = renderHook(() =>
+      useSessionProgress([slot(1, 'Bench', 2)], [loggedSet(101, 1, 1, 80, 8)]),
+    );
+
+    expect(result.current.exercises[0].completedSets).toEqual([
+      expect.objectContaining({ setNumber: 1, weight: 80, reps: 8 }),
+    ]);
+    expect(result.current.completedSetsTotal).toBe(1);
+  });
+
+  it('dedupes server-provided logs, keeping the highest id per set', () => {
     const { result } = renderHook(() =>
       useSessionProgress(
-        [slot(1, 'Bench', 1), slot(2, 'Row', 2)],
-        [loggedSet(1, 1, 80, 8), loggedSet(2, 1, 60, 10)],
+        [slot(1, 'Bench', 1)],
+        [loggedSet(101, 1, 1, 80, 8), loggedSet(102, 1, 1, 85, 6)],
       ),
     );
 
-    expect(result.current.currentExercise?.exercise_name).toBe('Row');
-    expect(result.current.completedSetsCount).toBe(1);
-  });
-
-  it('lands on the last exercise when every set is already logged', () => {
-    const { result } = renderHook(() =>
-      useSessionProgress(
-        [slot(1, 'Bench', 1), slot(2, 'Row', 1)],
-        [loggedSet(1, 1, 80, 8), loggedSet(2, 1, 60, 10)],
-      ),
-    );
-
-    expect(result.current.currentExercise?.exercise_name).toBe('Row');
-    expect(result.current.isExerciseComplete).toBe(true);
-    expect(result.current.progressPercentage).toBe(100);
+    expect(result.current.exercises[0].completedSets).toEqual([
+      expect.objectContaining({ setNumber: 1, weight: 85, reps: 6 }),
+    ]);
+    expect(result.current.completedSetsTotal).toBe(1);
   });
 });

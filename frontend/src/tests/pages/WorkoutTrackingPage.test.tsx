@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import WorkoutTrackingPage from '@/pages/WorkoutTrackingPage';
+import type { SessionDetail } from '@/types/session';
 
 const navigateMock = vi.fn();
 const completeSessionMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();
@@ -15,7 +16,7 @@ vi.mock('@/api/sessions', () => ({
   completeSession: (...args: unknown[]): Promise<unknown> => completeSessionMock(...args),
 }));
 
-const slot = {
+const baseSlot = {
   workout_exercise_id: 3,
   exercise_id: 10,
   exercise_name: 'Bench Press',
@@ -33,28 +34,12 @@ const slot = {
   warmup_sets: [],
 };
 
+const slot = (overrides: Partial<typeof baseSlot>) => ({ ...baseSlot, ...overrides });
+
+let sessionData: SessionDetail;
+
 vi.mock('@/hooks/useSession', () => ({
-  useSession: () => ({
-    data: {
-      session_id: 9,
-      scheduled_date: '2026-07-27',
-      week: 3,
-      status: 'scheduled',
-      workout_id: 4,
-      workout_name: 'Upper Body B',
-      exercise_count: 1,
-      duration_min: 45,
-      program_id: 1,
-      program_name: 'My Program',
-      slots: [slot],
-      logged_sets: [],
-      completed_at: null,
-      reactive_deload: false,
-      deload_reason: null,
-    },
-    isLoading: false,
-    error: null,
-  }),
+  useSession: () => ({ data: sessionData, isLoading: false, error: null }),
 }));
 
 vi.mock('@/store/auth', () => ({
@@ -72,9 +57,31 @@ describe('WorkoutTrackingPage', () => {
     completeSessionMock.mockClear().mockResolvedValue({});
     logSessionSetMock.mockClear().mockResolvedValue(undefined);
     postSessionReadinessMock.mockClear().mockResolvedValue(undefined);
+    sessionData = {
+      session_id: 9,
+      scheduled_date: '2026-07-27',
+      week: 3,
+      status: 'scheduled',
+      workout_id: 4,
+      workout_name: 'Upper Body B',
+      exercise_count: 1,
+      duration_min: 45,
+      program_id: 1,
+      program_name: 'My Program',
+      slots: [slot({ workout_exercise_id: 3, exercise_name: 'Bench Press', sets: 1 })],
+      logged_sets: [],
+      completed_at: null,
+      reactive_deload: false,
+      deload_reason: null,
+    };
   });
 
-  it('logs the current exercise from the session slots', () => {
+  it('renders every exercise as a section, first incomplete open by default', () => {
+    sessionData.slots = [
+      slot({ workout_exercise_id: 1, exercise_name: 'Bench Press', sets: 1 }),
+      slot({ workout_exercise_id: 2, exercise_name: 'Row', sets: 1 }),
+    ];
+
     render(
       <MemoryRouter>
         <WorkoutTrackingPage />
@@ -82,36 +89,15 @@ describe('WorkoutTrackingPage', () => {
     );
 
     expect(screen.getByText('Bench Press')).toBeInTheDocument();
-    expect(screen.getByText(/Exercise 1 of 1/)).toBeInTheDocument();
+    expect(screen.getByText('Row')).toBeInTheDocument();
+    expect(screen.getByText('Set 1')).toBeInTheDocument();
   });
 
-  it('returns to the dashboard root, not /dashboard, after completing', async () => {
-    render(
-      <MemoryRouter>
-        <WorkoutTrackingPage />
-      </MemoryRouter>,
-    );
-
-    // The single slot has 1 set, so log it through SetLogger first to reach
-    // exercise completion (and thus the "Complete Workout" button).
-    await userEvent.type(screen.getByLabelText('RPE (1–10)'), '7');
-    await userEvent.click(screen.getByRole('button', { name: /log set/i }));
-
-    await userEvent.click(await screen.findByRole('button', { name: /complete workout/i }));
-    const dialogButton = await screen.findByRole('button', { name: '4' });
-    await userEvent.click(dialogButton);
-    await userEvent.click(screen.getByRole('button', { name: /submit/i }));
-
-    await waitFor(() => expect(completeSessionMock).toHaveBeenCalledWith(9));
-    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/'));
-    // A submitted rating must complete the session exactly once - the
-    // ratingInFlightRef guard exists specifically to stop ReadinessModal's own
-    // post-onRate onClose() call from re-completing it a second time.
-    expect(completeSessionMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('still completes the session if the readiness POST itself fails', async () => {
-    postSessionReadinessMock.mockRejectedValue(new Error('network error'));
+  it('logs sets out of order across exercises without auto-advancing', async () => {
+    sessionData.slots = [
+      slot({ workout_exercise_id: 1, exercise_name: 'Bench Press', sets: 1 }),
+      slot({ workout_exercise_id: 2, exercise_name: 'Row', sets: 1 }),
+    ];
 
     render(
       <MemoryRouter>
@@ -119,37 +105,172 @@ describe('WorkoutTrackingPage', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.type(screen.getByLabelText('RPE (1–10)'), '7');
-    await userEvent.click(screen.getByRole('button', { name: /log set/i }));
+    await userEvent.click(screen.getByRole('button', { name: /row/i }));
 
-    await userEvent.click(await screen.findByRole('button', { name: /complete workout/i }));
-    const dialogButton = await screen.findByRole('button', { name: '4' });
-    await userEvent.click(dialogButton);
-    await userEvent.click(screen.getByRole('button', { name: /submit/i }));
+    const rowSection = within(screen.getByTestId('exercise-section-2'));
+    await userEvent.type(rowSection.getByLabelText('RPE (1–10)'), '7');
+    await userEvent.click(rowSection.getByRole('button', { name: 'Log Set 1' }));
 
-    // The rating attempt failed, but the workout must not be left permanently
-    // stuck in-progress: ReadinessModal's own onClose (fired after the failed
-    // onRate) should trigger the same fallback completion Skip uses.
-    await waitFor(() => expect(completeSessionMock).toHaveBeenCalledWith(9));
-    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/'));
+    await waitFor(() =>
+      expect(logSessionSetMock).toHaveBeenCalledWith(
+        9,
+        expect.objectContaining({ workout_exercise_id: 2 }),
+      ),
+    );
+    // Bench Press (still open as the seeded first-incomplete section) is untouched -
+    // its own "Log Set 1" button is still there, unaffected by Row's.
+    const benchSection = within(screen.getByTestId('exercise-section-1'));
+    expect(benchSection.getByRole('button', { name: 'Log Set 1' })).toBeInTheDocument();
   });
 
-  it('completes the session and navigates home when Skip is clicked on the post-workout modal', async () => {
+  it('toggles a section open and closed on header click', async () => {
     render(
       <MemoryRouter>
         <WorkoutTrackingPage />
       </MemoryRouter>,
     );
 
-    // The single slot has 1 set, so log it through SetLogger first to reach
-    // exercise completion (and thus the "Complete Workout" button).
-    await userEvent.type(screen.getByLabelText('RPE (1–10)'), '7');
-    await userEvent.click(screen.getByRole('button', { name: /log set/i }));
+    expect(screen.getByText('Set 1')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /bench press/i }));
+    expect(screen.queryByText('Set 1')).not.toBeInTheDocument();
+  });
 
-    await userEvent.click(await screen.findByRole('button', { name: /complete workout/i }));
+  it('lets a logged set be corrected by tapping it', async () => {
+    sessionData.logged_sets = [
+      {
+        id: 1,
+        workout_exercise_id: 3,
+        set_number: 1,
+        actual_weight: 80,
+        actual_reps: 8,
+        actual_rpe: 7,
+        effort_method: 'rpe',
+      },
+    ];
+
+    render(
+      <MemoryRouter>
+        <WorkoutTrackingPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /set 1 logged, tap to edit/i }));
+    const rpeInput = screen.getByLabelText('RPE (1–10)');
+    expect((rpeInput as HTMLInputElement).value).toBe('7');
+
+    await userEvent.clear(rpeInput);
+    await userEvent.type(rpeInput, '9');
+    await userEvent.click(screen.getByRole('button', { name: 'Log Set 1' }));
+
+    await waitFor(() =>
+      expect(logSessionSetMock).toHaveBeenCalledWith(
+        9,
+        expect.objectContaining({ workout_exercise_id: 3, set_number: 1, actual_rpe: 9 }),
+      ),
+    );
+    expect(await screen.findByText(/set 1 logged, tap to edit/i)).toBeInTheDocument();
+  });
+
+  it('completes the workout immediately when every set is logged', async () => {
+    sessionData.logged_sets = [
+      {
+        id: 1,
+        workout_exercise_id: 3,
+        set_number: 1,
+        actual_weight: 80,
+        actual_reps: 8,
+        actual_rpe: 7,
+        effort_method: 'rpe',
+      },
+    ];
+
+    render(
+      <MemoryRouter>
+        <WorkoutTrackingPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /complete workout/i }));
+    expect(screen.queryByText(/not logged/i)).not.toBeInTheDocument();
     await userEvent.click(await screen.findByRole('button', { name: /skip/i }));
 
     await waitFor(() => expect(completeSessionMock).toHaveBeenCalledWith(9));
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/'));
+  });
+
+  it('confirms before completing when a set is unlogged', async () => {
+    render(
+      <MemoryRouter>
+        <WorkoutTrackingPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /complete workout/i }));
+    expect(await screen.findByText(/1 set is not logged/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }));
+    expect(screen.queryByText(/how was that workout/i)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /complete workout/i }));
+    await userEvent.click(screen.getByRole('button', { name: /finish anyway/i }));
+    expect(await screen.findByText(/how was that workout/i)).toBeInTheDocument();
+  });
+
+  it('still completes the session if the readiness POST itself fails', async () => {
+    postSessionReadinessMock.mockRejectedValue(new Error('network error'));
+    sessionData.logged_sets = [
+      {
+        id: 1,
+        workout_exercise_id: 3,
+        set_number: 1,
+        actual_weight: 80,
+        actual_reps: 8,
+        actual_rpe: 7,
+        effort_method: 'rpe',
+      },
+    ];
+
+    render(
+      <MemoryRouter>
+        <WorkoutTrackingPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /complete workout/i }));
+    const dialogButton = await screen.findByRole('button', { name: '4' });
+    await userEvent.click(dialogButton);
+    await userEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+    await waitFor(() => expect(completeSessionMock).toHaveBeenCalledWith(9));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/'));
+  });
+
+  it('a submitted rating completes the session exactly once', async () => {
+    sessionData.logged_sets = [
+      {
+        id: 1,
+        workout_exercise_id: 3,
+        set_number: 1,
+        actual_weight: 80,
+        actual_reps: 8,
+        actual_rpe: 7,
+        effort_method: 'rpe',
+      },
+    ];
+
+    render(
+      <MemoryRouter>
+        <WorkoutTrackingPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /complete workout/i }));
+    const dialogButton = await screen.findByRole('button', { name: '4' });
+    await userEvent.click(dialogButton);
+    await userEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+    await waitFor(() => expect(completeSessionMock).toHaveBeenCalledWith(9));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/'));
+    expect(completeSessionMock).toHaveBeenCalledTimes(1);
   });
 });

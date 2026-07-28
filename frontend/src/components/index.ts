@@ -46,4 +46,6 @@ export { SlotExplanationPanel } from './SlotExplanationPanel';
 export { TemplateExplanationPanel } from './TemplateExplanationPanel';
 export { ReadinessModal } from './ReadinessModal';
 export { SessionStatusBadge } from './SessionStatusBadge';
+export { SetRow } from './SetRow';
 export { ScheduleRow } from './ScheduleRow';
+export { ExerciseSection } from './ExerciseSection';

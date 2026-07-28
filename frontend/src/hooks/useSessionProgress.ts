@@ -27,79 +27,78 @@ function toEntry(log: LoggedSet): LoggedSetEntry {
   };
 }
 
+// A correction is a second POST for the same set - the backend keeps both rows for
+// audit but only the highest id is current. Dedupe defensively here too in case a
+// stale cache ever returns both.
+function dedupeLoggedSets(loggedSets: LoggedSet[]): LoggedSet[] {
+  const bestByKey = new Map<string, LoggedSet>();
+  for (const log of loggedSets) {
+    const key = `${log.workout_exercise_id}:${log.set_number}`;
+    const current = bestByKey.get(key);
+    if (!current || log.id > current.id) {
+      bestByKey.set(key, log);
+    }
+  }
+  return Array.from(bestByKey.values());
+}
+
 export function useSessionProgress(slots: SlotPreview[], loggedSets: LoggedSet[] = []) {
   const [exercises, setExercises] = useState<ExerciseProgress[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
   // Keyed on slot + logged-set content rather than either array's reference: callers
-  // (including this hook's own test) routinely pass freshly-built arrays each render,
-  // which would otherwise make this effect "reset" on every render and loop forever.
-  // Serializing full slot content (not just workout_exercise_id) matters because a
-  // reactive deload or an exercise swap can change a slot's sets/load/exercise_id while
-  // keeping the same workout_exercise_id - progress should reset when the prescription
-  // actually changes, not just when the id list does. loggedSets is included so that a
-  // session already carrying server-recorded sets (e.g. after a page reload) resumes
-  // from that recorded progress instead of restarting at zero and re-logging duplicates.
+  // routinely pass freshly-built arrays each render, which would otherwise make this
+  // effect "reset" every render. Serializing full slot content (not just
+  // workout_exercise_id) matters because a reactive deload or an exercise swap can
+  // change a slot's sets/load/exercise_id while keeping the same workout_exercise_id.
   const slotsKey = JSON.stringify({ slots, loggedSets });
 
   useEffect(() => {
+    const deduped = dedupeLoggedSets(loggedSets);
     const seeded = slots.map((slot) => ({
       ...slot,
-      completedSets: loggedSets
+      completedSets: deduped
         .filter((log) => log.workout_exercise_id === slot.workout_exercise_id)
         .sort((a, b) => a.set_number - b.set_number)
         .map(toEntry),
     }));
     setExercises(seeded);
-    const firstIncomplete = seeded.findIndex((ex) => ex.completedSets.length < ex.sets);
-    setCurrentIndex(firstIncomplete === -1 ? Math.max(seeded.length - 1, 0) : firstIncomplete);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slotsKey]);
 
-  const currentExercise = exercises[currentIndex] ?? null;
-  const completedSetsCount = currentExercise?.completedSets.length ?? 0;
-  const isExerciseComplete = currentExercise ? completedSetsCount >= currentExercise.sets : false;
+  const totalSets = exercises.reduce((sum, ex) => sum + ex.sets, 0);
+  const completedSetsTotal = exercises.reduce((sum, ex) => sum + ex.completedSets.length, 0);
   const completedExercises = exercises.filter((ex) => ex.completedSets.length >= ex.sets).length;
-  const progressPercentage = exercises.length ? (completedExercises / exercises.length) * 100 : 0;
-  const isLastExercise = currentIndex === exercises.length - 1;
+  const progressPercentage = totalSets ? (completedSetsTotal / totalSets) * 100 : 0;
 
   const recordSet = useCallback(
-    (set: Omit<LoggedSetEntry, 'setNumber' | 'timestamp'>): boolean => {
-      let didComplete = false;
-      setExercises((prev) => {
-        const next = prev.map((ex, i) =>
-          i === currentIndex
+    (
+      workoutExerciseId: number,
+      setNumber: number,
+      data: Omit<LoggedSetEntry, 'setNumber' | 'timestamp'>,
+    ) => {
+      setExercises((prev) =>
+        prev.map((ex) =>
+          ex.workout_exercise_id === workoutExerciseId
             ? {
                 ...ex,
                 completedSets: [
-                  ...ex.completedSets,
-                  { ...set, setNumber: ex.completedSets.length + 1, timestamp: new Date() },
-                ],
+                  ...ex.completedSets.filter((s) => s.setNumber !== setNumber),
+                  { ...data, setNumber, timestamp: new Date() },
+                ].sort((a, b) => a.setNumber - b.setNumber),
               }
             : ex,
-        );
-        didComplete = next[currentIndex].completedSets.length >= next[currentIndex].sets;
-        return next;
-      });
-      return didComplete;
+        ),
+      );
     },
-    [currentIndex],
+    [],
   );
-
-  const goToNext = useCallback(() => {
-    setCurrentIndex((i) => (i < exercises.length - 1 ? i + 1 : i));
-  }, [exercises.length]);
 
   return {
     exercises,
-    currentIndex,
-    currentExercise,
-    completedSetsCount,
-    isExerciseComplete,
+    totalSets,
+    completedSetsTotal,
     completedExercises,
     progressPercentage,
-    isLastExercise,
     recordSet,
-    goToNext,
   };
 }
