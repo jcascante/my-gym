@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { EffortMethod } from '../types/programCreation';
 import { Button } from './Button';
 import { FormField } from './FormField';
@@ -48,18 +48,16 @@ export const SetRow: React.FC<SetRowProps> = ({
   const [reps, setReps] = useState<number | ''>(loggedSet?.reps ?? '');
   const [effort, setEffort] = useState<number | ''>(loggedSet?.effort ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loggedData, setLoggedData] = useState<{
-    weight?: number;
-    reps?: number;
-    effort?: number;
-  } | null>(
-    loggedSet ? { weight: loggedSet.weight, reps: loggedSet.reps, effort: loggedSet.effort } : null,
-  );
 
   const { min, max, label, short } = getEffortBounds(effort_method);
 
-  // Single source of truth: loggedData from local submission takes precedence over prop
-  const currentLogged = loggedData ?? loggedSet;
+  const hadLoggedSetRef = useRef(Boolean(loggedSet));
+  useEffect(() => {
+    if (!hadLoggedSetRef.current && loggedSet) {
+      setMode('summary');
+    }
+    hadLoggedSetRef.current = Boolean(loggedSet);
+  }, [loggedSet]);
 
   const handleWeightBlur = () => {
     if (weight !== '' && weight < 0) setWeight('');
@@ -74,10 +72,10 @@ export const SetRow: React.FC<SetRowProps> = ({
   };
 
   const handleEditTap = () => {
-    if (!currentLogged) return;
-    setWeight(currentLogged.weight ?? '');
-    setReps(currentLogged.reps ?? '');
-    setEffort(currentLogged.effort ?? '');
+    if (!loggedSet) return;
+    setWeight(loggedSet.weight ?? '');
+    setReps(loggedSet.reps ?? '');
+    setEffort(loggedSet.effort ?? '');
     setMode('edit');
   };
 
@@ -95,11 +93,6 @@ export const SetRow: React.FC<SetRowProps> = ({
         effort: effortVal,
         effort_method,
       });
-      setLoggedData({
-        weight: weight !== '' ? weight : undefined,
-        reps: reps !== '' ? reps : undefined,
-        effort: effortVal,
-      });
       setMode('summary');
     } catch {
       // Stay in edit mode with the entered values so the user can retry - the
@@ -109,7 +102,7 @@ export const SetRow: React.FC<SetRowProps> = ({
     }
   };
 
-  if (mode === 'summary' && currentLogged) {
+  if (mode === 'summary' && loggedSet) {
     return (
       <button
         type="button"
@@ -118,9 +111,11 @@ export const SetRow: React.FC<SetRowProps> = ({
         className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-success-50 dark:bg-success-900 border border-success-200 dark:border-success-700 text-left"
       >
         <span className="text-body-sm font-variant-numeric tabular-nums">
-          Set {setNumber} logged, tap to edit · {currentLogged.weight ?? '—'} lb ×{' '}
-          {currentLogged.reps ?? '—'} reps
-          {currentLogged.effort !== undefined ? ` · ${short} ${currentLogged.effort}` : ''}
+          Set {setNumber} · {loggedSet.weight ?? '—'} lb × {loggedSet.reps ?? '—'} reps
+          {loggedSet.effort !== undefined ? ` · ${short} ${loggedSet.effort}` : ''}
+        </span>
+        <span className="text-success-600 dark:text-success-400 text-sm shrink-0">
+          ✓ tap to edit
         </span>
       </button>
     );

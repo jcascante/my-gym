@@ -30,6 +30,8 @@ function toEntry(log: LoggedSet): LoggedSetEntry {
 // A correction is a second POST for the same set - the backend keeps both rows for
 // audit but only the highest id is current. Dedupe defensively here too in case a
 // stale cache ever returns both.
+// Session-detail responses are already scoped to one session, so session_id is
+// implicit here (unlike the backend's cross-session dedupe in get_set_logs_for_sessions).
 function dedupeLoggedSets(loggedSets: LoggedSet[]): LoggedSet[] {
   const bestByKey = new Map<string, LoggedSet>();
   for (const log of loggedSets) {
@@ -68,7 +70,7 @@ export function useSessionProgress(slots: SlotPreview[], loggedSets: LoggedSet[]
   const totalSets = exercises.reduce((sum, ex) => sum + ex.sets, 0);
   const completedSetsTotal = exercises.reduce((sum, ex) => sum + ex.completedSets.length, 0);
   const completedExercises = exercises.filter((ex) => ex.completedSets.length >= ex.sets).length;
-  const progressPercentage = totalSets ? (completedSetsTotal / totalSets) * 100 : 0;
+  const progressPercentage = totalSets ? Math.min(100, (completedSetsTotal / totalSets) * 100) : 0;
 
   const recordSet = useCallback(
     (

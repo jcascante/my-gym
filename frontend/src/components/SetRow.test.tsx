@@ -1,7 +1,34 @@
+import { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SetRow } from './SetRow';
+import type { EffortMethod } from '../types/programCreation';
+import type { LoggedSetEntry } from '../hooks/useSessionProgress';
+
+function SetRowHarness(props: {
+  setNumber: number;
+  effort_method: EffortMethod;
+  initialLoggedSet?: LoggedSetEntry;
+}) {
+  const [loggedSet, setLoggedSet] = useState(props.initialLoggedSet);
+  const handleLogSet = (data: {
+    weight?: number;
+    reps?: number;
+    effort: number;
+    effort_method: EffortMethod;
+  }) => {
+    setLoggedSet({ setNumber: props.setNumber, ...data, timestamp: new Date() });
+  };
+  return (
+    <SetRow
+      setNumber={props.setNumber}
+      effort_method={props.effort_method}
+      loggedSet={loggedSet}
+      onLogSet={handleLogSet}
+    />
+  );
+}
 
 describe('SetRow', () => {
   it('renders an input row with a per-set Log button when unlogged', () => {
@@ -12,26 +39,21 @@ describe('SetRow', () => {
   });
 
   it('calls onLogSet with the entered values and shows the logged summary after success', async () => {
-    const onLogSet = vi.fn().mockResolvedValue(undefined);
-    render(<SetRow setNumber={1} effort_method="rpe" onLogSet={onLogSet} />);
+    render(<SetRowHarness setNumber={1} effort_method="rpe" />);
 
     await userEvent.type(screen.getByLabelText(/weight/i), '185');
     await userEvent.type(screen.getByLabelText(/reps/i), '8');
     await userEvent.type(screen.getByLabelText(/rpe/i), '8.5');
     await userEvent.click(screen.getByRole('button', { name: 'Log Set 1' }));
 
-    expect(onLogSet).toHaveBeenCalledWith({
-      weight: 185,
-      reps: 8,
-      effort: 8.5,
-      effort_method: 'rpe',
-    });
-    expect(await screen.findByText(/set 1 logged, tap to edit/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: /set 1 logged, tap to edit/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/set 1.*185 lb.*8 reps.*rpe 8\.5/i)).toBeInTheDocument();
   });
 
   it('tap-to-edit works for newly logged sets (no initial loggedSet prop)', async () => {
-    const onLogSet = vi.fn().mockResolvedValue(undefined);
-    render(<SetRow setNumber={1} effort_method="rpe" onLogSet={onLogSet} />);
+    render(<SetRowHarness setNumber={1} effort_method="rpe" />);
 
     // Log a new set
     await userEvent.type(screen.getByLabelText(/weight/i), '185');
@@ -39,7 +61,9 @@ describe('SetRow', () => {
     await userEvent.type(screen.getByLabelText(/rpe/i), '8.5');
     await userEvent.click(screen.getByRole('button', { name: 'Log Set 1' }));
 
-    expect(await screen.findByText(/set 1 logged, tap to edit/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: /set 1 logged, tap to edit/i }),
+    ).toBeInTheDocument();
 
     // Tap the summary to edit
     await userEvent.click(screen.getByRole('button', { name: /set 1 logged, tap to edit/i }));

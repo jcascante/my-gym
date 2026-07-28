@@ -69,7 +69,7 @@ export default function WorkoutTrackingPage() {
 
   if (!session) return <Spinner />;
 
-  const unloggedCount = totalSets - completedSetsTotal;
+  const unloggedCount = Math.max(0, totalSets - completedSetsTotal);
 
   const toggleSection = (workoutExerciseId: number) => {
     setOpenIds((prev) => {
@@ -88,7 +88,7 @@ export default function WorkoutTrackingPage() {
     setNumber: number,
     data: { weight?: number; reps?: number; effort: number; effort_method: EffortMethod },
   ) => {
-    if (!sessionIdNum) return;
+    if (!sessionIdNum) throw new Error('No active session');
 
     try {
       await logSessionSet(sessionIdNum, {

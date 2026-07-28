@@ -127,6 +127,7 @@ async def get_set_logs_for_sessions(
                 WorkoutSetLog.created_at >= since,
             )
         )
+        .order_by(WorkoutSetLog.session_id, WorkoutSetLog.workout_exercise_id, WorkoutSetLog.set_number)
     )
     result = await db.execute(stmt)
     return _dedupe_latest_per_set(list(result.scalars().all()))
