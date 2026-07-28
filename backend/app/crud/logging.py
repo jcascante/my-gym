@@ -132,6 +132,26 @@ async def get_set_logs_for_sessions(
     return _dedupe_latest_per_set(list(result.scalars().all()))
 
 
+async def get_set_logs_for_session(db: AsyncSession, session_id: int, user_id: int) -> list[WorkoutSetLog]:
+    """Set logs for a single session, deduped to the latest value per set.
+
+    This is what session-detail responses (and thus the frontend's logged_sets)
+    are built from.
+    """
+    stmt = (
+        select(WorkoutSetLog)
+        .where(
+            and_(
+                WorkoutSetLog.session_id == session_id,
+                WorkoutSetLog.user_id == user_id,
+            )
+        )
+        .order_by(WorkoutSetLog.workout_exercise_id, WorkoutSetLog.set_number)
+    )
+    result = await db.execute(stmt)
+    return _dedupe_latest_per_set(list(result.scalars().all()))
+
+
 async def get_readiness_for_sessions(
     db: AsyncSession, program_id: int, user_id: int, since: date
 ) -> list[UserWorkoutLog]:

@@ -42,7 +42,7 @@ class WorkoutSetLog(Base):
     Appended during/after each completed set; tracks actual weight, reps, RPE.
     A correction is a second row for the same set, not an update - readers
     (get_set_logs, get_set_logs_for_sessions, get_set_logs_for_session) dedupe to
-    the highest id per (workout_exercise_id, set_number).
+    the highest id per (session_id, workout_exercise_id, set_number).
     """
 
     __tablename__ = "workout_set_logs"

@@ -106,17 +106,7 @@ async def _session_detail(db: AsyncSession, session: WorkoutSession, user: User)
     day = next((d for d in week_days if d["workout_id"] == session.workout_id), None)
     preview = WorkoutPreviewOut(**day) if day else None
 
-    logs = (
-        (
-            await db.execute(
-                select(WorkoutSetLog)
-                .where(WorkoutSetLog.session_id == session.id)
-                .order_by(WorkoutSetLog.workout_exercise_id, WorkoutSetLog.set_number)
-            )
-        )
-        .scalars()
-        .all()
-    )
+    logs = await crud_logging.get_set_logs_for_session(db, session.id, user.id)
 
     return SessionDetailOut(
         session_id=session.id,
