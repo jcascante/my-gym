@@ -131,7 +131,8 @@ async def test_session_detail_slots_come_from_the_sessions_own_week(
         },
     )
     program_id = draft.json()["program_id"]
-    await authenticated_client.post(f"/api/v1/programs/{program_id}/accept")
+    accepted = await authenticated_client.post(f"/api/v1/programs/{program_id}/accept")
+    assert accepted.json()["start_date"] == date.today().isoformat()
 
     schedule = await authenticated_client.get(
         f"/api/v1/users/me/schedule?start={date.today().isoformat()}&end=2027-01-01"

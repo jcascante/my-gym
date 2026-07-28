@@ -143,6 +143,7 @@ async def _preview_out(
         status=program.status.value,
         duration_weeks=program.duration_weeks,
         current_week=current_week,
+        start_date=program.start_date,
         weeks=weeks,
         advisories=advisories or [],
     )

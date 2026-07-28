@@ -26,7 +26,7 @@ export default function ProgramPreviewPage() {
               <Button
                 size="sm"
                 variant="primary"
-                onClick={() => navigate(`/workouts/${w.workout_id}?programId=${programId}`)}
+                onClick={() => navigate(`/schedule?week=${active}`)}
               >
                 Start Tracking
               </Button>

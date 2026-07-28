@@ -55,14 +55,24 @@ export default function Header() {
     <header className="bg-white border-b border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 sticky top-0 z-40 pt-[env(safe-area-inset-top)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <button
-            onClick={() => navigate('/')}
-            className="flex-shrink-0 hover:opacity-80 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 rounded"
-            aria-label="Go to dashboard"
-          >
-            <h1 className="text-2xl font-bold text-primary-600">MyGym</h1>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Logo */}
+            <button
+              onClick={() => navigate('/')}
+              className="flex-shrink-0 hover:opacity-80 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 rounded"
+              aria-label="Go to dashboard"
+            >
+              <h1 className="text-2xl font-bold text-primary-600">MyGym</h1>
+            </button>
+
+            {/* Schedule */}
+            <button
+              onClick={() => navigate('/schedule')}
+              className="hidden sm:block px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
+            >
+              Schedule
+            </button>
+          </div>
 
           {/* User Menu */}
           <div className="relative" ref={dropdownRef}>

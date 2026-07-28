@@ -2,46 +2,22 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { WorkoutCard } from '@/components/WorkoutCard';
-import type { WorkoutPreview } from '@/types/program';
+import type { ScheduleEntry } from '@/types/session';
 
-const makeSlot = (id: number, exerciseName: string) => ({
-  workout_exercise_id: id,
-  exercise_id: id,
-  exercise_name: exerciseName,
-  sets: 3,
-  reps: 8,
-  load: 135,
-  rest_seconds: 90,
-  note: null,
-  adjustment_reason: null,
-  is_locked: false,
-  is_user_swapped: false,
-  effort_target: null,
-  rotation_pool: [],
-  tempo: '2-0-1',
-  warmup_sets: [],
-});
-
-const workout: WorkoutPreview = {
+const entry: ScheduleEntry = {
+  session_id: 9,
+  scheduled_date: '2026-07-27',
+  week: 3,
+  status: 'scheduled',
   workout_id: 42,
-  key: 'upper-a',
-  name: 'Upper Body A',
-  slots: [makeSlot(1, 'Bench Press'), makeSlot(2, 'Barbell Row')],
-  reactive_deload: false,
-  deload_reason: null,
+  workout_name: 'Upper Body A',
+  exercise_count: 2,
+  duration_min: 45,
 };
 
-const renderCard = (onStartClick = vi.fn()) => {
-  render(
-    <WorkoutCard
-      workout={workout}
-      programName="Push/Pull Split"
-      weekNumber={3}
-      durationMin={45}
-      onStartClick={onStartClick}
-    />,
-  );
-  return onStartClick;
+const renderCard = (onSelect = vi.fn()) => {
+  render(<WorkoutCard entry={entry} programName="Push/Pull Split" onSelect={onSelect} />);
+  return onSelect;
 };
 
 describe('WorkoutCard', () => {
@@ -59,10 +35,9 @@ describe('WorkoutCard', () => {
   it('singularises the exercise count', () => {
     render(
       <WorkoutCard
-        workout={{ ...workout, slots: [makeSlot(1, 'Bench Press')] }}
+        entry={{ ...entry, exercise_count: 1 }}
         programName="Push/Pull Split"
-        weekNumber={3}
-        onStartClick={vi.fn()}
+        onSelect={vi.fn()}
       />,
     );
     expect(screen.getByText('Push/Pull Split • Week 3 • 1 exercise • 45 min')).toBeInTheDocument();
@@ -84,27 +59,26 @@ describe('WorkoutCard', () => {
     );
   });
 
-  it('calls onStartClick when the card is clicked', async () => {
-    const onStartClick = renderCard();
+  it('calls onSelect when the card is clicked', async () => {
+    const onSelect = renderCard();
     await userEvent.click(screen.getByRole('button'));
-    expect(onStartClick).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onStartClick when activated with the keyboard', async () => {
-    const onStartClick = renderCard();
+  it('calls onSelect when activated with the keyboard', async () => {
+    const onSelect = renderCard();
     await userEvent.tab();
     expect(screen.getByRole('button')).toHaveFocus();
     await userEvent.keyboard('{Enter}');
-    expect(onStartClick).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
   it('renders "0 exercises" when the workout has no slots', () => {
     render(
       <WorkoutCard
-        workout={{ ...workout, slots: [] }}
+        entry={{ ...entry, exercise_count: 0 }}
         programName="Push/Pull Split"
-        weekNumber={3}
-        onStartClick={vi.fn()}
+        onSelect={vi.fn()}
       />,
     );
     expect(screen.getByText('Push/Pull Split • Week 3 • 0 exercises • 45 min')).toBeInTheDocument();

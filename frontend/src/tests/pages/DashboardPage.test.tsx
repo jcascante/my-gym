@@ -4,16 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import DashboardPage from '@/pages/DashboardPage';
 
-const makeWorkout = (id: number, name: string) => ({
-  workout_id: id,
-  key: name.toLowerCase(),
-  name,
-  slots: [],
-});
-
-let programData: unknown;
-
 const navigateMock = vi.fn();
+let todaySession: unknown = null;
+let programData: unknown = null;
+
+vi.mock('@/hooks/useSchedule', () => ({
+  useTodaySession: () => ({ session: todaySession, isLoading: false }),
+}));
 
 vi.mock('@/hooks/usePrograms', () => ({
   useActiveProgram: () => ({ data: programData, isLoading: false }),
@@ -32,46 +29,26 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => navigateMock };
 });
 
+const entry = {
+  session_id: 9,
+  scheduled_date: '2026-07-27',
+  week: 3,
+  status: 'scheduled' as const,
+  workout_id: 4,
+  workout_name: 'Upper Body B',
+  exercise_count: 5,
+  duration_min: 45,
+};
+
 describe('DashboardPage', () => {
-  beforeEach(() => navigateMock.mockClear());
-
-  it("shows the workout from the program's current week, not always week 1", () => {
-    programData = {
-      program_id: 1,
-      name: 'My Program',
-      status: 'active',
-      duration_weeks: 3,
-      current_week: 2,
-      weeks: {
-        '1': [makeWorkout(1, 'Week 1 Day A')],
-        '2': [makeWorkout(2, 'Week 2 Day A')],
-        '3': [makeWorkout(3, 'Week 3 Day A')],
-      },
-      advisories: [],
-    };
-
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByText('Week 2 Day A')).toBeInTheDocument();
-    expect(screen.getByText('My Program • Week 2 • 0 exercises • 45 min')).toBeInTheDocument();
+  beforeEach(() => {
+    navigateMock.mockClear();
+    todaySession = null;
+    programData = { program_id: 1, name: 'My Program', status: 'active', duration_weeks: 8 };
   });
 
-  it('navigates to workout tracking when the card is clicked', async () => {
-    programData = {
-      program_id: 7,
-      name: 'My Program',
-      status: 'active',
-      duration_weeks: 3,
-      current_week: 2,
-      weeks: {
-        '2': [makeWorkout(2, 'Week 2 Day A')],
-      },
-      advisories: [],
-    };
+  it("shows today's session when one is scheduled", () => {
+    todaySession = entry;
 
     render(
       <MemoryRouter>
@@ -79,8 +56,47 @@ describe('DashboardPage', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: /Start Week 2 Day A/ }));
+    expect(screen.getByText('Upper Body B')).toBeInTheDocument();
+  });
 
-    expect(navigateMock).toHaveBeenCalledWith('/workouts/2?programId=7');
+  it('opens the session detail in one click', async () => {
+    todaySession = entry;
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /Upper Body B/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith('/sessions/9');
+  });
+
+  it('falls back to a schedule link when nothing is scheduled today', async () => {
+    todaySession = null;
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/nothing scheduled today/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /view schedule/i }));
+    expect(navigateMock).toHaveBeenCalledWith('/schedule');
+  });
+
+  it('prompts to create a program when there is none', () => {
+    programData = null;
+    todaySession = null;
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: /create program/i })).toBeInTheDocument();
   });
 });

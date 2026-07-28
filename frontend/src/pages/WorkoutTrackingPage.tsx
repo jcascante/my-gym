@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   SetLogger,
   CompletedSets,
@@ -13,45 +13,16 @@ import {
 import { formatSlotNote } from '@/utils/slotNote';
 import type { EffortMethod } from '@/types/programCreation';
 import { useAuthStore } from '@/store/auth';
-import { useWorkoutDetails } from '@/hooks/useWorkoutDetails';
-import { logSetLog } from '@/api/logging';
-import { postWorkoutReadiness } from '@/api/workouts';
-
-interface LoggedSet {
-  setNumber: number;
-  weight?: number;
-  reps?: number;
-  effort?: number;
-  effort_method?: EffortMethod;
-  timestamp: Date;
-}
-
-interface ExerciseProgress {
-  workout_exercise_id: number;
-  exercise_name: string;
-  sets: number;
-  reps: number;
-  load: number | null;
-  rest_seconds: number;
-  note: string | null;
-  adjustment_reason: string | null;
-  completedSets: LoggedSet[];
-}
+import { useSession } from '@/hooks/useSession';
+import { useSessionProgress } from '@/hooks/useSessionProgress';
+import { logSessionSet, postSessionReadiness, completeSession } from '@/api/sessions';
 
 export default function WorkoutTrackingPage() {
   const navigate = useNavigate();
-  const { workoutId } = useParams<{ workoutId?: string }>();
-  const [searchParams] = useSearchParams();
+  const { sessionId } = useParams<{ sessionId?: string }>();
+  const sessionIdNum = sessionId ? Number(sessionId) : null;
+  const { data: session, isLoading, error } = useSession(sessionIdNum);
   const { userProfile } = useAuthStore();
-
-  const programId = searchParams.get('programId') ? Number(searchParams.get('programId')) : null;
-  const workoutIdNum = workoutId ? Number(workoutId) : null;
-
-  const {
-    data: workoutDetails,
-    isLoading,
-    error,
-  } = useWorkoutDetails(workoutIdNum ?? 0, programId);
 
   const rawEffortMethod = userProfile?.effort_method;
   const effortMethod: EffortMethod =
@@ -62,30 +33,22 @@ export default function WorkoutTrackingPage() {
       ? rawEffortMethod
       : 'rpe';
 
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [exercises, setExercises] = useState<ExerciseProgress[]>([]);
+  const {
+    currentExercise,
+    currentIndex,
+    exercises,
+    completedSetsCount,
+    isExerciseComplete,
+    completedExercises,
+    progressPercentage,
+    isLastExercise,
+    recordSet,
+    goToNext,
+  } = useSessionProgress(session?.slots ?? []);
+
   const [toast, setToast] = useState<{ message: string; icon?: string } | null>(null);
   const [readinessOpen, setReadinessOpen] = useState<'pre' | 'post' | null>(null);
   const [deloadBannerDismissed, setDeloadBannerDismissed] = useState(false);
-
-  // Initialize exercises from workout details
-  useEffect(() => {
-    if (workoutDetails?.slots) {
-      const exs = workoutDetails.slots.map((slot) => ({
-        workout_exercise_id: slot.workout_exercise_id,
-        exercise_name: slot.exercise_name,
-        sets: slot.sets,
-        reps: slot.reps,
-        load: slot.load,
-        rest_seconds: slot.rest_seconds,
-        note: slot.note,
-        adjustment_reason: slot.adjustment_reason,
-        completedSets: [],
-      }));
-      setExercises(exs);
-      setCurrentExerciseIndex(0);
-    }
-  }, [workoutDetails]);
 
   if (isLoading) return <Spinner />;
   if (error) {
@@ -99,18 +62,10 @@ export default function WorkoutTrackingPage() {
     );
   }
 
-  if (!workoutDetails || exercises.length === 0) {
-    return <Spinner />;
-  }
+  if (!session || !currentExercise) return <Spinner />;
 
-  const currentExercise = exercises[currentExerciseIndex];
-  const completedSetsCount = currentExercise.completedSets.length;
   const totalSets = currentExercise.sets;
-  const isExerciseComplete = completedSetsCount >= totalSets;
   const repsRemaining = totalSets - completedSetsCount;
-  const totalExercises = exercises.length;
-  const completedExercises = exercises.filter((ex) => ex.completedSets.length >= ex.sets).length;
-  const progressPercentage = (completedExercises / totalExercises) * 100;
 
   const handleLogSet = async (data: {
     weight?: number;
@@ -118,67 +73,43 @@ export default function WorkoutTrackingPage() {
     effort: number;
     effort_method: EffortMethod;
   }) => {
-    if (!workoutIdNum) {
-      console.error('Workout ID is missing');
-      return;
-    }
+    if (!sessionIdNum || !currentExercise) return;
 
     try {
-      await logSetLog(
-        workoutIdNum,
-        currentExercise.workout_exercise_id,
-        completedSetsCount + 1,
-        data.weight,
-        data.reps,
-        data.effort,
-        effortMethod,
-      );
+      await logSessionSet(sessionIdNum, {
+        workout_exercise_id: currentExercise.workout_exercise_id,
+        set_number: completedSetsCount + 1,
+        actual_weight: data.weight,
+        actual_reps: data.reps,
+        actual_rpe: data.effort,
+        effort_method: effortMethod,
+      });
 
-      const newSet: LoggedSet = {
-        setNumber: completedSetsCount + 1,
+      const didComplete = recordSet({
         weight: data.weight,
         reps: data.reps,
         effort: data.effort,
         effort_method: data.effort_method,
-        timestamp: new Date(),
-      };
+      });
 
-      const newExercises = [...exercises];
-      newExercises[currentExerciseIndex].completedSets.push(newSet);
-      setExercises(newExercises);
+      if (!didComplete) {
+        const remaining = currentExercise.sets - (completedSetsCount + 1);
+        setToast({ message: `Set logged! ${remaining} more to go! 💪`, icon: '✓' });
+        return;
+      }
 
-      const isNowComplete = newExercises[currentExerciseIndex].completedSets.length >= totalSets;
-      if (isNowComplete) {
-        setToast({
-          message: `Great! ${currentExercise.exercise_name} complete! 💪`,
-          icon: '🎉',
-        });
+      setToast({ message: `Great! ${currentExercise.exercise_name} complete! 💪`, icon: '🎉' });
 
-        // Auto-advance to next exercise after 1.5s
-        if (currentExerciseIndex < exercises.length - 1) {
-          const nextIndex = currentExerciseIndex + 1;
-          const nextExerciseName = newExercises[nextIndex].exercise_name;
-          setTimeout(() => {
-            setCurrentExerciseIndex(nextIndex);
-            setToast({
-              message: `Next up: ${nextExerciseName}`,
-              icon: '▶️',
-            });
-          }, 1500);
-        }
-      } else {
-        const remaining = totalSets - newExercises[currentExerciseIndex].completedSets.length;
-        setToast({
-          message: `Set logged! ${remaining} more to go! 💪`,
-          icon: '✓',
-        });
+      if (!isLastExercise) {
+        const nextName = exercises[currentIndex + 1].exercise_name;
+        setTimeout(() => {
+          goToNext();
+          setToast({ message: `Next up: ${nextName}`, icon: '▶️' });
+        }, 1500);
       }
     } catch (err) {
       console.error('Failed to log set:', err);
-      setToast({
-        message: 'Failed to log set. Please try again.',
-        icon: '⚠️',
-      });
+      setToast({ message: 'Failed to log set. Please try again.', icon: '⚠️' });
     }
   };
 
@@ -187,27 +118,20 @@ export default function WorkoutTrackingPage() {
   };
 
   const handleSubmitReadiness = async (readiness: number) => {
-    if (!workoutIdNum) {
-      console.error('Workout ID is missing');
-      return;
-    }
+    if (!sessionIdNum) return;
+    const phase = readinessOpen === 'pre' ? 'pre' : 'post';
 
     try {
-      await postWorkoutReadiness(workoutIdNum, readiness, readinessOpen === 'pre' ? 'pre' : 'post');
-      setToast({
-        message: `Readiness recorded: ${readiness}/5`,
-        icon: '✓',
-      });
+      await postSessionReadiness(sessionIdNum, readiness, phase);
+      setToast({ message: `Readiness recorded: ${readiness}/5`, icon: '✓' });
 
-      if (readinessOpen === 'post') {
-        navigate('/dashboard');
+      if (phase === 'post') {
+        await completeSession(sessionIdNum);
+        navigate('/');
       }
     } catch (err) {
       console.error('Failed to record readiness:', err);
-      setToast({
-        message: 'Failed to record readiness. Please try again.',
-        icon: '⚠️',
-      });
+      setToast({ message: 'Failed to record readiness. Please try again.', icon: '⚠️' });
     } finally {
       setReadinessOpen(null);
     }
@@ -221,7 +145,7 @@ export default function WorkoutTrackingPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                Exercise {currentExerciseIndex + 1} of {totalExercises}
+                Exercise {currentIndex + 1} of {exercises.length}
               </p>
               <h1 className="text-2xl font-bold">{currentExercise.exercise_name}</h1>
             </div>
@@ -245,7 +169,7 @@ export default function WorkoutTrackingPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                {completedExercises}/{totalExercises} exercises
+                {completedExercises}/{exercises.length} exercises
               </p>
               <p className="text-xs text-neutral-600 dark:text-neutral-400">
                 {Math.round(progressPercentage)}%
@@ -265,18 +189,16 @@ export default function WorkoutTrackingPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto p-4 pb-24">
           {/* Reactive Deload Banner */}
-          {workoutDetails.reactive_deload &&
-            !deloadBannerDismissed &&
-            workoutDetails.deload_reason && (
-              <Alert
-                type="info"
-                dismissible
-                onDismiss={() => setDeloadBannerDismissed(true)}
-                className="mb-4"
-              >
-                {workoutDetails.deload_reason}
-              </Alert>
-            )}
+          {session.reactive_deload && !deloadBannerDismissed && session.deload_reason && (
+            <Alert
+              type="info"
+              dismissible
+              onDismiss={() => setDeloadBannerDismissed(true)}
+              className="mb-4"
+            >
+              {session.deload_reason}
+            </Alert>
+          )}
 
           {/* Set Logger */}
           <Card className="mb-8">
@@ -336,15 +258,12 @@ export default function WorkoutTrackingPage() {
       {/* Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 dark:bg-neutral-900">
         <div className="max-w-2xl mx-auto bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-sm mb-4 p-4">
-          {isExerciseComplete && currentExerciseIndex === totalExercises - 1 ? (
+          {isExerciseComplete && isLastExercise ? (
             <Button className="w-full" onClick={handleCompleteWorkout}>
               Complete Workout
             </Button>
           ) : isExerciseComplete ? (
-            <Button
-              className="w-full"
-              onClick={() => setCurrentExerciseIndex(currentExerciseIndex + 1)}
-            >
+            <Button className="w-full" onClick={goToNext}>
               Next Exercise
             </Button>
           ) : (

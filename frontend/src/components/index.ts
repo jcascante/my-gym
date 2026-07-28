@@ -45,3 +45,5 @@ export { CheckInWidget } from './CheckInWidget';
 export { SlotExplanationPanel } from './SlotExplanationPanel';
 export { TemplateExplanationPanel } from './TemplateExplanationPanel';
 export { ReadinessModal } from './ReadinessModal';
+export { SessionStatusBadge } from './SessionStatusBadge';
+export { ScheduleRow } from './ScheduleRow';
