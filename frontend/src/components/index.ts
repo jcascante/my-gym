@@ -26,8 +26,6 @@ export { ProgramListCard } from './ProgramListCard';
 export { WorkoutCard } from './WorkoutCard';
 export { ProgressBar } from './ProgressBar';
 export { StatCard } from './StatCard';
-export { SetLogger } from './SetLogger';
-export { CompletedSets } from './CompletedSets';
 export { RestTimer } from './RestTimer';
 export { Toast } from './Toast';
 export { ProgramGridCard } from './ProgramGridCard';
