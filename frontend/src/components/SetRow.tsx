@@ -165,6 +165,7 @@ export const SetRow: React.FC<SetRowProps> = ({
           onChange={(e) => setEffort(e.target.value === '' ? '' : Number(e.target.value))}
           onBlur={handleEffortBlur}
           placeholder="0"
+          required
           groupClassName="mb-0 md:mb-4"
           labelClassName="text-xs md:text-sm mb-1 md:mb-2"
           className="px-2 py-1 md:px-3 md:py-2 text-xs md:text-base"
