@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ExerciseSection, Toast, Button, ReadinessModal, Spinner, Alert } from '@/components';
-import type { EffortMethod } from '@/types/programCreation';
+import type { EffortMethod, WeightUnit } from '@/types/programCreation';
 import { useAuthStore } from '@/store/auth';
 import { useSession } from '@/hooks/useSession';
 import { useSessionProgress } from '@/hooks/useSessionProgress';
@@ -19,6 +19,10 @@ export default function WorkoutTrackingPage() {
     rawEffortMethod === 'rpe' || rawEffortMethod === 'rir' || rawEffortMethod === 'borg'
       ? rawEffortMethod
       : 'rpe';
+
+  const rawWeightUnit = userProfile?.weight_unit;
+  const weightUnit: WeightUnit =
+    rawWeightUnit === 'kg' || rawWeightUnit === 'lbs' ? rawWeightUnit : 'lbs';
 
   const {
     exercises,
@@ -255,7 +259,7 @@ export default function WorkoutTrackingPage() {
               key={exercise.workout_exercise_id}
               exercise={exercise}
               effort_method={effortMethod}
-              weightUnit="lbs"
+              weightUnit={weightUnit}
               isOpen={openIds.has(exercise.workout_exercise_id)}
               onToggle={() => toggleSection(exercise.workout_exercise_id)}
               onLogSet={(setNumber, data) =>
