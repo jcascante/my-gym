@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { APP_NAME } from '@/config/app';
 import { useAuthStore } from '@/store/auth';
 import { login, getCurrentUser } from '@/api/auth';
 import { getErrorMessage } from '@/api/errors';
@@ -36,7 +37,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">Welcome back</h1>
-          <p className="text-neutral-600 dark:text-neutral-400">Sign in to your MyGym account</p>
+          <p className="text-neutral-600 dark:text-neutral-400">
+            Sign in to your {APP_NAME} account
+          </p>
         </div>
 
         {error && (

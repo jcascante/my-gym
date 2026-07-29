@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { APP_NAME } from '@/config/app';
 import { useAuthStore } from '@/store/auth';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '@/api/auth';
@@ -62,7 +63,7 @@ export default function Header() {
               className="flex-shrink-0 hover:opacity-80 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 rounded"
               aria-label="Go to dashboard"
             >
-              <h1 className="text-2xl font-bold text-primary-600">MyGym</h1>
+              <h1 className="text-2xl font-bold text-primary-600">{APP_NAME}</h1>
             </button>
 
             {/* Schedule */}

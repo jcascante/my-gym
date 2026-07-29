@@ -8,6 +8,13 @@ variable "project_name" {
   default = "gym-app"
 }
 
+# Display name shown in the product (API title, page title, UI copy).
+# Distinct from project_name, which prefixes AWS resource names.
+variable "app_name" {
+  type    = string
+  default = "MyGym"
+}
+
 variable "environment" {
   type    = string
   default = "production"

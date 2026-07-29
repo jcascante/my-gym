@@ -116,6 +116,7 @@ module "backend_ecs" {
 
   environment_variables = {
     ENVIRONMENT                 = var.environment
+    PROJECT_NAME                = var.app_name
     DATABASE_URL                = "postgresql+asyncpg://${var.db_username}:${var.db_password}@${module.rds.address}:5432/${var.db_name}"
     SECRET_KEY                  = var.secret_key
     BACKEND_CORS_ORIGINS        = var.backend_cors_origins

@@ -94,7 +94,7 @@ app.include_router(sessions_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 async def root() -> dict[str, str]:
-    return {"message": "MyGym API"}
+    return {"message": f"{settings.PROJECT_NAME} API"}
 
 
 @app.get("/health")

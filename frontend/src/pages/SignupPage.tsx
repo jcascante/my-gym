@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { APP_NAME } from '@/config/app';
 import { useAuthStore } from '@/store/auth';
 import { signup, login, getCurrentUser } from '@/api/auth';
 import { getErrorMessage } from '@/api/errors';
@@ -66,7 +67,7 @@ export default function SignupPage() {
             Create your account
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400">
-            Join MyGym and start your fitness journey
+            Join {APP_NAME} and start your fitness journey
           </p>
         </div>
 
