@@ -1,3 +1,4 @@
+import { APP_NAME } from '@/config/app';
 import { Card } from '@/components';
 
 export default function SettingsPage() {
@@ -30,7 +31,7 @@ export default function SettingsPage() {
           Notifications
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400">
-          Control how you receive notifications from MyGym.
+          Control how you receive notifications from {APP_NAME}.
         </p>
       </Card>
     </div>
