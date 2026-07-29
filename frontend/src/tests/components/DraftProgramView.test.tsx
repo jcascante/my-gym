@@ -25,6 +25,7 @@ const program = {
   name: 'P',
   status: 'draft' as const,
   duration_weeks: 2,
+  weight_unit: 'lbs' as const,
   weeks: {
     '1': [
       {

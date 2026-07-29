@@ -61,6 +61,7 @@ describe('usePrograms hooks', () => {
         name: 'Test Program',
         status: 'draft' as const,
         duration_weeks: 8,
+        weight_unit: 'kg' as const,
         weeks: {},
         advisories: [],
       };
@@ -90,6 +91,7 @@ describe('usePrograms hooks', () => {
         name: 'Test Program',
         status: 'draft' as const,
         duration_weeks: 8,
+        weight_unit: 'kg' as const,
         weeks: {},
         advisories: [],
       };
@@ -114,6 +116,7 @@ describe('usePrograms hooks', () => {
         name: 'Test Program',
         status: 'draft' as const,
         duration_weeks: 8,
+        weight_unit: 'kg' as const,
         weeks: {},
         advisories: [],
       };
@@ -155,6 +158,7 @@ describe('usePrograms hooks', () => {
         name: 'Before swap',
         status: 'draft' as const,
         duration_weeks: 8,
+        weight_unit: 'kg' as const,
         weeks: {},
         advisories: [],
       };
@@ -184,6 +188,7 @@ describe('usePrograms hooks', () => {
         name: 'Test Program',
         status: 'active' as const,
         duration_weeks: 8,
+        weight_unit: 'kg' as const,
         weeks: {},
         advisories: [],
       };

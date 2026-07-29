@@ -68,6 +68,7 @@ describe('WorkoutTrackingPage', () => {
       duration_min: 45,
       program_id: 1,
       program_name: 'My Program',
+      weight_unit: 'lbs',
       slots: [slot({ workout_exercise_id: 3, exercise_name: 'Bench Press', sets: 1 })],
       logged_sets: [],
       completed_at: null,

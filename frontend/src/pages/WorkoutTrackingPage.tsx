@@ -20,9 +20,7 @@ export default function WorkoutTrackingPage() {
       ? rawEffortMethod
       : 'rpe';
 
-  const rawWeightUnit = userProfile?.weight_unit;
-  const weightUnit: WeightUnit =
-    rawWeightUnit === 'kg' || rawWeightUnit === 'lbs' ? rawWeightUnit : 'lbs';
+  const weightUnit: WeightUnit = session?.weight_unit ?? 'lbs';
 
   const {
     exercises,
