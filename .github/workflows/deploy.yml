@@ -100,7 +100,7 @@ jobs:
       - name: Build frontend
         env:
           VITE_API_URL: https://api.costabirra.com
-          VITE_APP_NAME: ${{ vars.APP_NAME || 'Metryx' }}
+          VITE_APP_NAME: ${{ vars.APP_NAME || 'MyGym' }}
         run: npm run build
         working-directory: frontend
 

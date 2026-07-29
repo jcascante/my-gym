@@ -141,7 +141,7 @@ Once bootstrap and application infrastructure are deployed:
 
 3. Add to GitHub repository secrets and variables:
    - **Secrets** → `AWS_DEPLOY_ROLE_ARN` (the role ARN from step 1)
-   - **Variables** → `ECS_CLUSTER_NAME`, `ECS_SERVICE_NAME`, `FRONTEND_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID`, `APP_NAME` (optional, defaults to `Metryx`)
+   - **Variables** → `ECS_CLUSTER_NAME`, `ECS_SERVICE_NAME`, `FRONTEND_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID`, `APP_NAME` (optional, defaults to `MyGym`)
 
 4. Push to `main` branch to trigger the first deployment via `.github/workflows/deploy.yml`
 
@@ -158,7 +158,7 @@ Once bootstrap and application infrastructure are deployed:
 
 - `aws_region`: Default `us-east-1`
 - `project_name`: Default `gym-app`
-- `app_name`: Product display name shown in the app/API (default `Metryx`)
+- `app_name`: Product display name shown in the app/API (default `MyGym`)
 - `environment`: Default `production`
 - `image_tag`: Docker image tag to deploy (default `latest`)
 - `db_name`: PostgreSQL database name (default `mygym`)
