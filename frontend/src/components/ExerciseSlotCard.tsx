@@ -3,7 +3,7 @@ import type { WeightUnit } from '@/types/programCreation';
 import { SlotFeedbackMenu } from './SlotFeedbackMenu';
 import { SlotExplanationPanel } from './SlotExplanationPanel';
 import { formatSlotNote } from '@/utils/slotNote';
-import { formatEffortDisplay } from '@/utils/effortDisplay';
+import { formatEffortDisplay, formatEffortSuffix } from '@/utils/effortDisplay';
 
 function formatRestSeconds(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -36,6 +36,7 @@ export function ExerciseSlotCard({
     weightUnit,
     slot.effort_target,
   );
+  const effortSuffix = formatEffortSuffix(slot.load, slot.effort_target);
 
   return (
     <div className="bg-white dark:bg-neutral-700/30 border border-neutral-200 dark:border-neutral-600 rounded-lg p-2">
@@ -78,6 +79,9 @@ export function ExerciseSlotCard({
           <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {effortDisplay}
           </span>
+          {effortSuffix && (
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">{effortSuffix}</span>
+          )}
           <span className="text-xs text-neutral-500 dark:text-neutral-400">
             Rest: {formatRestSeconds(slot.rest_seconds)}
           </span>
