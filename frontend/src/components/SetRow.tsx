@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { EffortMethod, WeightUnit } from '../types/programCreation';
+import type { EffortTarget } from '../types/program';
 import { Button } from './Button';
 import { FormField } from './FormField';
+import { formatEffortDisplay } from '../utils/effortDisplay';
 import type { LoggedSetEntry } from '../hooks/useSessionProgress';
 
 interface SetRowProps {
@@ -51,7 +53,7 @@ export const SetRow: React.FC<SetRowProps> = ({
   const [effort, setEffort] = useState<number | ''>(loggedSet?.effort ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { min, max, label, short } = getEffortBounds(effort_method);
+  const { min, max, label } = getEffortBounds(effort_method);
 
   const hadLoggedSetRef = useRef(Boolean(loggedSet));
   useEffect(() => {
@@ -105,6 +107,19 @@ export const SetRow: React.FC<SetRowProps> = ({
   };
 
   if (mode === 'summary' && loggedSet) {
+    const performedEffortTarget: EffortTarget | null =
+      loggedSet.effort !== undefined && loggedSet.effort_method
+        ? { method: loggedSet.effort_method, value: loggedSet.effort }
+        : null;
+
+    const performedDisplay = formatEffortDisplay(
+      1,
+      loggedSet.reps ?? 0,
+      loggedSet.weight ?? null,
+      weightUnit,
+      performedEffortTarget,
+    );
+
     return (
       <button
         type="button"
@@ -113,8 +128,7 @@ export const SetRow: React.FC<SetRowProps> = ({
         className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-success-50 dark:bg-success-900 border border-success-200 dark:border-success-700 text-left"
       >
         <span className="text-body-sm font-variant-numeric tabular-nums">
-          Set {setNumber} · {loggedSet.weight ?? '—'} {weightUnit} × {loggedSet.reps ?? '—'} reps
-          {loggedSet.effort !== undefined ? ` · ${short} ${loggedSet.effort}` : ''}
+          Set {setNumber} · {performedDisplay}
         </span>
         <span className="text-success-600 dark:text-success-400 text-sm shrink-0">
           ✓ tap to edit

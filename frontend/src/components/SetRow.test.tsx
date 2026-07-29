@@ -51,7 +51,7 @@ describe('SetRow', () => {
     expect(
       await screen.findByRole('button', { name: /set 1 logged, tap to edit/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/set 1.*185 lb.*8 reps.*rpe 8\.5/i)).toBeInTheDocument();
+    expect(screen.getByText(/set 1.*1 x 8 @185 lbs/i)).toBeInTheDocument();
   });
 
   it('tap-to-edit works for newly logged sets (no initial loggedSet prop)', async () => {
@@ -94,7 +94,7 @@ describe('SetRow', () => {
       />,
     );
 
-    expect(screen.getByText(/set 1.*80 lb.*8 reps.*rpe 7/i)).toBeInTheDocument();
+    expect(screen.getByText(/set 1.*1 x 8 @80 lbs/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Log Set 1' })).not.toBeInTheDocument();
   });
 

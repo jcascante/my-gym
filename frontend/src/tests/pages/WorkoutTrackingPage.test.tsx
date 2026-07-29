@@ -168,10 +168,9 @@ describe('WorkoutTrackingPage', () => {
         expect.objectContaining({ workout_exercise_id: 3, set_number: 1, actual_rpe: 9 }),
       ),
     );
-    expect(
-      await screen.findByRole('button', { name: /set 1 logged, tap to edit/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/rpe 9/i)).toBeInTheDocument();
+    const setButton = await screen.findByRole('button', { name: /set 1 logged, tap to edit/i });
+    expect(setButton).toBeInTheDocument();
+    expect(setButton).toHaveTextContent(/set 1.*1 x 8 @80 lbs/i);
   });
 
   it('completes the workout immediately when every set is logged', async () => {
