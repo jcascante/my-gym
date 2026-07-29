@@ -129,7 +129,7 @@ export const SetRow: React.FC<SetRowProps> = ({
       <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
         Set {setNumber}
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <FormField
           id={`weight-input-${idScope}`}
           label="Weight (optional)"
