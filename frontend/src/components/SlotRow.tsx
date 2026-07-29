@@ -1,29 +1,31 @@
 import type { FeedbackAction, SlotPreview } from '@/types/program';
+import type { WeightUnit } from '@/types/programCreation';
 import { SlotFeedbackMenu } from './SlotFeedbackMenu';
 import { formatSlotNote } from '@/utils/slotNote';
-
-function formatEffortTarget(target: SlotPreview['effort_target']): string | null {
-  if (!target) return null;
-  if (target.method === 'percent_1rm') {
-    return `${Math.round((target.pct ?? 0) * 100)}%`;
-  }
-  return `${target.method.toUpperCase()} ${target.value}`;
-}
+import { formatEffortDisplay } from '@/utils/effortDisplay';
 
 export function SlotRow({
   slot,
+  weightUnit,
   onAction,
   onSwap,
   onPreview,
   readOnly = false,
 }: {
   slot: SlotPreview;
+  weightUnit: WeightUnit;
   onAction?: (a: FeedbackAction) => void;
   onSwap?: () => void;
   onPreview?: (exerciseId: number) => void;
   readOnly?: boolean;
 }) {
-  const effortLabel = formatEffortTarget(slot.effort_target);
+  const effortDisplay = formatEffortDisplay(
+    slot.sets,
+    slot.reps,
+    slot.load,
+    weightUnit,
+    slot.effort_target,
+  );
   return (
     <div className="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -55,12 +57,8 @@ export function SlotRow({
           </h4>
           <div className="flex flex-wrap gap-2 mt-1">
             <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {slot.sets} × {slot.reps}
-              {slot.load != null ? ` @ ${slot.load}` : ''}
+              {effortDisplay}
             </span>
-            {effortLabel && (
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">{effortLabel}</span>
-            )}
             {slot.note && (
               <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">
                 {formatSlotNote(slot.note)}

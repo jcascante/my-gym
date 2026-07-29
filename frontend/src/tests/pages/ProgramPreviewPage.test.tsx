@@ -24,6 +24,7 @@ vi.mock('@/hooks/usePrograms', () => ({
         return programStatus;
       },
       duration_weeks: 1,
+      weight_unit: 'lbs',
       weeks: {
         '1': [
           {
@@ -37,7 +38,7 @@ vi.mock('@/hooks/usePrograms', () => ({
                 exercise_name: 'Bench Press',
                 sets: 4,
                 reps: 8,
-                load: 185,
+                load: null,
                 rest_seconds: 180,
                 note: null,
                 is_locked: false,
@@ -53,7 +54,7 @@ vi.mock('@/hooks/usePrograms', () => ({
                 exercise_name: 'Squats',
                 sets: 3,
                 reps: 5,
-                load: 225,
+                load: null,
                 rest_seconds: 240,
                 note: 'Go heavy',
                 is_locked: true,
@@ -130,8 +131,8 @@ it('displays exercise names and effort targets', () => {
   );
   expect(screen.getByText('Bench Press')).toBeInTheDocument();
   expect(screen.getByText('Squats')).toBeInTheDocument();
-  expect(screen.getByText('RPE 8')).toBeInTheDocument();
-  expect(screen.getByText('85%')).toBeInTheDocument();
+  expect(screen.getByText('4 x 8 @RPE 8')).toBeInTheDocument();
+  expect(screen.getByText('3 x 5 @85%')).toBeInTheDocument();
   expect(screen.getByText('Go heavy')).toBeInTheDocument();
 });
 

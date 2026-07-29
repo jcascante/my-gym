@@ -14,7 +14,7 @@ describe('formatEffortDisplay', () => {
   });
 
   it('formats percent_1rm effort when no weight', () => {
-    const effortTarget: EffortTarget = { method: 'percent_1rm', pct: 70 };
+    const effortTarget: EffortTarget = { method: 'percent_1rm', pct: 0.7 };
     const result = formatEffortDisplay(4, 10, null, 'lbs', effortTarget);
     expect(result).toBe('4 x 10 @70%');
   });

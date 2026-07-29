@@ -17,6 +17,7 @@ from app.models.program import Workout
 from app.models.session import SessionStatus, WorkoutSession
 from app.models.user import User
 from app.schemas.logging import UserWorkoutLogCreate, UserWorkoutLogOut, WorkoutSetLogOut
+from app.schemas.program import WeightUnit
 from app.schemas.program_api import WorkoutPreviewOut
 from app.schemas.session import ScheduleEntryOut, SessionDetailOut, SessionSetLogCreate
 from app.services.program.loading import load_program_with_definition
@@ -120,6 +121,7 @@ async def _session_detail(db: AsyncSession, session: WorkoutSession, user: User)
         duration_min=_duration_for(user),
         program_id=program.id,
         program_name=program.name,
+        weight_unit=WeightUnit(program.weight_unit),
         slots=preview.slots if preview else [],
         logged_sets=[WorkoutSetLogOut.model_validate(log) for log in logs],
         reactive_deload=preview.reactive_deload if preview else False,

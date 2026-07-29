@@ -19,7 +19,7 @@ export function formatEffortDisplay(
   if (effortTarget) {
     switch (effortTarget.method) {
       case 'percent_1rm':
-        return `${baseFormat} @${effortTarget.pct}%`;
+        return `${baseFormat} @${Math.round((effortTarget.pct ?? 0) * 100)}%`;
       case 'rir':
         return `${baseFormat} @RIR ${effortTarget.value}`;
       case 'rpe':

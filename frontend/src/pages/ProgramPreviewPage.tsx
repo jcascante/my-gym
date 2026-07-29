@@ -10,6 +10,7 @@ export default function ProgramPreviewPage() {
   const { data, isLoading } = useProgramPreview(programId);
   const [active, setActive] = useState(1);
   if (isLoading || !data) return <Spinner />;
+  const weightUnit = data.weight_unit;
   const weeks = Object.keys(data.weeks)
     .map(Number)
     .sort((a, b) => a - b);
@@ -34,7 +35,12 @@ export default function ProgramPreviewPage() {
               )}
             </div>
             {w.slots.map((s) => (
-              <SlotRow key={s.workout_exercise_id} slot={s} readOnly={true} />
+              <SlotRow
+                key={s.workout_exercise_id}
+                slot={s}
+                weightUnit={weightUnit}
+                readOnly={true}
+              />
             ))}
           </Card>
         ))}
