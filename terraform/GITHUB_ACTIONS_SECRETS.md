@@ -10,7 +10,7 @@ Set these in your GitHub repository settings:
 `ECS_SERVICE_NAME` = gym-app-production-backend
 `FRONTEND_BUCKET` = app.costabirra.com
 `CLOUDFRONT_DISTRIBUTION_ID` = E15DPRRJ6MVP5X
-`APP_NAME` = Metryx (falls back to `Metryx` if unset; controls the frontend build's display name only — backend's `PROJECT_NAME` is set via the `app_name` Terraform variable)
+`APP_NAME` = MyGym (falls back to `MyGym` if unset; controls the frontend build's display name only — backend's `PROJECT_NAME` is set via the `app_name` Terraform variable)
 
 ## To populate secrets and variables, run:
 
