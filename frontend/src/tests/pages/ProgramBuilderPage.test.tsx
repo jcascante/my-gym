@@ -235,6 +235,7 @@ describe('ProgramBuilderPage', () => {
         name: 'Bodyweight Full Body',
         status: 'draft',
         duration_weeks: 8,
+        weight_unit: 'kg' as const,
         weeks: { '1': [] },
         advisories: [],
       });
@@ -319,6 +320,7 @@ describe('ProgramBuilderPage', () => {
         name: 'Bodyweight Full Body',
         status: 'draft',
         duration_weeks: 8,
+        weight_unit: 'kg' as const,
         weeks: { '1': [] },
         advisories: [],
       });
@@ -468,6 +470,7 @@ describe('ProgramBuilderPage', () => {
         name: 'Template 1',
         status: 'draft',
         duration_weeks: 8,
+        weight_unit: 'kg' as const,
         weeks: { '1': [] },
         advisories: [],
       });
@@ -595,6 +598,7 @@ describe('ProgramBuilderPage', () => {
         name: 'Draft Program',
         status: 'draft',
         duration_weeks: 8,
+        weight_unit: 'kg' as const,
         weeks: { '1': [] },
         advisories: [],
       });

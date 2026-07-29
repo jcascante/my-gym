@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from app.schemas.program import EffortMethod, ProgressionStyle, VarietyPreference
+from app.schemas.program import EffortMethod, ProgressionStyle, VarietyPreference, WeightUnit
 
 
 class MatchRequest(BaseModel):
@@ -119,6 +119,7 @@ class ProgramPreviewOut(BaseModel):
     duration_weeks: int
     current_week: int | None = None
     start_date: date | None = None
+    weight_unit: WeightUnit = WeightUnit.KG
     weeks: dict[int, list[WorkoutPreviewOut]]
     advisories: list[Advisory] = []
 

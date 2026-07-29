@@ -2,7 +2,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useSession } from '@/hooks/useSession';
 import { toIsoDate } from '@/hooks/useSchedule';
 import { Alert, Button, Card, SessionStatusBadge, Spinner } from '@/components';
+import { formatEffortDisplay } from '@/utils/effortDisplay';
 import type { LoggedSet } from '@/types/session';
+import type { EffortTarget } from '@/types/program';
 
 export default function SessionDetailPage() {
   const navigate = useNavigate();
@@ -85,9 +87,29 @@ export default function SessionDetailPage() {
                   <span className="body-sm text-neutral-600 dark:text-neutral-400 text-right">
                     {logged.length > 0
                       ? logged
-                          .map((s) => `${s.actual_weight ?? '—'} × ${s.actual_reps ?? '—'}`)
+                          .map((s) => {
+                            const effortTarget: EffortTarget | null = s.effort_method
+                              ? {
+                                  method: s.effort_method as EffortTarget['method'],
+                                  value: s.actual_rpe ?? undefined,
+                                }
+                              : null;
+                            return formatEffortDisplay(
+                              1,
+                              s.actual_reps ?? 0,
+                              s.actual_weight ?? null,
+                              session.weight_unit,
+                              effortTarget,
+                            );
+                          })
                           .join('  ')
-                      : `${slot.sets} × ${slot.reps}${slot.load ? ` @ ${slot.load}` : ''}`}
+                      : formatEffortDisplay(
+                          slot.sets,
+                          slot.reps,
+                          slot.load,
+                          session.weight_unit,
+                          slot.effort_target,
+                        )}
                   </span>
                 </li>
               );

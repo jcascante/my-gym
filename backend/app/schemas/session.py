@@ -4,6 +4,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from app.schemas.logging import WorkoutSetLogOut
+from app.schemas.program import WeightUnit
 from app.schemas.program_api import SlotPreviewOut
 
 
@@ -25,6 +26,7 @@ class SessionDetailOut(ScheduleEntryOut):
 
     program_id: int
     program_name: str
+    weight_unit: WeightUnit
     slots: list[SlotPreviewOut]
     logged_sets: list[WorkoutSetLogOut]
     reactive_deload: bool

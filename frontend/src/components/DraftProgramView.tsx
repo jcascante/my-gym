@@ -7,6 +7,7 @@ import { Alert } from './Alert';
 import { TemplateExplanationPanel } from './TemplateExplanationPanel';
 import { useProgramPreview, useSubmitFeedback } from '@/hooks/usePrograms';
 import { useExercises } from '@/hooks/useExercises';
+import type { WeightUnit } from '@/types/programCreation';
 import type { FeedbackAction, ProgramPreview } from '@/types/program';
 import type { Exercise, ExerciseResponse } from '@/types/exercise';
 
@@ -61,6 +62,8 @@ export function DraftProgramView({
   const { data: allExercises = [] } = useExercises();
   const onAction = (a: FeedbackAction) => feedback.mutate(a);
 
+  const weightUnit: WeightUnit = program.weight_unit || 'lbs';
+
   const previewExercise = useMemo(() => {
     if (!previewExerciseId) return null;
     const response = allExercises.find((ex) => ex.id === previewExerciseId);
@@ -95,6 +98,7 @@ export function DraftProgramView({
               key={w.workout_id}
               workout={w}
               programId={programId}
+              weightUnit={weightUnit}
               onAction={onAction}
               onSwap={setSwapFor}
               onPreview={setPreviewExerciseId}

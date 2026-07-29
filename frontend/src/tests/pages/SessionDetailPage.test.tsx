@@ -44,6 +44,7 @@ const base = {
   duration_min: 45,
   program_id: 1,
   program_name: 'My Program',
+  weight_unit: 'kg',
   slots: [slot],
   logged_sets: [],
   completed_at: null,
@@ -65,7 +66,7 @@ describe('SessionDetailPage', () => {
 
     expect(screen.getByText('Upper Body B')).toBeInTheDocument();
     expect(screen.getByText('Bench Press')).toBeInTheDocument();
-    expect(screen.getByText(/4 × 8/)).toBeInTheDocument();
+    expect(screen.getByText('4 x 8 @80 kg')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /start workout/i })).toBeInTheDocument();
   });
 
@@ -106,7 +107,7 @@ describe('SessionDetailPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/80 × 8/)).toBeInTheDocument();
+    expect(screen.getByText('1 x 8 @80 kg')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /start workout/i })).not.toBeInTheDocument();
   });
 

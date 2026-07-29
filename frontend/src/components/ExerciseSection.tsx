@@ -1,12 +1,14 @@
 import React from 'react';
-import { EffortMethod } from '../types/programCreation';
+import type { EffortMethod, WeightUnit } from '../types/programCreation';
 import { SetRow } from './SetRow';
 import { formatSlotNote } from '../utils/slotNote';
+import { formatEffortDisplay } from '../utils/effortDisplay';
 import type { ExerciseProgress, LoggedSetEntry } from '../hooks/useSessionProgress';
 
 interface ExerciseSectionProps {
   exercise: ExerciseProgress;
   effort_method: EffortMethod;
+  weightUnit: WeightUnit;
   isOpen: boolean;
   onToggle: () => void;
   onLogSet: (
@@ -18,6 +20,7 @@ interface ExerciseSectionProps {
 export const ExerciseSection: React.FC<ExerciseSectionProps> = ({
   exercise,
   effort_method,
+  weightUnit,
   isOpen,
   onToggle,
   onLogSet,
@@ -26,6 +29,14 @@ export const ExerciseSection: React.FC<ExerciseSectionProps> = ({
   const isComplete = completedCount >= exercise.sets;
   const findSet = (setNumber: number): LoggedSetEntry | undefined =>
     exercise.completedSets.find((s) => s.setNumber === setNumber);
+
+  const effortDisplay = formatEffortDisplay(
+    exercise.sets,
+    exercise.reps,
+    exercise.load,
+    weightUnit,
+    exercise.effort_target,
+  );
 
   return (
     <div
@@ -36,13 +47,16 @@ export const ExerciseSection: React.FC<ExerciseSectionProps> = ({
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="w-full flex items-center justify-between px-4 py-3"
+        className="w-full flex items-center justify-between px-4 py-3 gap-3"
       >
         <span className="flex items-center gap-2 font-semibold text-neutral-900 dark:text-neutral-100">
           {isComplete && <span className="text-success-600 dark:text-success-400">✓</span>}
           {exercise.exercise_name}
         </span>
-        <span className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+        <span className="flex-1 text-sm text-neutral-600 dark:text-neutral-400 text-center">
+          {effortDisplay}
+        </span>
+        <span className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400 whitespace-nowrap">
           {completedCount}/{exercise.sets} sets
           <span>{isOpen ? '▴' : '▾'}</span>
         </span>
@@ -52,10 +66,7 @@ export const ExerciseSection: React.FC<ExerciseSectionProps> = ({
         <div className="px-4 pb-4 space-y-3">
           <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
             <span>
-              Target: {exercise.load ?? '—'} × {exercise.reps}
-            </span>
-            <span>
-              Rest {Math.floor(exercise.rest_seconds / 60)}:
+              Target: {effortDisplay} · Rest {Math.floor(exercise.rest_seconds / 60)}:
               {String(exercise.rest_seconds % 60).padStart(2, '0')}
             </span>
           </div>
@@ -73,6 +84,7 @@ export const ExerciseSection: React.FC<ExerciseSectionProps> = ({
                 key={setNumber}
                 setNumber={setNumber}
                 effort_method={effort_method}
+                weightUnit={weightUnit}
                 loggedSet={findSet(setNumber)}
                 idPrefix={exercise.workout_exercise_id}
                 onLogSet={(data) => onLogSet(setNumber, data)}

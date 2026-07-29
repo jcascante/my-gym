@@ -27,6 +27,7 @@ export interface LoggedSet {
 export interface SessionDetail extends ScheduleEntry {
   program_id: number;
   program_name: string;
+  weight_unit: 'kg' | 'lbs';
   slots: SlotPreview[];
   logged_sets: LoggedSet[];
   completed_at: string | null;

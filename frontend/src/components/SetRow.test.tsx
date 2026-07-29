@@ -3,12 +3,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SetRow } from './SetRow';
-import type { EffortMethod } from '../types/programCreation';
+import type { EffortMethod, WeightUnit } from '../types/programCreation';
 import type { LoggedSetEntry } from '../hooks/useSessionProgress';
 
 function SetRowHarness(props: {
   setNumber: number;
   effort_method: EffortMethod;
+  weightUnit: WeightUnit;
   initialLoggedSet?: LoggedSetEntry;
 }) {
   const [loggedSet, setLoggedSet] = useState(props.initialLoggedSet);
@@ -24,6 +25,7 @@ function SetRowHarness(props: {
     <SetRow
       setNumber={props.setNumber}
       effort_method={props.effort_method}
+      weightUnit={props.weightUnit}
       loggedSet={loggedSet}
       onLogSet={handleLogSet}
     />
@@ -32,14 +34,14 @@ function SetRowHarness(props: {
 
 describe('SetRow', () => {
   it('renders an input row with a per-set Log button when unlogged', () => {
-    render(<SetRow setNumber={2} effort_method="rpe" onLogSet={vi.fn()} />);
+    render(<SetRow setNumber={2} effort_method="rpe" weightUnit="lbs" onLogSet={vi.fn()} />);
 
     expect(screen.getByText('Set 2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Log Set 2' })).toBeInTheDocument();
   });
 
   it('calls onLogSet with the entered values and shows the logged summary after success', async () => {
-    render(<SetRowHarness setNumber={1} effort_method="rpe" />);
+    render(<SetRowHarness setNumber={1} effort_method="rpe" weightUnit="lbs" />);
 
     await userEvent.type(screen.getByLabelText(/weight/i), '185');
     await userEvent.type(screen.getByLabelText(/reps/i), '8');
@@ -49,11 +51,11 @@ describe('SetRow', () => {
     expect(
       await screen.findByRole('button', { name: /set 1 logged, tap to edit/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/set 1.*185 lb.*8 reps.*rpe 8\.5/i)).toBeInTheDocument();
+    expect(screen.getByText(/set 1.*1 x 8 @185 lbs/i)).toBeInTheDocument();
   });
 
   it('tap-to-edit works for newly logged sets (no initial loggedSet prop)', async () => {
-    render(<SetRowHarness setNumber={1} effort_method="rpe" />);
+    render(<SetRowHarness setNumber={1} effort_method="rpe" weightUnit="lbs" />);
 
     // Log a new set
     await userEvent.type(screen.getByLabelText(/weight/i), '185');
@@ -79,6 +81,7 @@ describe('SetRow', () => {
       <SetRow
         setNumber={1}
         effort_method="rpe"
+        weightUnit="lbs"
         loggedSet={{
           setNumber: 1,
           weight: 80,
@@ -91,7 +94,7 @@ describe('SetRow', () => {
       />,
     );
 
-    expect(screen.getByText(/set 1.*80 lb.*8 reps.*rpe 7/i)).toBeInTheDocument();
+    expect(screen.getByText(/set 1.*1 x 8 @80 lbs/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Log Set 1' })).not.toBeInTheDocument();
   });
 
@@ -101,6 +104,7 @@ describe('SetRow', () => {
       <SetRow
         setNumber={1}
         effort_method="rpe"
+        weightUnit="lbs"
         loggedSet={{
           setNumber: 1,
           weight: 80,
@@ -122,7 +126,7 @@ describe('SetRow', () => {
 
   it('stays in the input state if onLogSet rejects', async () => {
     const onLogSet = vi.fn().mockRejectedValue(new Error('network error'));
-    render(<SetRow setNumber={1} effort_method="rpe" onLogSet={onLogSet} />);
+    render(<SetRow setNumber={1} effort_method="rpe" weightUnit="lbs" onLogSet={onLogSet} />);
 
     await userEvent.type(screen.getByLabelText(/rpe/i), '8');
     await userEvent.click(screen.getByRole('button', { name: 'Log Set 1' }));
@@ -132,7 +136,7 @@ describe('SetRow', () => {
   });
 
   it('clamps RPE to 1-10 range', async () => {
-    render(<SetRow setNumber={1} effort_method="rpe" onLogSet={vi.fn()} />);
+    render(<SetRow setNumber={1} effort_method="rpe" weightUnit="lbs" onLogSet={vi.fn()} />);
     const rpeInput = screen.getByLabelText(/rpe/i);
     await userEvent.type(rpeInput, '15');
     await userEvent.tab();

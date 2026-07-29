@@ -7,5 +7,5 @@ New formula: `EngineConfig(flags.use_constraint_scorer=True, flags.use_beam_sear
 - Rank agreement (old top template == new top template): 78.0%
 - Advisory rate (all_infeasible), old formula: 0.0%
 - Advisory rate (all_infeasible), new formula: 0.0%
-- Latency p95, old formula: 12.884 ms
-- Latency p95, new formula: 30.445 ms
+- Latency p95, old formula: 3.553 ms
+- Latency p95, new formula: 11.658 ms

@@ -80,6 +80,7 @@ export interface ProgramPreview {
   duration_weeks: number;
   current_week?: number | null;
   start_date?: string | null;
+  weight_unit: 'kg' | 'lbs';
   weeks: Record<string, WorkoutPreview[]>;
   advisories: Advisory[];
 }
