@@ -2,7 +2,7 @@ import React from 'react';
 import type { EffortMethod, WeightUnit } from '../types/programCreation';
 import { SetRow } from './SetRow';
 import { formatSlotNote } from '../utils/slotNote';
-import { formatEffortDisplay } from '../utils/effortDisplay';
+import { formatEffortDisplay, formatEffortSuffix } from '../utils/effortDisplay';
 import type { ExerciseProgress, LoggedSetEntry } from '../hooks/useSessionProgress';
 
 interface ExerciseSectionProps {
@@ -37,6 +37,7 @@ export const ExerciseSection: React.FC<ExerciseSectionProps> = ({
     weightUnit,
     exercise.effort_target,
   );
+  const effortSuffix = formatEffortSuffix(exercise.load, exercise.effort_target);
 
   return (
     <div
@@ -66,7 +67,9 @@ export const ExerciseSection: React.FC<ExerciseSectionProps> = ({
         <div className="px-4 pb-4 space-y-3">
           <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
             <span>
-              Target: {effortDisplay} · Rest {Math.floor(exercise.rest_seconds / 60)}:
+              Target: {effortDisplay}
+              {effortSuffix ? ` · ${effortSuffix}` : ''} · Rest{' '}
+              {Math.floor(exercise.rest_seconds / 60)}:
               {String(exercise.rest_seconds % 60).padStart(2, '0')}
             </span>
           </div>
