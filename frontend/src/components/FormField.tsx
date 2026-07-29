@@ -6,6 +6,8 @@ interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
   required?: boolean;
   children?: ReactNode;
+  groupClassName?: string;
+  labelClassName?: string;
 }
 
 export const FormField: FC<FormFieldProps> = ({
@@ -16,6 +18,8 @@ export const FormField: FC<FormFieldProps> = ({
   className = '',
   id,
   type = 'text',
+  groupClassName = '',
+  labelClassName = '',
   ...props
 }) => {
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
@@ -23,8 +27,8 @@ export const FormField: FC<FormFieldProps> = ({
   const isPassword = type === 'password';
 
   return (
-    <div className="input-group">
-      <label htmlFor={inputId} className="input-label">
+    <div className={`input-group ${groupClassName}`}>
+      <label htmlFor={inputId} className={`input-label ${labelClassName}`}>
         {label}
         {required && <span className="text-error-600 ml-1">*</span>}
       </label>

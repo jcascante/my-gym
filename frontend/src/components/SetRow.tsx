@@ -125,6 +125,7 @@ export const SetRow: React.FC<SetRowProps> = ({
     <form
       onSubmit={handleSubmit}
       className="space-y-1 md:space-y-2 rounded-lg border border-neutral-200 dark:border-neutral-700 p-2 md:p-3"
+      className="space-y-1 md:space-y-2 rounded-lg border border-neutral-200 dark:border-neutral-700 p-2 md:p-3"
     >
       <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
         Set {setNumber}
@@ -164,7 +165,6 @@ export const SetRow: React.FC<SetRowProps> = ({
           onChange={(e) => setEffort(e.target.value === '' ? '' : Number(e.target.value))}
           onBlur={handleEffortBlur}
           placeholder="0"
-          required
           groupClassName="mb-0 md:mb-4"
           labelClassName="text-xs md:text-sm mb-1 md:mb-2"
           className="px-2 py-1 md:px-3 md:py-2 text-xs md:text-base"
