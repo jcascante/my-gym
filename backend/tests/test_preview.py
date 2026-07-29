@@ -224,7 +224,9 @@ async def test_derive_week_percent_1rm_target_includes_load(sample_template_orm,
 
 
 @pytest.mark.asyncio
-async def test_derive_week_omits_effort_target_when_effort_method_unset(sample_template_orm, sample_exercises):
+async def test_derive_week_defaults_effort_target_to_rpe_when_effort_method_unset(
+    sample_template_orm, sample_exercises
+):
     definition = TemplateDefinition.from_orm_template(sample_template_orm)
     ctx = SelectionContext(["barbell", "bench", "squat_rack"], "intermediate", [], set())
     program = build_draft(
@@ -247,7 +249,8 @@ async def test_derive_week_omits_effort_target_when_effort_method_unset(sample_t
     week1 = derive_week(program, definition, 1, exercise_map)
     slots = [s for d in week1 for s in d["slots"]]
     assert slots
-    assert all(s["effort_target"] is None for s in slots)  # backward compatible default
+    assert all(s["effort_target"] is not None for s in slots)
+    assert all(s["effort_target"]["method"] == "rpe" for s in slots)
 
 
 @pytest.mark.asyncio
