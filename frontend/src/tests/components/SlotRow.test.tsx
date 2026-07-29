@@ -86,6 +86,22 @@ describe('SlotRow', () => {
     expect(screen.queryByText(/🔁 rotates weekly/)).not.toBeInTheDocument();
   });
 
+  it('shows an effort suffix chip when load and effort_target are both present', () => {
+    const slot = {
+      ...baseSlot,
+      load: 100,
+      effort_target: { method: 'rpe' as const, value: 8 },
+    };
+    render(<SlotRow slot={slot} weightUnit="kg" onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.getByText('3 x 5 @100 kg')).toBeInTheDocument();
+    expect(screen.getByText('RPE 8')).toBeInTheDocument();
+  });
+
+  it('does not show an effort suffix chip when load is present but effort_target is null', () => {
+    render(<SlotRow slot={baseSlot} weightUnit="kg" onAction={vi.fn()} onSwap={vi.fn()} />);
+    expect(screen.queryByText(/RPE|RIR|Borg|%/)).not.toBeInTheDocument();
+  });
+
   it('shows a friendly label for a deload note', () => {
     const slot = { ...baseSlot, note: 'deload' };
     render(<SlotRow slot={slot} weightUnit="kg" onAction={vi.fn()} onSwap={vi.fn()} />);

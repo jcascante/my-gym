@@ -2,7 +2,7 @@ import type { FeedbackAction, SlotPreview } from '@/types/program';
 import type { WeightUnit } from '@/types/programCreation';
 import { SlotFeedbackMenu } from './SlotFeedbackMenu';
 import { formatSlotNote } from '@/utils/slotNote';
-import { formatEffortDisplay } from '@/utils/effortDisplay';
+import { formatEffortDisplay, formatEffortSuffix } from '@/utils/effortDisplay';
 
 export function SlotRow({
   slot,
@@ -26,6 +26,7 @@ export function SlotRow({
     weightUnit,
     slot.effort_target,
   );
+  const effortSuffix = formatEffortSuffix(slot.load, slot.effort_target);
   return (
     <div className="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -59,6 +60,9 @@ export function SlotRow({
             <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
               {effortDisplay}
             </span>
+            {effortSuffix && (
+              <span className="text-sm text-neutral-500 dark:text-neutral-400">{effortSuffix}</span>
+            )}
             {slot.note && (
               <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">
                 {formatSlotNote(slot.note)}

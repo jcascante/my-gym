@@ -132,6 +132,17 @@ describe('ExerciseSlotCard', () => {
       expect(screen.getByText(/3 x 5 @100 lbs/)).toBeInTheDocument();
     });
 
+    it('shows an effort suffix chip when load and effort_target are both present', () => {
+      const slot = {
+        ...baseSlot,
+        load: 100,
+        effort_target: { method: 'rir' as const, value: 2 },
+      };
+      render(wrap(<ExerciseSlotCard slot={slot} programId={1} weightUnit="lbs" readOnly />));
+      expect(screen.getByText(/3 x 5 @100 lbs/)).toBeInTheDocument();
+      expect(screen.getByText('RIR 2')).toBeInTheDocument();
+    });
+
     it('can be rendered with onAction and onSwap callbacks', () => {
       const onAction = vi.fn();
       const onSwap = vi.fn();

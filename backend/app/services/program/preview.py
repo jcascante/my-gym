@@ -36,15 +36,16 @@ def _warmup_sets(load: float | None) -> list[dict[str, object]]:
 def _effort_target(
     scheme: SetScheme, target_rpe: float | None, intensity_pct: float | None, effort_method: str | None
 ) -> dict[str, Any] | None:
-    if effort_method is None or target_rpe is None:
+    if target_rpe is None:
         return None
-    if effort_method == "rpe":
+    method = effort_method or "rpe"
+    if method == "rpe":
         return {"method": "rpe", "value": target_rpe}
-    if effort_method == "rir":
+    if method == "rir":
         return {"method": "rir", "value": round(10 - target_rpe)}
-    if effort_method == "borg":
+    if method == "borg":
         return {"method": "borg", "value": min(20, max(6, round(target_rpe * 2 + 2)))}
-    if effort_method == "percent_1rm" and intensity_pct is not None:
+    if method == "percent_1rm" and intensity_pct is not None:
         return {"method": "percent_1rm", "pct": intensity_pct, "target_load": scheme.load}
     return None
 

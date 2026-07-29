@@ -133,4 +133,35 @@ describe('ExerciseSection', () => {
       effort_method: 'rpe',
     });
   });
+
+  it('shows the effort suffix on the Target line when a load and effort target are both present', () => {
+    render(
+      <ExerciseSection
+        exercise={exercise({ load: 80, effort_target: { method: 'rpe', value: 8 } })}
+        effort_method="rpe"
+        weightUnit="lbs"
+        isOpen
+        onToggle={vi.fn()}
+        onLogSet={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Target: 2 x 8 @80 lbs · RPE 8 · Rest 1:30')).toBeInTheDocument();
+  });
+
+  it('does not show the effort suffix in the collapsed header even with a load and effort target', () => {
+    render(
+      <ExerciseSection
+        exercise={exercise({ load: 80, effort_target: { method: 'rpe', value: 8 } })}
+        effort_method="rpe"
+        weightUnit="lbs"
+        isOpen={false}
+        onToggle={vi.fn()}
+        onLogSet={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('2 x 8 @80 lbs')).toBeInTheDocument();
+    expect(screen.queryByText(/RPE 8/)).not.toBeInTheDocument();
+  });
 });
