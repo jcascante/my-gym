@@ -108,7 +108,7 @@ describe('WorkoutTrackingPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /row/i }));
 
     const rowSection = within(screen.getByTestId('exercise-section-2'));
-    await userEvent.type(rowSection.getByLabelText('RPE (1–10)'), '7');
+    await userEvent.type(rowSection.getByLabelText(/RPE \(1–10\)/), '7');
     await userEvent.click(rowSection.getByRole('button', { name: 'Log Set 1' }));
 
     await waitFor(() =>
@@ -155,7 +155,7 @@ describe('WorkoutTrackingPage', () => {
     );
 
     await userEvent.click(screen.getByRole('button', { name: /set 1 logged, tap to edit/i }));
-    const rpeInput = screen.getByLabelText('RPE (1–10)');
+    const rpeInput = screen.getByLabelText(/RPE \(1–10\)/);
     expect((rpeInput as HTMLInputElement).value).toBe('7');
 
     await userEvent.clear(rpeInput);

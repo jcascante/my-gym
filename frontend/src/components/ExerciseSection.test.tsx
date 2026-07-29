@@ -118,7 +118,7 @@ describe('ExerciseSection', () => {
       />,
     );
 
-    await userEvent.type(screen.getAllByLabelText('RPE (1–10)')[1], '7');
+    await userEvent.type(screen.getAllByLabelText(/RPE \(1–10\)/)[1], '7');
     await userEvent.click(screen.getByRole('button', { name: 'Log Set 2' }));
 
     expect(onLogSet).toHaveBeenCalledWith(2, {
