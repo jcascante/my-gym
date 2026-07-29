@@ -124,12 +124,12 @@ export const SetRow: React.FC<SetRowProps> = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-2 rounded-lg border border-neutral-200 dark:border-neutral-700 p-3"
+      className="space-y-1 md:space-y-2 rounded-lg border border-neutral-200 dark:border-neutral-700 p-2 md:p-3"
     >
       <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
         Set {setNumber}
       </p>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1 md:gap-2">
         <FormField
           id={`weight-input-${idScope}`}
           label="Weight (optional)"
@@ -139,6 +139,9 @@ export const SetRow: React.FC<SetRowProps> = ({
           onChange={(e) => setWeight(e.target.value === '' ? '' : Number(e.target.value))}
           onBlur={handleWeightBlur}
           placeholder="0"
+          groupClassName="mb-0 md:mb-4"
+          labelClassName="text-xs md:text-sm mb-1 md:mb-2"
+          className="px-2 py-1 md:px-3 md:py-2 text-xs md:text-base"
         />
         <FormField
           id={`reps-input-${idScope}`}
@@ -148,6 +151,9 @@ export const SetRow: React.FC<SetRowProps> = ({
           onChange={(e) => setReps(e.target.value === '' ? '' : Number(e.target.value))}
           onBlur={handleRepsBlur}
           placeholder="0"
+          groupClassName="mb-0 md:mb-4"
+          labelClassName="text-xs md:text-sm mb-1 md:mb-2"
+          className="px-2 py-1 md:px-3 md:py-2 text-xs md:text-base"
         />
         <FormField
           id={`effort-input-${idScope}`}
@@ -158,6 +164,9 @@ export const SetRow: React.FC<SetRowProps> = ({
           onChange={(e) => setEffort(e.target.value === '' ? '' : Number(e.target.value))}
           onBlur={handleEffortBlur}
           placeholder="0"
+          groupClassName="mb-0 md:mb-4"
+          labelClassName="text-xs md:text-sm mb-1 md:mb-2"
+          className="px-2 py-1 md:px-3 md:py-2 text-xs md:text-base"
         />
       </div>
       <Button
