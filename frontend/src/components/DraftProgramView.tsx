@@ -7,7 +7,6 @@ import { Alert } from './Alert';
 import { TemplateExplanationPanel } from './TemplateExplanationPanel';
 import { useProgramPreview, useSubmitFeedback } from '@/hooks/usePrograms';
 import { useExercises } from '@/hooks/useExercises';
-import { useAuthStore } from '@/store/auth';
 import type { WeightUnit } from '@/types/programCreation';
 import type { FeedbackAction, ProgramPreview } from '@/types/program';
 import type { Exercise, ExerciseResponse } from '@/types/exercise';
@@ -53,7 +52,6 @@ export function DraftProgramView({
   // is what makes the UI pick up those updates, instead of rendering the draft prop
   // frozen at the moment the draft was first created.
   const { data: program = initialProgram } = useProgramPreview(programId, initialProgram);
-  const { userProfile } = useAuthStore();
   const weeks = Object.keys(program.weeks)
     .map(Number)
     .sort((a, b) => a - b);
@@ -64,9 +62,7 @@ export function DraftProgramView({
   const { data: allExercises = [] } = useExercises();
   const onAction = (a: FeedbackAction) => feedback.mutate(a);
 
-  const rawWeightUnit = userProfile?.weight_unit;
-  const weightUnit: WeightUnit =
-    rawWeightUnit === 'kg' || rawWeightUnit === 'lbs' ? rawWeightUnit : 'lbs';
+  const weightUnit: WeightUnit = program.weight_unit || 'lbs';
 
   const previewExercise = useMemo(() => {
     if (!previewExerciseId) return null;

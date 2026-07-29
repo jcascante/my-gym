@@ -31,6 +31,7 @@ from app.models import (
 )
 from app.schemas.checkin import CheckInCreate, CheckInResponse, CheckInResultResponse
 from app.schemas.explain import LedgerContributionOut, SlotExplanationOut, TemplateExplanationOut
+from app.schemas.program import WeightUnit
 from app.schemas.program_api import (
     Advisory,
     AlternativeOut,
@@ -144,6 +145,7 @@ async def _preview_out(
         duration_weeks=program.duration_weeks,
         current_week=current_week,
         start_date=program.start_date,
+        weight_unit=WeightUnit(program.weight_unit),
         weeks=weeks,
         advisories=advisories or [],
     )
