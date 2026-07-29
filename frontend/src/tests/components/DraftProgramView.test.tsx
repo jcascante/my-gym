@@ -14,6 +14,12 @@ vi.mock('@/hooks/useExercises', () => ({
   useExercises: () => ({ data: [], isLoading: false }),
 }));
 
+vi.mock('@/store/auth', () => ({
+  useAuthStore: () => ({
+    userProfile: { weight_unit: 'lbs' },
+  }),
+}));
+
 const program = {
   program_id: 1,
   name: 'P',
@@ -60,9 +66,8 @@ function wrap(ui: React.ReactNode) {
 it('shows session, slot, and locked badge', () => {
   render(wrap(<DraftProgramView program={program} programId={1} />));
   expect(screen.getByText('Day A')).toBeInTheDocument();
-  // ExerciseSlotCard (the draft-review compact card) renders "3×5@60" with no spaces,
-  // unlike SlotRow's spaced "3 × 5 @ 60" - this test targets the compact card's format.
-  expect(screen.getByText(/3×5@60/)).toBeInTheDocument();
+  // ExerciseSlotCard now uses formatEffortDisplay which renders "3 x 5 @60 lbs"
+  expect(screen.getByText(/3 x 5 @60 lbs/)).toBeInTheDocument();
   expect(screen.getByLabelText(/locked/i)).toBeInTheDocument();
 });
 

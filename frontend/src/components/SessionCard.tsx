@@ -1,15 +1,18 @@
 import { ExerciseSlotCard } from './ExerciseSlotCard';
 import type { FeedbackAction, WorkoutPreview } from '@/types/program';
+import type { WeightUnit } from '@/types/programCreation';
 
 export function SessionCard({
   workout,
   programId,
+  weightUnit,
   onAction,
   onSwap,
   onPreview,
 }: {
   workout: WorkoutPreview;
   programId: number;
+  weightUnit: WeightUnit;
   onAction: (a: FeedbackAction) => void;
   onSwap: (weId: number) => void;
   onPreview?: (exerciseId: number) => void;
@@ -27,6 +30,7 @@ export function SessionCard({
             key={s.workout_exercise_id}
             slot={s}
             programId={programId}
+            weightUnit={weightUnit}
             onAction={onAction}
             onSwap={() => onSwap(s.workout_exercise_id)}
             onPreview={onPreview}
