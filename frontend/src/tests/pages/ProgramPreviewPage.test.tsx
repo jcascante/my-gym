@@ -132,7 +132,7 @@ it('displays exercise names and effort targets', () => {
   expect(screen.getByText('Bench Press')).toBeInTheDocument();
   expect(screen.getByText('Squats')).toBeInTheDocument();
   expect(screen.getByText('4 x 8 @RPE 8')).toBeInTheDocument();
-  expect(screen.getByText('3 x 5 @85%')).toBeInTheDocument();
+  expect(screen.getByText('3 x 5 @85% 1RM')).toBeInTheDocument();
   expect(screen.getByText('Go heavy')).toBeInTheDocument();
 });
 
