@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { EffortMethod } from '../types/programCreation';
+import type { EffortMethod, WeightUnit } from '../types/programCreation';
 import { Button } from './Button';
 import { FormField } from './FormField';
 import type { LoggedSetEntry } from '../hooks/useSessionProgress';
@@ -7,6 +7,7 @@ import type { LoggedSetEntry } from '../hooks/useSessionProgress';
 interface SetRowProps {
   setNumber: number;
   effort_method: EffortMethod;
+  weightUnit: WeightUnit;
   loggedSet?: LoggedSetEntry;
   // Scopes this row's input ids (e.g. to the owning exercise) so two rows sharing
   // a setNumber never collide on DOM id when both render at once - as happens once
@@ -38,6 +39,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 export const SetRow: React.FC<SetRowProps> = ({
   setNumber,
   effort_method,
+  weightUnit,
   loggedSet,
   idPrefix,
   onLogSet,
@@ -111,7 +113,7 @@ export const SetRow: React.FC<SetRowProps> = ({
         className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-success-50 dark:bg-success-900 border border-success-200 dark:border-success-700 text-left"
       >
         <span className="text-body-sm font-variant-numeric tabular-nums">
-          Set {setNumber} · {loggedSet.weight ?? '—'} lb × {loggedSet.reps ?? '—'} reps
+          Set {setNumber} · {loggedSet.weight ?? '—'} {weightUnit} × {loggedSet.reps ?? '—'} reps
           {loggedSet.effort !== undefined ? ` · ${short} ${loggedSet.effort}` : ''}
         </span>
         <span className="text-success-600 dark:text-success-400 text-sm shrink-0">

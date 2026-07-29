@@ -255,6 +255,7 @@ export default function WorkoutTrackingPage() {
               key={exercise.workout_exercise_id}
               exercise={exercise}
               effort_method={effortMethod}
+              weightUnit="lbs"
               isOpen={openIds.has(exercise.workout_exercise_id)}
               onToggle={() => toggleSection(exercise.workout_exercise_id)}
               onLogSet={(setNumber, data) =>

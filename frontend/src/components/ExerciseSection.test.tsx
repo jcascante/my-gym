@@ -30,6 +30,7 @@ describe('ExerciseSection', () => {
       <ExerciseSection
         exercise={exercise()}
         effort_method="rpe"
+        weightUnit="lbs"
         isOpen={false}
         onToggle={vi.fn()}
         onLogSet={vi.fn()}
@@ -65,6 +66,7 @@ describe('ExerciseSection', () => {
           ],
         })}
         effort_method="rpe"
+        weightUnit="lbs"
         isOpen={false}
         onToggle={vi.fn()}
         onLogSet={vi.fn()}
@@ -81,6 +83,7 @@ describe('ExerciseSection', () => {
       <ExerciseSection
         exercise={exercise()}
         effort_method="rpe"
+        weightUnit="lbs"
         isOpen={false}
         onToggle={onToggle}
         onLogSet={vi.fn()}
@@ -96,6 +99,7 @@ describe('ExerciseSection', () => {
       <ExerciseSection
         exercise={exercise()}
         effort_method="rpe"
+        weightUnit="lbs"
         isOpen
         onToggle={vi.fn()}
         onLogSet={vi.fn()}
@@ -112,6 +116,7 @@ describe('ExerciseSection', () => {
       <ExerciseSection
         exercise={exercise()}
         effort_method="rpe"
+        weightUnit="lbs"
         isOpen
         onToggle={vi.fn()}
         onLogSet={onLogSet}
