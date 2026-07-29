@@ -125,7 +125,6 @@ export const SetRow: React.FC<SetRowProps> = ({
     <form
       onSubmit={handleSubmit}
       className="space-y-1 md:space-y-2 rounded-lg border border-neutral-200 dark:border-neutral-700 p-2 md:p-3"
-      className="space-y-1 md:space-y-2 rounded-lg border border-neutral-200 dark:border-neutral-700 p-2 md:p-3"
     >
       <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
         Set {setNumber}
