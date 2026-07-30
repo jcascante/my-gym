@@ -34,6 +34,16 @@ class SessionDetailOut(ScheduleEntryOut):
     completed_at: Optional[datetime] = None
 
 
+class UserStatsOut(BaseModel):
+    """Aggregate stats for the dashboard, scoped to the user's active program."""
+
+    workouts_this_month: int
+    current_streak_days: int
+    personal_records: int
+    total_volume: float
+    weight_unit: WeightUnit
+
+
 class SessionSetLogCreate(BaseModel):
     """Append a set to a session. The session supplies the workout."""
 

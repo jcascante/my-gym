@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { useActiveProgram } from '@/hooks/usePrograms';
-import { useTodaySession } from '@/hooks/useSchedule';
+import { useTodaySession, useWeeklyProgress, useUserStats } from '@/hooks/useSchedule';
 import { Button, Card, WorkoutCard, ProgressBar, StatCard, Spinner } from '@/components';
 
 export default function DashboardPage() {
@@ -10,6 +10,11 @@ export default function DashboardPage() {
 
   const { data: program, isLoading: programLoading } = useActiveProgram();
   const { session: todaySession, isLoading } = useTodaySession();
+  const { completed: weekCompleted, total: weekTotal } = useWeeklyProgress(
+    program?.start_date,
+    program?.current_week,
+  );
+  const { stats } = useUserStats();
 
   if (programLoading) return <Spinner />;
 
@@ -73,7 +78,12 @@ export default function DashboardPage() {
         {program && (
           <Card className="mb-8">
             <h2 className="heading-lg mb-6">This Week</h2>
-            <ProgressBar completed={0} total={5} showPercentage label="Weekly Progress" />
+            <ProgressBar
+              completed={weekCompleted}
+              total={weekTotal}
+              showPercentage
+              label="Weekly Progress"
+            />
           </Card>
         )}
 
@@ -81,10 +91,30 @@ export default function DashboardPage() {
         <Card>
           <h2 className="heading-lg mb-6">Your Stats</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Workouts This Month" value="0" icon="🏋️" variant="primary" />
-            <StatCard label="Current Streak" value="0 days" icon="🔥" variant="success" />
-            <StatCard label="Personal Records" value="0" icon="🥇" variant="warning" />
-            <StatCard label="Total Volume" value="0 lbs" icon="⚖️" variant="info" />
+            <StatCard
+              label="Workouts This Month"
+              value={stats?.workouts_this_month ?? 0}
+              icon="🏋️"
+              variant="primary"
+            />
+            <StatCard
+              label="Current Streak"
+              value={`${stats?.current_streak_days ?? 0} days`}
+              icon="🔥"
+              variant="success"
+            />
+            <StatCard
+              label="Personal Records"
+              value={stats?.personal_records ?? 0}
+              icon="🥇"
+              variant="warning"
+            />
+            <StatCard
+              label="Total Volume"
+              value={`${Math.round(stats?.total_volume ?? 0).toLocaleString()} ${stats?.weight_unit ?? 'lbs'}`}
+              icon="⚖️"
+              variant="info"
+            />
           </div>
         </Card>
       </div>

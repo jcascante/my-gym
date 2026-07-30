@@ -35,6 +35,14 @@ export interface SessionDetail extends ScheduleEntry {
   deload_reason: string | null;
 }
 
+export interface UserStats {
+  workouts_this_month: number;
+  current_streak_days: number;
+  personal_records: number;
+  total_volume: number;
+  weight_unit: 'kg' | 'lbs';
+}
+
 export interface SessionSetLogPayload {
   workout_exercise_id: number;
   set_number: number;

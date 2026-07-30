@@ -1,5 +1,15 @@
 import { apiClient } from '@/api/client';
-import type { ScheduleEntry, SessionDetail, SessionSetLogPayload } from '@/types/session';
+import type {
+  ScheduleEntry,
+  SessionDetail,
+  SessionSetLogPayload,
+  UserStats,
+} from '@/types/session';
+
+export async function getUserStats(): Promise<UserStats> {
+  const { data } = await apiClient.get<UserStats>('/users/me/stats');
+  return data;
+}
 
 export async function getSchedule(start: string, end: string): Promise<ScheduleEntry[]> {
   const { data } = await apiClient.get<ScheduleEntry[]>('/users/me/schedule', {

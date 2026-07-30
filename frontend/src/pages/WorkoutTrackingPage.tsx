@@ -1,14 +1,18 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { ExerciseSection, Toast, Button, ReadinessModal, Spinner, Alert } from '@/components';
 import type { EffortMethod, WeightUnit } from '@/types/programCreation';
 import { useAuthStore } from '@/store/auth';
 import { useSession } from '@/hooks/useSession';
 import { useSessionProgress } from '@/hooks/useSessionProgress';
+import { programKeys } from '@/hooks/usePrograms';
+import { statsKeys } from '@/hooks/useSchedule';
 import { logSessionSet, postSessionReadiness, completeSession } from '@/api/sessions';
 
 export default function WorkoutTrackingPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { sessionId } = useParams<{ sessionId?: string }>();
   const sessionIdNum = sessionId ? Number(sessionId) : null;
   const { data: session, isLoading, error } = useSession(sessionIdNum);
@@ -72,6 +76,15 @@ export default function WorkoutTrackingPage() {
   if (!session) return <Spinner />;
 
   const unloggedCount = Math.max(0, totalSets - completedSetsTotal);
+
+  // Completion navigates back to the dashboard, whose queries would otherwise
+  // only refresh incidentally via remount - invalidate explicitly so today's
+  // and this week's progress are correct even if that remount doesn't happen.
+  const invalidateAfterCompletion = () => {
+    void queryClient.invalidateQueries({ queryKey: ['schedule'] });
+    void queryClient.invalidateQueries({ queryKey: programKeys.active });
+    void queryClient.invalidateQueries({ queryKey: statsKeys.all });
+  };
 
   const toggleSection = (workoutExerciseId: number) => {
     setOpenIds((prev) => {
@@ -142,6 +155,7 @@ export default function WorkoutTrackingPage() {
 
       if (phase === 'post') {
         await completeSession(sessionIdNum);
+        invalidateAfterCompletion();
         navigate('/');
       }
     } catch (err) {
@@ -164,6 +178,7 @@ export default function WorkoutTrackingPage() {
     if (readinessOpen === 'post' && !wasRatingAttempt && sessionIdNum) {
       try {
         await completeSession(sessionIdNum);
+        invalidateAfterCompletion();
         navigate('/');
       } catch (err) {
         console.error('Failed to complete workout:', err);
