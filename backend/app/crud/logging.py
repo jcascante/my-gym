@@ -133,6 +133,27 @@ async def get_set_logs_for_sessions(
     return _dedupe_latest_per_set(list(result.scalars().all()))
 
 
+async def get_all_set_logs_for_program(db: AsyncSession, program_id: int, user_id: int) -> list[WorkoutSetLog]:
+    """All of a user's set logs for one program, unwindowed, deduped to the latest value per set.
+
+    Backs the dashboard stats cards (personal records, total volume), which need
+    full history rather than the reactive-deload lookback window.
+    """
+    stmt = (
+        select(WorkoutSetLog)
+        .join(WorkoutSession, WorkoutSession.id == WorkoutSetLog.session_id)
+        .where(
+            and_(
+                WorkoutSession.program_id == program_id,
+                WorkoutSetLog.user_id == user_id,
+            )
+        )
+        .order_by(WorkoutSetLog.session_id, WorkoutSetLog.workout_exercise_id, WorkoutSetLog.set_number)
+    )
+    result = await db.execute(stmt)
+    return _dedupe_latest_per_set(list(result.scalars().all()))
+
+
 async def get_set_logs_for_session(db: AsyncSession, session_id: int, user_id: int) -> list[WorkoutSetLog]:
     """Set logs for a single session, deduped to the latest value per set.
 

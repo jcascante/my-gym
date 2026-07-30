@@ -1,10 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { getSchedule } from '@/api/sessions';
-import type { ScheduleEntry } from '@/types/session';
+import { getSchedule, getUserStats } from '@/api/sessions';
+import type { ScheduleEntry, UserStats } from '@/types/session';
 
 export const sessionKeys = {
   schedule: (start: string, end: string) => ['schedule', start, end] as const,
   detail: (id: number) => ['session', id] as const,
+};
+
+export const statsKeys = {
+  all: ['stats'] as const,
 };
 
 export function toIsoDate(d: Date): string {
@@ -31,4 +35,27 @@ export function useTodaySession(): { session: ScheduleEntry | null; isLoading: b
   const today = toIsoDate(new Date());
   const { data, isLoading } = useSchedule(today, today);
   return { session: data?.[0] ?? null, isLoading };
+}
+
+export function useUserStats(): { stats: UserStats | undefined; isLoading: boolean } {
+  const { data, isLoading } = useQuery({ queryKey: statsKeys.all, queryFn: getUserStats });
+  return { stats: data, isLoading };
+}
+
+export function useWeeklyProgress(
+  startDate: string | null | undefined,
+  week: number | null | undefined,
+): { completed: number; total: number; isLoading: boolean } {
+  const range = startDate && week != null ? weekRange(startDate, week) : null;
+  const { data, isLoading } = useQuery({
+    queryKey: sessionKeys.schedule(range?.start ?? '', range?.end ?? ''),
+    queryFn: () => getSchedule(range!.start, range!.end),
+    enabled: range !== null,
+  });
+  const entries = data ?? [];
+  return {
+    completed: entries.filter((entry) => entry.status === 'completed').length,
+    total: entries.length,
+    isLoading,
+  };
 }

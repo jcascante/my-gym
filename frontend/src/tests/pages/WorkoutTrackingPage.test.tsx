@@ -2,8 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WorkoutTrackingPage from '@/pages/WorkoutTrackingPage';
 import type { SessionDetail } from '@/types/session';
+
+function renderPage() {
+  const client = new QueryClient();
+  return render(
+    <QueryClientProvider client={client}>
+      <MemoryRouter>
+        <WorkoutTrackingPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
 
 const navigateMock = vi.fn();
 const completeSessionMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();
@@ -83,11 +95,7 @@ describe('WorkoutTrackingPage', () => {
       slot({ workout_exercise_id: 2, exercise_name: 'Row', sets: 1 }),
     ];
 
-    render(
-      <MemoryRouter>
-        <WorkoutTrackingPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     expect(screen.getByText('Bench Press')).toBeInTheDocument();
     expect(screen.getByText('Row')).toBeInTheDocument();
@@ -100,11 +108,7 @@ describe('WorkoutTrackingPage', () => {
       slot({ workout_exercise_id: 2, exercise_name: 'Row', sets: 1 }),
     ];
 
-    render(
-      <MemoryRouter>
-        <WorkoutTrackingPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     await userEvent.click(screen.getByRole('button', { name: /row/i }));
 
@@ -125,11 +129,7 @@ describe('WorkoutTrackingPage', () => {
   });
 
   it('toggles a section open and closed on header click', async () => {
-    render(
-      <MemoryRouter>
-        <WorkoutTrackingPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     expect(screen.getByText('Set 1')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /bench press/i }));
@@ -149,11 +149,7 @@ describe('WorkoutTrackingPage', () => {
       },
     ];
 
-    render(
-      <MemoryRouter>
-        <WorkoutTrackingPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     await userEvent.click(screen.getByRole('button', { name: /set 1 logged, tap to edit/i }));
     const rpeInput = screen.getByLabelText(/RPE \(1–10\)/);
@@ -187,11 +183,7 @@ describe('WorkoutTrackingPage', () => {
       },
     ];
 
-    render(
-      <MemoryRouter>
-        <WorkoutTrackingPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     await userEvent.click(screen.getByRole('button', { name: /complete workout/i }));
     expect(screen.queryByText(/not logged/i)).not.toBeInTheDocument();
@@ -202,11 +194,7 @@ describe('WorkoutTrackingPage', () => {
   });
 
   it('confirms before completing when a set is unlogged', async () => {
-    render(
-      <MemoryRouter>
-        <WorkoutTrackingPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     await userEvent.click(screen.getByRole('button', { name: /complete workout/i }));
     expect(await screen.findByText(/1 set is not logged/i)).toBeInTheDocument();
@@ -233,11 +221,7 @@ describe('WorkoutTrackingPage', () => {
       },
     ];
 
-    render(
-      <MemoryRouter>
-        <WorkoutTrackingPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     await userEvent.click(screen.getByRole('button', { name: /complete workout/i }));
     const dialogButton = await screen.findByRole('button', { name: '4' });
@@ -261,11 +245,7 @@ describe('WorkoutTrackingPage', () => {
       },
     ];
 
-    render(
-      <MemoryRouter>
-        <WorkoutTrackingPage />
-      </MemoryRouter>,
-    );
+    renderPage();
 
     await userEvent.click(screen.getByRole('button', { name: /complete workout/i }));
     const dialogButton = await screen.findByRole('button', { name: '4' });

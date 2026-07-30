@@ -7,9 +7,13 @@ import DashboardPage from '@/pages/DashboardPage';
 const navigateMock = vi.fn();
 let todaySession: unknown = null;
 let programData: unknown = null;
+let weeklyProgress = { completed: 0, total: 0, isLoading: false };
+let userStats: unknown = undefined;
 
 vi.mock('@/hooks/useSchedule', () => ({
   useTodaySession: () => ({ session: todaySession, isLoading: false }),
+  useWeeklyProgress: () => weeklyProgress,
+  useUserStats: () => ({ stats: userStats, isLoading: false }),
 }));
 
 vi.mock('@/hooks/usePrograms', () => ({
@@ -45,6 +49,8 @@ describe('DashboardPage', () => {
     navigateMock.mockClear();
     todaySession = null;
     programData = { program_id: 1, name: 'My Program', status: 'active', duration_weeks: 8 };
+    weeklyProgress = { completed: 0, total: 0, isLoading: false };
+    userStats = undefined;
   });
 
   it("shows today's session when one is scheduled", () => {
@@ -85,6 +91,53 @@ describe('DashboardPage', () => {
     expect(screen.getByText(/nothing scheduled today/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /view schedule/i }));
     expect(navigateMock).toHaveBeenCalledWith('/schedule');
+  });
+
+  it('shows weekly progress from real session data', () => {
+    weeklyProgress = { completed: 2, total: 4, isLoading: false };
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('2 of 4 workouts completed')).toBeInTheDocument();
+    expect(screen.getByText('50%')).toBeInTheDocument();
+  });
+
+  it('shows real stats instead of hardcoded zeros', () => {
+    userStats = {
+      workouts_this_month: 7,
+      current_streak_days: 3,
+      personal_records: 2,
+      total_volume: 12500,
+      weight_unit: 'kg',
+    };
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('7')).toBeInTheDocument();
+    expect(screen.getByText('3 days')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('12,500 kg')).toBeInTheDocument();
+  });
+
+  it('falls back to zeros while stats are unavailable', () => {
+    userStats = undefined;
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('0 days')).toBeInTheDocument();
+    expect(screen.getByText('0 lbs')).toBeInTheDocument();
   });
 
   it('prompts to create a program when there is none', () => {

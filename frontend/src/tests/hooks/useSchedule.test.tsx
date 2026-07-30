@@ -2,10 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useSchedule, useTodaySession, toIsoDate } from '@/hooks/useSchedule';
-import { getSchedule } from '@/api/sessions';
+import {
+  useSchedule,
+  useTodaySession,
+  useWeeklyProgress,
+  useUserStats,
+  toIsoDate,
+} from '@/hooks/useSchedule';
+import { getSchedule, getUserStats } from '@/api/sessions';
 
-vi.mock('@/api/sessions', () => ({ getSchedule: vi.fn() }));
+vi.mock('@/api/sessions', () => ({ getSchedule: vi.fn(), getUserStats: vi.fn() }));
 
 function wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -55,5 +61,58 @@ describe('useSchedule', () => {
 
     await waitFor(() => expect(result.current.session).not.toBeNull());
     expect(result.current.session?.session_id).toBe(1);
+  });
+});
+
+describe('useWeeklyProgress', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('counts completed sessions against the week total', async () => {
+    vi.mocked(getSchedule).mockResolvedValue([
+      { ...entry, session_id: 1, status: 'completed' },
+      { ...entry, session_id: 2, status: 'scheduled' },
+      { ...entry, session_id: 3, status: 'completed' },
+    ]);
+
+    const { result } = renderHook(() => useWeeklyProgress('2026-07-27', 1), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.completed).toBe(2);
+    expect(result.current.total).toBe(3);
+  });
+
+  it('returns zero progress when nothing is scheduled that week', async () => {
+    vi.mocked(getSchedule).mockResolvedValue([]);
+
+    const { result } = renderHook(() => useWeeklyProgress('2026-07-27', 1), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.completed).toBe(0);
+    expect(result.current.total).toBe(0);
+  });
+});
+
+describe('useUserStats', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns the stats from the API', async () => {
+    vi.mocked(getUserStats).mockResolvedValue({
+      workouts_this_month: 5,
+      current_streak_days: 3,
+      personal_records: 2,
+      total_volume: 12500,
+      weight_unit: 'kg',
+    });
+
+    const { result } = renderHook(() => useUserStats(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.stats).toEqual({
+      workouts_this_month: 5,
+      current_streak_days: 3,
+      personal_records: 2,
+      total_volume: 12500,
+      weight_unit: 'kg',
+    });
   });
 });

@@ -60,6 +60,15 @@ async def get_sessions_in_range(db: AsyncSession, user_id: int, start: date, end
     return list(result.scalars().all())
 
 
+async def get_completed_sessions_for_program(db: AsyncSession, program_id: int) -> list[WorkoutSession]:
+    result = await db.execute(
+        select(WorkoutSession).where(
+            and_(WorkoutSession.program_id == program_id, WorkoutSession.status == SessionStatus.COMPLETED)
+        )
+    )
+    return list(result.scalars().all())
+
+
 async def get_session(db: AsyncSession, session_id: int, user_id: int) -> WorkoutSession | None:
     result = await db.execute(
         select(WorkoutSession)

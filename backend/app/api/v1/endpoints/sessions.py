@@ -10,8 +10,14 @@ from app.core.constants import DELOAD_LOOKBACK_DAYS
 from app.core.database import get_db
 from app.crud import logging as crud_logging
 from app.crud.exercise import get_exercises_by_ids
-from app.crud.logging import get_readiness_for_sessions, get_set_logs_for_sessions
-from app.crud.session import get_session, get_sessions_in_range, set_session_status
+from app.crud.logging import get_all_set_logs_for_program, get_readiness_for_sessions, get_set_logs_for_sessions
+from app.crud.program import get_active_program
+from app.crud.session import (
+    get_completed_sessions_for_program,
+    get_session,
+    get_sessions_in_range,
+    set_session_status,
+)
 from app.models.logging import UserWorkoutLog, WorkoutSetLog
 from app.models.program import Workout
 from app.models.session import SessionStatus, WorkoutSession
@@ -19,9 +25,10 @@ from app.models.user import User
 from app.schemas.logging import UserWorkoutLogCreate, UserWorkoutLogOut, WorkoutSetLogOut
 from app.schemas.program import WeightUnit
 from app.schemas.program_api import WorkoutPreviewOut
-from app.schemas.session import ScheduleEntryOut, SessionDetailOut, SessionSetLogCreate
+from app.schemas.session import ScheduleEntryOut, SessionDetailOut, SessionSetLogCreate, UserStatsOut
 from app.services.program.loading import load_program_with_definition
 from app.services.program.preview import derive_week
+from app.services.stats import current_streak_days, personal_records, total_volume, workouts_this_month
 
 router = APIRouter(prefix="/users/me", tags=["sessions"])
 
@@ -48,6 +55,34 @@ async def _workout_for(db: AsyncSession, session: WorkoutSession) -> Workout:
 def _duration_for(user: User) -> int:
     # get_user_by_id selectinloads User.profile, so this never lazy-loads.
     return (user.profile.workout_duration_min if user.profile else None) or DEFAULT_DURATION_MIN
+
+
+@router.get("/stats", response_model=UserStatsOut)
+async def get_user_stats(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> UserStatsOut:
+    program = await get_active_program(db, user.id)
+    if program is None:
+        return UserStatsOut(
+            workouts_this_month=0,
+            current_streak_days=0,
+            personal_records=0,
+            total_volume=0.0,
+            weight_unit=WeightUnit.KG,
+        )
+
+    completed_sessions = await get_completed_sessions_for_program(db, program.id)
+    set_logs = await get_all_set_logs_for_program(db, program.id, user.id)
+    today = date.today()
+
+    return UserStatsOut(
+        workouts_this_month=workouts_this_month(completed_sessions, today),
+        current_streak_days=current_streak_days(completed_sessions, today),
+        personal_records=personal_records(set_logs),
+        total_volume=total_volume(set_logs),
+        weight_unit=WeightUnit(program.weight_unit),
+    )
 
 
 @router.get("/schedule", response_model=list[ScheduleEntryOut])
