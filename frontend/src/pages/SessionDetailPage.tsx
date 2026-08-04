@@ -51,36 +51,56 @@ export default function SessionDetailPage() {
   return (
     <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900 py-8 px-4 pb-28">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="secondary"
-            aria-label="Previous day"
-            disabled={prevDisabled}
-            onClick={() => navigate(`/workout/${addDays(currentDate, -1)}`)}
-          >
-            ←
-          </Button>
-          <div className="text-center">
-            <p className="label-sm text-neutral-600 dark:text-neutral-400">
+        <div className="grid grid-cols-3 items-center mb-2">
+          <div className="justify-self-start">
+            {currentDate !== today && (
+              <button
+                type="button"
+                aria-label="Go to today"
+                className="text-xs font-medium px-3 py-1.5 rounded-full border border-primary-600 text-primary-600 hover:bg-primary-50 dark:border-primary-400 dark:text-primary-400 dark:hover:bg-primary-900/30 transition-smooth"
+                onClick={() => navigate(`/workout/${today}`)}
+              >
+                Today
+              </button>
+            )}
+          </div>
+          <div className="justify-self-center flex items-center gap-3">
+            <Button
+              variant="secondary"
+              aria-label="Previous day"
+              disabled={prevDisabled}
+              onClick={() => navigate(`/workout/${addDays(currentDate, -1)}`)}
+            >
+              ←
+            </Button>
+            <p className="label-sm text-neutral-600 dark:text-neutral-400 whitespace-nowrap">
               {dateLabel}
-              {session && ` • Week ${session.week}`}
             </p>
-            {session && (
+            <Button
+              variant="secondary"
+              aria-label="Next day"
+              disabled={nextDisabled}
+              onClick={() => navigate(`/workout/${addDays(currentDate, 1)}`)}
+            >
+              →
+            </Button>
+          </div>
+          <div />
+        </div>
+
+        <div className="mb-6 min-h-[1.75rem] flex items-center justify-center gap-2">
+          {session && (
+            <>
+              <span className="label-sm text-neutral-600 dark:text-neutral-400">
+                Week {session.week}
+              </span>
               <SessionStatusBadge
                 status={session.status}
                 scheduledDate={session.scheduled_date}
                 today={today}
               />
-            )}
-          </div>
-          <Button
-            variant="secondary"
-            aria-label="Next day"
-            disabled={nextDisabled}
-            onClick={() => navigate(`/workout/${addDays(currentDate, 1)}`)}
-          >
-            →
-          </Button>
+            </>
+          )}
         </div>
 
         {isLoading ? (

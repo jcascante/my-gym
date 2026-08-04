@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -12,6 +12,7 @@ let workoutForDate: {
   error: unknown;
 };
 let programData: unknown;
+let paramsDate = '2026-07-27';
 
 vi.mock('@/hooks/useSession', () => ({
   useWorkoutForDate: () => workoutForDate,
@@ -23,7 +24,7 @@ vi.mock('@/hooks/usePrograms', () => ({
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
-  return { ...actual, useNavigate: () => navigateMock, useParams: () => ({ date: '2026-07-27' }) };
+  return { ...actual, useNavigate: () => navigateMock, useParams: () => ({ date: paramsDate }) };
 });
 
 const slot = {
@@ -66,6 +67,11 @@ describe('SessionDetailPage', () => {
   beforeEach(() => {
     navigateMock.mockClear();
     programData = { start_date: '2026-07-01', duration_weeks: 8 };
+    vi.setSystemTime(new Date(2026, 7, 4, 10, 0, 0));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('lists the prescription and offers to start a scheduled session', () => {
@@ -251,5 +257,46 @@ describe('SessionDetailPage', () => {
     );
 
     expect(screen.getByText(/could not be loaded/i)).toBeInTheDocument();
+  });
+
+  it('shows the Today button when viewing a previous date', () => {
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: /go to today/i })).toBeInTheDocument();
+  });
+
+  it('hides the Today button when viewing today', () => {
+    paramsDate = '2026-08-04';
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('button', { name: /go to today/i })).not.toBeInTheDocument();
+
+    paramsDate = '2026-07-27';
+  });
+
+  it('navigates to today when clicking the Today button', async () => {
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /go to today/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith('/workout/2026-08-04');
   });
 });
