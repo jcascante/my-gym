@@ -33,7 +33,8 @@ export function useWorkoutForDate(date: string): WorkoutForDate {
 
   return {
     session: session ?? null,
-    isRestDay: !scheduleLoading && entrySessionId === null,
+    isRestDay:
+      !scheduleLoading && !scheduleError && entries !== undefined && entrySessionId === null,
     isLoading: scheduleLoading || sessionLoading,
     error: scheduleError ?? sessionError ?? null,
   };

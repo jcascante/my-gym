@@ -223,6 +223,19 @@ describe('SessionDetailPage', () => {
     expect(screen.getByRole('button', { name: /next day/i })).toBeDisabled();
   });
 
+  it('keeps the day navigation arrows visible while the workout is loading', () => {
+    workoutForDate = { session: null, isRestDay: false, isLoading: true, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: /previous day/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /next day/i })).toBeInTheDocument();
+  });
+
   it('shows an error state when the workout fails to load', () => {
     workoutForDate = {
       session: null,

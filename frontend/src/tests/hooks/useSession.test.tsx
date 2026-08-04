@@ -60,4 +60,28 @@ describe('useWorkoutForDate', () => {
     expect(result.current.session).toBeNull();
     expect(getSession).not.toHaveBeenCalled();
   });
+
+  it('surfaces a schedule-fetch error without misreporting it as a rest day', async () => {
+    vi.mocked(getSchedule).mockRejectedValue(new Error('network down'));
+
+    const { result } = renderHook(() => useWorkoutForDate('2026-08-07'), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.isRestDay).toBe(false);
+    expect(result.current.session).toBeNull();
+    expect(getSession).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a session-fetch error without misreporting it as a rest day', async () => {
+    vi.mocked(getSchedule).mockResolvedValue([entry]);
+    vi.mocked(getSession).mockRejectedValue(new Error('session fetch failed'));
+
+    const { result } = renderHook(() => useWorkoutForDate('2026-08-05'), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.isRestDay).toBe(false);
+    expect(result.current.session).toBeNull();
+  });
 });

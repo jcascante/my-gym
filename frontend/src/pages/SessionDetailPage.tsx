@@ -15,8 +15,6 @@ export default function SessionDetailPage() {
   const { data: program } = useActiveProgram();
   const { session, isLoading, error } = useWorkoutForDate(currentDate);
 
-  if (isLoading) return <Spinner />;
-
   if (error) {
     return (
       <div className="min-h-dvh flex items-center justify-center px-4">
@@ -85,7 +83,11 @@ export default function SessionDetailPage() {
           </Button>
         </div>
 
-        {!session ? (
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Spinner size="sm" />
+          </div>
+        ) : !session ? (
           <Card padding="lg" className="text-center">
             <p className="body-md text-neutral-600 dark:text-neutral-400">Rest day</p>
           </Card>
