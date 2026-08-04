@@ -66,7 +66,7 @@ export default function App() {
             <Route path="/sessions/:sessionId/track" element={<WorkoutTrackingPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/schedule" element={<SchedulePage />} />
-            <Route path="/sessions/:sessionId" element={<SessionDetailPage />} />
+            <Route path="/workout/:date" element={<SessionDetailPage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </>
         ) : (
