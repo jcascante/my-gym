@@ -24,6 +24,18 @@ export function weekRange(startDate: string, week: number): { start: string; end
   return { start: toIsoDate(start), end: toIsoDate(end) };
 }
 
+export function addDays(dateStr: string, delta: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return toIsoDate(new Date(y, m - 1, d + delta));
+}
+
+export function programDateBounds(
+  startDate: string,
+  durationWeeks: number,
+): { start: string; end: string } {
+  return { start: startDate, end: weekRange(startDate, durationWeeks).end };
+}
+
 export function useSchedule(start: string, end: string) {
   return useQuery({
     queryKey: sessionKeys.schedule(start, end),

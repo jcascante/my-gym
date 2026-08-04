@@ -8,6 +8,8 @@ import {
   useWeeklyProgress,
   useUserStats,
   toIsoDate,
+  addDays,
+  programDateBounds,
 } from '@/hooks/useSchedule';
 import { getSchedule, getUserStats } from '@/api/sessions';
 
@@ -114,5 +116,21 @@ describe('useUserStats', () => {
       total_volume: 12500,
       weight_unit: 'kg',
     });
+  });
+});
+
+describe('addDays', () => {
+  it('adds days forward, including across a month boundary', () => {
+    expect(addDays('2026-07-31', 1)).toBe('2026-08-01');
+  });
+
+  it('subtracts days backward, including across a month boundary', () => {
+    expect(addDays('2026-08-01', -1)).toBe('2026-07-31');
+  });
+});
+
+describe('programDateBounds', () => {
+  it('spans from the start date through the end of the final week', () => {
+    expect(programDateBounds('2026-07-01', 2)).toEqual({ start: '2026-07-01', end: '2026-07-14' });
   });
 });
