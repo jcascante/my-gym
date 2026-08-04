@@ -60,7 +60,7 @@ export default function DashboardPage() {
             <WorkoutCard
               entry={todaySession}
               programName={program.name}
-              onSelect={() => navigate(`/sessions/${todaySession.session_id}`)}
+              onSelect={() => navigate(`/workout/${todaySession.scheduled_date}`)}
             />
           </div>
         ) : (
