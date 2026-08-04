@@ -43,12 +43,12 @@ describe('ScheduleRow', () => {
     expect(screen.getByText('today')).toBeInTheDocument();
   });
 
-  it('calls onSelect with the session id when clicked', async () => {
+  it('calls onSelect with the scheduled date when clicked', async () => {
     const onSelect = vi.fn();
     render(<ScheduleRow entry={entry} today="2026-07-27" onSelect={onSelect} />);
 
     await userEvent.click(screen.getByRole('button'));
 
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelect).toHaveBeenCalledWith('2026-07-27');
   });
 });
