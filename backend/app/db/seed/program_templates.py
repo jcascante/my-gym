@@ -9,6 +9,9 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "days_per_week_max": 3,
         "session_duration_min": 45,
         "session_duration_max": 60,
+        "duration_weeks_default": 8,
+        "duration_weeks_min": 4,
+        "duration_weeks_max": 12,
         "progression_ref": {"model_key": "linear_load", "params": {"increment": 2.5}, "deload_every": 4},
         "required_inputs": [
             {"key": "squat_start", "label": "Comfortable squat weight", "type": "number", "applies_to": "squat"},
@@ -85,6 +88,9 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "days_per_week_max": 3,
         "session_duration_min": 30,
         "session_duration_max": 45,
+        "duration_weeks_default": 8,
+        "duration_weeks_min": 4,
+        "duration_weeks_max": 12,
         "progression_ref": {"model_key": "double_progression", "params": {"increment": 0}},
         "required_inputs": [],
         "split": {
@@ -153,6 +159,9 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "days_per_week_max": 4,
         "session_duration_min": 45,
         "session_duration_max": 75,
+        "duration_weeks_default": 8,
+        "duration_weeks_min": 4,
+        "duration_weeks_max": 12,
         "progression_ref": {"model_key": "double_progression", "params": {"increment": 2.5}, "deload_every": 4},
         "required_inputs": [
             {"key": "squat_start", "label": "Comfortable squat weight", "type": "number", "applies_to": "squat"},
@@ -255,6 +264,9 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "days_per_week_max": 6,
         "session_duration_min": 45,
         "session_duration_max": 75,
+        "duration_weeks_default": 12,
+        "duration_weeks_min": 6,
+        "duration_weeks_max": 18,
         "progression_ref": {"model_key": "double_progression", "params": {"increment": 2.5}, "deload_every": 6},
         "required_inputs": [
             {"key": "squat_start", "label": "Comfortable squat weight", "type": "number", "applies_to": "squat"},
@@ -380,6 +392,9 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "days_per_week_max": 2,
         "session_duration_min": 30,
         "session_duration_max": 45,
+        "duration_weeks_default": 8,
+        "duration_weeks_min": 4,
+        "duration_weeks_max": 12,
         "progression_ref": {"model_key": "double_progression", "params": {"increment": 0}},
         "required_inputs": [],
         "split": {
@@ -437,6 +452,9 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "days_per_week_max": 3,
         "session_duration_min": 30,
         "session_duration_max": 45,
+        "duration_weeks_default": 8,
+        "duration_weeks_min": 4,
+        "duration_weeks_max": 12,
         "progression_ref": {"model_key": "double_progression", "params": {"increment": 0}},
         "required_inputs": [],
         "split": {
@@ -505,6 +523,9 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "days_per_week_max": 3,
         "session_duration_min": 45,
         "session_duration_max": 60,
+        "duration_weeks_default": 8,
+        "duration_weeks_min": 4,
+        "duration_weeks_max": 12,
         "progression_ref": {
             "model_key": "weekly_undulating",
             "params": {
@@ -592,6 +613,9 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "days_per_week_max": 4,
         "session_duration_min": 60,
         "session_duration_max": 90,
+        "duration_weeks_default": 8,
+        "duration_weeks_min": 4,
+        "duration_weeks_max": 12,
         "progression_ref": {"model_key": "linear_load", "params": {"increment": 5.0}, "deload_every": 4},
         "required_inputs": [
             {"key": "squat_start", "label": "Comfortable squat weight", "type": "number", "applies_to": "squat"},
@@ -694,6 +718,9 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "days_per_week_max": 5,
         "session_duration_min": 60,
         "session_duration_max": 90,
+        "duration_weeks_default": 10,
+        "duration_weeks_min": 5,
+        "duration_weeks_max": 15,
         "progression_ref": {"model_key": "double_progression", "params": {"increment": 2.5}, "deload_every": 5},
         "required_inputs": [
             {"key": "squat_start", "label": "Comfortable squat weight", "type": "number", "applies_to": "squat"},
@@ -807,6 +834,9 @@ PROGRAM_TEMPLATE_SEED: list[dict[str, object]] = [
         "days_per_week_max": 4,
         "session_duration_min": 60,
         "session_duration_max": 90,
+        "duration_weeks_default": 12,
+        "duration_weeks_min": 8,
+        "duration_weeks_max": 16,
         "progression_ref": {"model_key": "linear_load", "params": {"increment": 5.0}, "deload_every": 4},
         "required_inputs": [
             {"key": "squat_start", "label": "Comfortable squat weight", "type": "number", "applies_to": "squat"},
