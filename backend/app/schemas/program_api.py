@@ -12,7 +12,7 @@ class MatchRequest(BaseModel):
     session_duration_min: int
     fitness_focus: str
     weight_unit: str = "kg"
-    duration_weeks: int = 8
+    duration_weeks: int
     progression_style: ProgressionStyle = ProgressionStyle.CONSISTENT
     movement_preferences: dict[str, float] = {}
     complementary_focus: bool = True

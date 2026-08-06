@@ -5,7 +5,13 @@ from app.schemas.program_api import Advisory, DraftRequest, MatchRequest, Progra
 
 
 def _base_kwargs():
-    return dict(environment_id=1, days_per_week=3, session_duration_min=60, fitness_focus="strength")
+    return dict(
+        environment_id=1,
+        days_per_week=3,
+        session_duration_min=60,
+        fitness_focus="strength",
+        duration_weeks=8,
+    )
 
 
 def test_match_request_defaults():
@@ -18,6 +24,11 @@ def test_match_request_defaults():
         duration_weeks=8,
     )
     assert r.duration_weeks == 8
+
+
+def test_match_request_requires_duration_weeks():
+    with pytest.raises(ValidationError):
+        MatchRequest(environment_id=1, days_per_week=3, session_duration_min=60, fitness_focus="strength")
 
 
 def test_draft_request_carries_required_inputs():

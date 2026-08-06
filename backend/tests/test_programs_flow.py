@@ -276,6 +276,7 @@ async def test_match_returns_new_factor_keys(
             "days_per_week": 3,
             "session_duration_min": 60,
             "fitness_focus": "strength",
+            "duration_weeks": 8,
             "movement_preferences": {"kettlebell": 1.5},
             "complementary_focus": True,
         },
