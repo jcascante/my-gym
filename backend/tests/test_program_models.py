@@ -121,3 +121,28 @@ async def test_workout_exercise_rotation_pool_defaults_to_empty_list(db_session:
     await db_session.refresh(slot)
 
     assert slot.rotation_pool == []
+
+
+@pytest.mark.asyncio
+async def test_program_template_duration_fields_default_when_omitted(db_session: AsyncSession):
+    template = ProgramTemplate(
+        name="Duration Default Test",
+        slug="duration-default-test",
+        description="",
+        goals=["general"],
+        experience_levels=["beginner"],
+        days_per_week_min=3,
+        days_per_week_max=3,
+        session_duration_min=45,
+        session_duration_max=60,
+        split={"sessions": []},
+        progression_ref={"model_key": "linear_load", "params": {}},
+        required_inputs=[],
+    )
+    db_session.add(template)
+    await db_session.commit()
+    await db_session.refresh(template)
+
+    assert template.duration_weeks_default == 8
+    assert template.duration_weeks_min == 4
+    assert template.duration_weeks_max == 12
