@@ -679,6 +679,12 @@ def test_template_match_out_round_trips_advisories_field():
         advisories=[Advisory(code="FREQUENCY_STRUCTURALLY_LIMITED", severity="info", subject="chest", message="x")],
     )
     assert dataclasses.is_dataclass(match)
-    out = TemplateMatchOut(**match.__dict__, required_inputs=[])
+    out = TemplateMatchOut(
+        **match.__dict__,
+        required_inputs=[],
+        duration_weeks_default=8,
+        duration_weeks_min=4,
+        duration_weeks_max=12,
+    )
     assert out.advisories == match.advisories
     assert out.advisories[0].code == "FREQUENCY_STRUCTURALLY_LIMITED"

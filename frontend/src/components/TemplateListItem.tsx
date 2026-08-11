@@ -1,14 +1,11 @@
 import { Card } from '@/components';
 import type { Template } from '@/types/template';
+import { formatDurationWeeks } from '@/utils/duration';
 
 interface TemplateListItemProps {
   template: Template;
   isExpanded: boolean;
   onToggle: () => void;
-}
-
-function formatDurationWeeks(min: number, max: number): string {
-  return min === max ? `${min} weeks` : `${min}-${max} weeks`;
 }
 
 export default function TemplateListItem({

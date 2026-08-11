@@ -19,6 +19,9 @@ function createMockMatch(id: number, name: string): TemplateMatch {
     factors: { rest_quality: 0.8, equipment_access: 0.9 },
     required_inputs: [],
     tier: 'best',
+    duration_weeks_default: 8,
+    duration_weeks_min: 4,
+    duration_weeks_max: 12,
     all_infeasible: false,
     advisories: [],
   };

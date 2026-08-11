@@ -55,6 +55,9 @@ class TemplateMatchOut(BaseModel):
     factors: dict[str, float]
     tier: Literal["best", "strong", "possible"]
     required_inputs: list[dict[str, object]]
+    duration_weeks_default: int
+    duration_weeks_min: int
+    duration_weeks_max: int
     # True only when returned via the all-infeasible best-effort fallback.
     # Phase 2 (plan §2.5) will fold this into the general Advisory list rather
     # than keep it as a standalone boolean.

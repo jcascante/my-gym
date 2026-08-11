@@ -15,6 +15,9 @@ const matches = [
     factors: { goal: 1 },
     required_inputs: [],
     tier: 'best' as const,
+    duration_weeks_default: 8,
+    duration_weeks_min: 4,
+    duration_weeks_max: 12,
     all_infeasible: false,
     advisories: [],
   },
@@ -26,6 +29,9 @@ const matches = [
     factors: { goal: 1 },
     required_inputs: [],
     tier: 'strong' as const,
+    duration_weeks_default: 8,
+    duration_weeks_min: 4,
+    duration_weeks_max: 12,
     all_infeasible: false,
     advisories: [],
   },
@@ -40,6 +46,9 @@ const matchesInfeasible = [
     factors: { goal: 0.6 },
     required_inputs: [],
     tier: 'possible' as const,
+    duration_weeks_default: 8,
+    duration_weeks_min: 4,
+    duration_weeks_max: 12,
     all_infeasible: true,
     advisories: [],
   },
@@ -69,6 +78,21 @@ describe('TemplateMatchList', () => {
     const onSelect = vi.fn();
     render(<TemplateMatchList matches={matches} selectedId={null} onSelect={onSelect} />);
     expect(screen.getByText(/Fit: 92%/)).toBeInTheDocument();
+  });
+
+  it('renders the duration range for each match', () => {
+    const onSelect = vi.fn();
+    render(<TemplateMatchList matches={matches} selectedId={null} onSelect={onSelect} />);
+    expect(screen.getAllByText(/Duration: 4-12 weeks/)).toHaveLength(2);
+  });
+
+  it('collapses the duration display when min equals max', () => {
+    const onSelect = vi.fn();
+    const fixedDurationMatch = [{ ...matches[0], duration_weeks_min: 8, duration_weeks_max: 8 }];
+    render(
+      <TemplateMatchList matches={fixedDurationMatch} selectedId={null} onSelect={onSelect} />,
+    );
+    expect(screen.getByText(/Duration: 8 weeks/)).toBeInTheDocument();
   });
 
   it('selects on click', () => {
@@ -111,6 +135,9 @@ describe('TemplateMatchList', () => {
         factors: { goal: 1 },
         required_inputs: [],
         tier: 'best' as const,
+        duration_weeks_default: 8,
+        duration_weeks_min: 4,
+        duration_weeks_max: 12,
         all_infeasible: false,
         advisories: [
           {
@@ -359,6 +386,9 @@ describe('TemplateMatchList', () => {
           factors: { goal: 1 },
           required_inputs: [],
           tier: 'strong' as const,
+          duration_weeks_default: 8,
+          duration_weeks_min: 4,
+          duration_weeks_max: 12,
           all_infeasible: false,
           advisories: [],
         },

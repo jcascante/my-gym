@@ -1,6 +1,7 @@
 import { Card } from './Card';
 import { Alert } from './Alert';
 import type { TemplateMatch } from '@/types/program';
+import { formatDurationWeeks } from '@/utils/duration';
 
 const TIER_LABELS: Record<TemplateMatch['tier'], string> = {
   best: 'Best match',
@@ -43,6 +44,9 @@ export function TemplateMatchCard({
           ))}
           <li className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
             Fit: {match.fit_pct}%
+          </li>
+          <li className="text-xs text-neutral-500 dark:text-neutral-400">
+            Duration: {formatDurationWeeks(match.duration_weeks_min, match.duration_weeks_max)}
           </li>
         </ul>
         {match.advisories.map((advisory, i) => (

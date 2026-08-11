@@ -165,6 +165,7 @@ async def match(
     if environment is None:
         raise TrainingEnvironmentNotFoundError()
     templates = await list_active_templates(db)
+    templates_by_id = {t.id: t for t in templates}
     exercises = await list_exercises(db)
     feasibility = {}
     definitions = {}
@@ -219,6 +220,9 @@ async def match(
             TemplateMatchOut(
                 **m.__dict__,
                 required_inputs=[r.model_dump() for r in definitions[m.template_id].required_inputs],
+                duration_weeks_default=templates_by_id[m.template_id].duration_weeks_default,
+                duration_weeks_min=templates_by_id[m.template_id].duration_weeks_min,
+                duration_weeks_max=templates_by_id[m.template_id].duration_weeks_max,
             )
             for m in paginated
         ],
