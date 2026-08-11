@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import ProgramBuilderPage from '@/pages/ProgramBuilderPage';
 import * as programsApi from '@/api/programs';
 import * as trainingEnvironmentsApi from '@/api/trainingEnvironments';
@@ -226,6 +227,9 @@ describe('ProgramBuilderPage', () => {
             factors: {},
             required_inputs: [],
             tier: 'best',
+            duration_weeks_default: 8,
+            duration_weeks_min: 4,
+            duration_weeks_max: 12,
             all_infeasible: false,
             advisories: [],
           },
@@ -271,6 +275,9 @@ describe('ProgramBuilderPage', () => {
               },
             ],
             tier: 'best',
+            duration_weeks_default: 8,
+            duration_weeks_min: 4,
+            duration_weeks_max: 12,
             all_infeasible: false,
             advisories: [],
           },
@@ -311,6 +318,9 @@ describe('ProgramBuilderPage', () => {
             factors: {},
             required_inputs: [],
             tier: 'best',
+            duration_weeks_default: 8,
+            duration_weeks_min: 4,
+            duration_weeks_max: 12,
             all_infeasible: false,
             advisories: [],
           },
@@ -337,6 +347,64 @@ describe('ProgramBuilderPage', () => {
           expect.objectContaining({ start_date: '2026-08-01' }),
         );
       });
+    });
+  });
+
+  describe('draft creation error handling', () => {
+    beforeEach(() => {
+      vi.mocked(useAuthStore).mockReturnValue({
+        user: { id: 1, email: 'test@example.com', first_name: 'John', last_name: 'Doe' },
+        userProfile: { id: 1, fitness_focus: 'strength', age: 30, gender: 'male' },
+        isAuthenticated: true,
+        isLoading: false,
+        setAuth: vi.fn(),
+        setUserProfile: vi.fn(),
+        clearAuth: vi.fn(),
+        setLoading: vi.fn(),
+      });
+    });
+
+    it('shows the /draft error and stays on the Select step instead of advancing', async () => {
+      vi.mocked(programsApi.matchTemplates).mockResolvedValue(
+        mockTemplateMatchResponse([
+          {
+            template_id: 1,
+            slug: 'bodyweight-full-body-x3',
+            name: 'Bodyweight Full Body',
+            fit_pct: 80,
+            factors: {},
+            required_inputs: [],
+            tier: 'best',
+            duration_weeks_default: 8,
+            duration_weeks_min: 4,
+            duration_weeks_max: 12,
+            all_infeasible: false,
+            advisories: [],
+          },
+        ]),
+      );
+      const axiosError = new AxiosError('Request failed with status code 422');
+      axiosError.response = {
+        status: 422,
+        data: { detail: 'duration_weeks must be between 4 and 12 for this template' },
+      } as AxiosError['response'];
+      vi.mocked(programsApi.createDraft).mockRejectedValue(axiosError);
+
+      render(wrap(<ProgramBuilderPage />));
+      fireEvent.click(screen.getByText('Submit prefs'));
+
+      await waitFor(() => expect(screen.getByText('Bodyweight Full Body')).toBeInTheDocument());
+      fireEvent.click(screen.getByText('Bodyweight Full Body'));
+
+      await waitFor(() =>
+        expect(
+          screen.getByText('duration_weeks must be between 4 and 12 for this template'),
+        ).toBeInTheDocument(),
+      );
+
+      // Step did not advance to the draft view (step 3)
+      expect(screen.queryByText('Accept program')).not.toBeInTheDocument();
+      expect(screen.getByText('Bodyweight Full Body')).toBeInTheDocument();
     });
   });
 
@@ -443,6 +511,9 @@ describe('ProgramBuilderPage', () => {
         factors: {},
         required_inputs: [],
         tier: 'best' as const,
+        duration_weeks_default: 8,
+        duration_weeks_min: 4,
+        duration_weeks_max: 12,
         all_infeasible: false,
         advisories: [],
       });
@@ -524,6 +595,9 @@ describe('ProgramBuilderPage', () => {
         factors: {},
         required_inputs: [],
         tier: 'best' as const,
+        duration_weeks_default: 8,
+        duration_weeks_min: 4,
+        duration_weeks_max: 12,
         all_infeasible: false,
         advisories: [],
       });
@@ -571,6 +645,9 @@ describe('ProgramBuilderPage', () => {
         factors: {},
         required_inputs,
         tier: 'best' as const,
+        duration_weeks_default: 8,
+        duration_weeks_min: 4,
+        duration_weeks_max: 12,
         all_infeasible: false,
         advisories: [],
       });
@@ -634,6 +711,9 @@ describe('ProgramBuilderPage', () => {
         factors: {},
         required_inputs: [],
         tier: 'best' as const,
+        duration_weeks_default: 8,
+        duration_weeks_min: 4,
+        duration_weeks_max: 12,
         all_infeasible: false,
         advisories: [],
       });
@@ -678,6 +758,9 @@ describe('ProgramBuilderPage', () => {
         factors: {},
         required_inputs: [],
         tier: 'best' as const,
+        duration_weeks_default: 8,
+        duration_weeks_min: 4,
+        duration_weeks_max: 12,
         all_infeasible: false,
         advisories: [],
       });
@@ -808,6 +891,9 @@ describe('ProgramBuilderPage', () => {
         factors: {},
         required_inputs: [],
         tier: 'best' as const,
+        duration_weeks_default: 8,
+        duration_weeks_min: 4,
+        duration_weeks_max: 12,
         all_infeasible: false,
         advisories: [],
       });

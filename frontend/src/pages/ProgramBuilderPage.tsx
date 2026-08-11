@@ -13,6 +13,7 @@ import {
 import { useAcceptProgram, useCreateDraft, useInfiniteTemplateMatches } from '@/hooks/usePrograms';
 import { useTrainingEnvironments } from '@/hooks/useTrainingEnvironments';
 import { useAuthStore } from '@/store/auth';
+import { getErrorMessage } from '@/api/errors';
 import type {
   MatchRequest as ApiMatchRequest,
   ProgramPreview,
@@ -45,6 +46,7 @@ export default function ProgramBuilderPage() {
   const [requiredInputValues, setRequiredInputValues] = useState<Record<string, number | string>>(
     {},
   );
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   const emptyRequest = useMemo(() => ({}) as ApiMatchRequest, []);
   const infiniteMatches = useInfiniteTemplateMatches(apiPrefs || emptyRequest);
@@ -78,16 +80,21 @@ export default function ProgramBuilderPage() {
   const makeDraft = async (m: TemplateMatch, requiredInputs: Record<string, number | string>) => {
     if (!apiPrefs || !formPrefs) return;
     setRequiredInputValues(requiredInputs);
-    const program = await createDraft.mutateAsync({
-      ...apiPrefs,
-      template_id: m.template_id,
-      required_inputs: requiredInputs,
-      progression_style: formPrefs.progression_style,
-      effort_method: formPrefs.effort_method || null,
-      start_date: formPrefs.start_date,
-    });
-    setDraft(program);
-    setStep(3);
+    setDraftError(null);
+    try {
+      const program = await createDraft.mutateAsync({
+        ...apiPrefs,
+        template_id: m.template_id,
+        required_inputs: requiredInputs,
+        progression_style: formPrefs.progression_style,
+        effort_method: formPrefs.effort_method || null,
+        start_date: formPrefs.start_date,
+      });
+      setDraft(program);
+      setStep(3);
+    } catch (err) {
+      setDraftError(getErrorMessage(err));
+    }
   };
 
   const onAccept = async () => {
@@ -142,6 +149,11 @@ export default function ProgramBuilderPage() {
       )}
       {step === 1 && (
         <div>
+          {draftError && (
+            <Alert type="error" dismissible onDismiss={() => setDraftError(null)} className="mb-4">
+              {draftError}
+            </Alert>
+          )}
           <TemplateMatchList
             matches={infiniteMatches.matches}
             selectedId={chosen?.template_id ?? null}
@@ -159,6 +171,11 @@ export default function ProgramBuilderPage() {
       )}
       {step === 2 && chosen && (
         <div>
+          {draftError && (
+            <Alert type="error" dismissible onDismiss={() => setDraftError(null)} className="mb-4">
+              {draftError}
+            </Alert>
+          )}
           <RequiredInputsForm
             inputs={chosen.required_inputs}
             onSubmit={(v) => makeDraft(chosen, v)}
