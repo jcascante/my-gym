@@ -34,6 +34,9 @@ export function ProgramCreationForm({
   const [sessionDurationMin, setSessionDurationMin] = useState(
     initialValues?.session_duration_min.toString() ?? '60',
   );
+  const [durationWeeks, setDurationWeeks] = useState(
+    initialValues?.duration_weeks.toString() ?? '8',
+  );
   const [weightUnit, setWeightUnit] = useState<WeightUnit>(initialValues?.weight_unit ?? 'kg');
   const [progressionStyle, setProgressionStyle] = useState<ProgressionStyle>(
     initialValues?.progression_style ?? 'consistent',
@@ -62,6 +65,7 @@ export function ProgramCreationForm({
     if (initialValues) {
       setDaysPerWeek(initialValues.days_per_week.toString());
       setSessionDurationMin(initialValues.session_duration_min.toString());
+      setDurationWeeks(initialValues.duration_weeks.toString());
       setWeightUnit(initialValues.weight_unit);
       setProgressionStyle(initialValues.progression_style);
       setEffortMethod(initialValues.effort_method);
@@ -83,6 +87,7 @@ export function ProgramCreationForm({
       environment_id: environmentId,
       days_per_week: parseInt(daysPerWeek, 10),
       session_duration_min: parseInt(sessionDurationMin, 10),
+      duration_weeks: parseInt(durationWeeks, 10),
       start_date: new Date().toISOString().slice(0, 10),
       weight_unit: weightUnit,
       progression_style: progressionStyle,

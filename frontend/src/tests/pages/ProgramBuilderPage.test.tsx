@@ -31,6 +31,7 @@ vi.mock('@/components/ProgramWizard', () => ({
           environment_id: environmentId,
           days_per_week: 3,
           session_duration_min: 60,
+          duration_weeks: 8,
           weight_unit: 'kg',
           progression_style: 'consistent',
           effort_method: '',
