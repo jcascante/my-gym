@@ -176,8 +176,8 @@ export function ProgramWizardStep1({
           name="duration_weeks"
           value={durationWeeks}
           onChange={(e) => setDurationWeeks(e.target.value)}
-          min="1"
-          max="52"
+          min="4"
+          max="18"
           step="1"
           required
         />
