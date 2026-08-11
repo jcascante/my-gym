@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Enum,
@@ -51,6 +52,13 @@ class ProgramTemplate(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "duration_weeks_min <= duration_weeks_default AND duration_weeks_default <= duration_weeks_max",
+            name="ck_program_templates_duration_weeks_range",
+        ),
+    )
 
 
 class WorkoutProgram(Base):
