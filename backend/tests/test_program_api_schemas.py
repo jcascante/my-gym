@@ -14,7 +14,7 @@ def _base_kwargs():
     )
 
 
-def test_match_request_defaults():
+def test_match_request_accepts_duration_weeks():
     r = MatchRequest(
         environment_id=1,
         days_per_week=4,
