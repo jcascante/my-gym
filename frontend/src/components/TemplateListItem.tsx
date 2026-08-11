@@ -7,6 +7,10 @@ interface TemplateListItemProps {
   onToggle: () => void;
 }
 
+function formatDurationWeeks(min: number, max: number): string {
+  return min === max ? `${min} weeks` : `${min}-${max} weeks`;
+}
+
 export default function TemplateListItem({
   template,
   isExpanded,
@@ -38,7 +42,8 @@ export default function TemplateListItem({
             <p className="body-sm text-neutral-600 dark:text-neutral-400">
               {template.experience_levels.join(', ')} • {template.goals.join(', ')} •{' '}
               {template.days_per_week_min}-{template.days_per_week_max} days/week •{' '}
-              {template.session_duration_min}-{template.session_duration_max} min
+              {template.session_duration_min}-{template.session_duration_max} min •{' '}
+              {formatDurationWeeks(template.duration_weeks_min, template.duration_weeks_max)}
             </p>
           </div>
         </div>
@@ -78,6 +83,12 @@ export default function TemplateListItem({
                 <p className="label-sm text-neutral-600 dark:text-neutral-400">Session Duration</p>
                 <p className="body-sm font-medium text-neutral-900 dark:text-neutral-50">
                   {template.session_duration_min}-{template.session_duration_max} min
+                </p>
+              </div>
+              <div>
+                <p className="label-sm text-neutral-600 dark:text-neutral-400">Duration</p>
+                <p className="body-sm font-medium text-neutral-900 dark:text-neutral-50">
+                  {formatDurationWeeks(template.duration_weeks_min, template.duration_weeks_max)}
                 </p>
               </div>
             </div>
