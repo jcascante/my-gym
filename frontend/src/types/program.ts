@@ -30,6 +30,9 @@ export interface TemplateMatch {
   tier: 'best' | 'strong' | 'possible';
   all_infeasible: boolean;
   advisories: Advisory[];
+  duration_weeks_default: number;
+  duration_weeks_min: number;
+  duration_weeks_max: number;
 }
 
 export interface TemplateMatchResponse {

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Enum,
@@ -42,12 +43,22 @@ class ProgramTemplate(Base):
     days_per_week_max: Mapped[int] = mapped_column(Integer, nullable=False)
     session_duration_min: Mapped[int] = mapped_column(Integer, nullable=False)
     session_duration_max: Mapped[int] = mapped_column(Integer, nullable=False)
+    duration_weeks_default: Mapped[int] = mapped_column(Integer, nullable=False, default=8)
+    duration_weeks_min: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
+    duration_weeks_max: Mapped[int] = mapped_column(Integer, nullable=False, default=12)
     split: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     progression_ref: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     required_inputs: Mapped[list[Any]] = mapped_column(JSON, nullable=False, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "duration_weeks_min <= duration_weeks_default AND duration_weeks_default <= duration_weeks_max",
+            name="ck_program_templates_duration_weeks_range",
+        ),
+    )
 
 
 class WorkoutProgram(Base):

@@ -90,7 +90,7 @@ export default function SchedulePage() {
                   key={entry.session_id}
                   entry={entry}
                   today={today}
-                  onSelect={(id) => navigate(`/sessions/${id}`)}
+                  onSelect={(date) => navigate(`/workout/${date}`)}
                 />
               ))}
             </div>

@@ -9,6 +9,7 @@ from app.core import (
     ProgramNotFoundError,
     ProgramTemplateNotFoundError,
     TrainingEnvironmentNotFoundError,
+    ValidationError,
     WorkoutExerciseNotFoundError,
 )
 from app.core.constants import DELOAD_LOOKBACK_DAYS
@@ -164,6 +165,7 @@ async def match(
     if environment is None:
         raise TrainingEnvironmentNotFoundError()
     templates = await list_active_templates(db)
+    templates_by_id = {t.id: t for t in templates}
     exercises = await list_exercises(db)
     feasibility = {}
     definitions = {}
@@ -218,6 +220,9 @@ async def match(
             TemplateMatchOut(
                 **m.__dict__,
                 required_inputs=[r.model_dump() for r in definitions[m.template_id].required_inputs],
+                duration_weeks_default=templates_by_id[m.template_id].duration_weeks_default,
+                duration_weeks_min=templates_by_id[m.template_id].duration_weeks_min,
+                duration_weeks_max=templates_by_id[m.template_id].duration_weeks_max,
             )
             for m in paginated
         ],
@@ -240,6 +245,11 @@ async def draft(
     template = await get_template(db, data.template_id)
     if template is None or not template.is_active:
         raise ProgramTemplateNotFoundError()
+    if not (template.duration_weeks_min <= data.duration_weeks <= template.duration_weeks_max):
+        raise ValidationError(
+            f"duration_weeks must be between {template.duration_weeks_min} and "
+            f"{template.duration_weeks_max} for this template"
+        )
     definition = TemplateDefinition.from_orm_template(template)
     ctx = await _ctx_for(
         db,

@@ -76,7 +76,7 @@ describe('DashboardPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /Upper Body B/i }));
 
-    expect(navigateMock).toHaveBeenCalledWith('/sessions/9');
+    expect(navigateMock).toHaveBeenCalledWith('/workout/2026-07-27');
   });
 
   it('falls back to a schedule link when nothing is scheduled today', async () => {

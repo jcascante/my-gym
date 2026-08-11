@@ -4,7 +4,7 @@ import { SessionStatusBadge } from '@/components/SessionStatusBadge';
 export interface ScheduleRowProps {
   entry: ScheduleEntry;
   today: string;
-  onSelect: (sessionId: number) => void;
+  onSelect: (scheduledDate: string) => void;
 }
 
 export function ScheduleRow({ entry, today, onSelect }: ScheduleRowProps) {
@@ -17,7 +17,7 @@ export function ScheduleRow({ entry, today, onSelect }: ScheduleRowProps) {
   return (
     <button
       type="button"
-      onClick={() => onSelect(entry.session_id)}
+      onClick={() => onSelect(entry.scheduled_date)}
       className="w-full flex items-center justify-between gap-4 px-4 py-3 text-left rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-smooth focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
     >
       <span className="flex items-baseline gap-4 min-w-0">

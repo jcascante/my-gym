@@ -82,7 +82,7 @@ describe('SchedulePage', () => {
     expect(screen.getByRole('button', { name: /previous week/i })).toBeDisabled();
   });
 
-  it('navigates to the session detail on select', async () => {
+  it('navigates to the workout preview on select', async () => {
     render(
       <MemoryRouter>
         <SchedulePage />
@@ -91,7 +91,7 @@ describe('SchedulePage', () => {
 
     await userEvent.click(screen.getByText('Upper Body A'));
 
-    expect(navigateMock).toHaveBeenCalledWith('/sessions/9');
+    expect(navigateMock).toHaveBeenCalledWith('/workout/2026-07-27');
   });
 
   it('explains an empty week for a program with no sessions', () => {

@@ -13,6 +13,9 @@ const mockTemplate: Template = {
   days_per_week_max: 3,
   session_duration_min: 45,
   session_duration_max: 60,
+  duration_weeks_default: 8,
+  duration_weeks_min: 4,
+  duration_weeks_max: 12,
   split: {
     sessions: [
       {
@@ -106,5 +109,33 @@ describe('TemplateListItem', () => {
     render(<TemplateListItem template={mockTemplate} isExpanded={true} onToggle={() => {}} />);
 
     expect(screen.getByText('Comfortable squat weight')).toBeInTheDocument();
+  });
+
+  it('should show the duration range in the compact summary when min and max differ', () => {
+    render(<TemplateListItem template={mockTemplate} isExpanded={false} onToggle={() => {}} />);
+
+    expect(screen.getByText(/4-12 weeks/i)).toBeInTheDocument();
+  });
+
+  it('should collapse the duration range to a single number when min equals max', () => {
+    const fixedDurationTemplate = {
+      ...mockTemplate,
+      duration_weeks_default: 8,
+      duration_weeks_min: 8,
+      duration_weeks_max: 8,
+    };
+    render(
+      <TemplateListItem template={fixedDurationTemplate} isExpanded={false} onToggle={() => {}} />,
+    );
+
+    expect(screen.getByText(/\b8 weeks\b/i)).toBeInTheDocument();
+    expect(screen.queryByText(/8-8 weeks/i)).not.toBeInTheDocument();
+  });
+
+  it('should show the duration range in the expanded Configuration section', () => {
+    render(<TemplateListItem template={mockTemplate} isExpanded={true} onToggle={() => {}} />);
+
+    expect(screen.getByText('Duration')).toBeInTheDocument();
+    expect(screen.getByText('4-12 weeks')).toBeInTheDocument();
   });
 });

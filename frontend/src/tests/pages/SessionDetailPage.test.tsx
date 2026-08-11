@@ -1,19 +1,30 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import SessionDetailPage from '@/pages/SessionDetailPage';
 
 const navigateMock = vi.fn();
-let sessionData: unknown;
+let workoutForDate: {
+  session: unknown;
+  isRestDay: boolean;
+  isLoading: boolean;
+  error: unknown;
+};
+let programData: unknown;
+let paramsDate = '2026-07-27';
 
 vi.mock('@/hooks/useSession', () => ({
-  useSession: () => ({ data: sessionData, isLoading: false, error: null }),
+  useWorkoutForDate: () => workoutForDate,
+}));
+
+vi.mock('@/hooks/usePrograms', () => ({
+  useActiveProgram: () => ({ data: programData, isLoading: false }),
 }));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
-  return { ...actual, useNavigate: () => navigateMock, useParams: () => ({ sessionId: '9' }) };
+  return { ...actual, useNavigate: () => navigateMock, useParams: () => ({ date: paramsDate }) };
 });
 
 const slot = {
@@ -53,10 +64,23 @@ const base = {
 };
 
 describe('SessionDetailPage', () => {
-  beforeEach(() => navigateMock.mockClear());
+  beforeEach(() => {
+    navigateMock.mockClear();
+    programData = { start_date: '2026-07-01', duration_weeks: 8 };
+    vi.setSystemTime(new Date(2026, 7, 4, 10, 0, 0));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('lists the prescription and offers to start a scheduled session', () => {
-    sessionData = { ...base, status: 'scheduled' };
+    workoutForDate = {
+      session: { ...base, status: 'scheduled' },
+      isRestDay: false,
+      isLoading: false,
+      error: null,
+    };
 
     render(
       <MemoryRouter>
@@ -71,7 +95,12 @@ describe('SessionDetailPage', () => {
   });
 
   it('navigates to the tracker when starting', async () => {
-    sessionData = { ...base, status: 'scheduled' };
+    workoutForDate = {
+      session: { ...base, status: 'scheduled' },
+      isRestDay: false,
+      isLoading: false,
+      error: null,
+    };
 
     render(
       <MemoryRouter>
@@ -85,20 +114,25 @@ describe('SessionDetailPage', () => {
   });
 
   it('shows logged results and no start action for a completed session', () => {
-    sessionData = {
-      ...base,
-      status: 'completed',
-      logged_sets: [
-        {
-          id: 1,
-          workout_exercise_id: 3,
-          set_number: 1,
-          actual_weight: 80,
-          actual_reps: 8,
-          actual_rpe: 8,
-          effort_method: 'rpe',
-        },
-      ],
+    workoutForDate = {
+      session: {
+        ...base,
+        status: 'completed',
+        logged_sets: [
+          {
+            id: 1,
+            workout_exercise_id: 3,
+            set_number: 1,
+            actual_weight: 80,
+            actual_reps: 8,
+            actual_rpe: 8,
+            effort_method: 'rpe',
+          },
+        ],
+      },
+      isRestDay: false,
+      isLoading: false,
+      error: null,
     };
 
     render(
@@ -112,7 +146,12 @@ describe('SessionDetailPage', () => {
   });
 
   it('offers to start a future session early', () => {
-    sessionData = { ...base, status: 'scheduled', scheduled_date: '2099-01-01' };
+    workoutForDate = {
+      session: { ...base, status: 'scheduled', scheduled_date: '2099-01-01' },
+      isRestDay: false,
+      isLoading: false,
+      error: null,
+    };
 
     render(
       <MemoryRouter>
@@ -121,5 +160,143 @@ describe('SessionDetailPage', () => {
     );
 
     expect(screen.getByRole('button', { name: /start early/i })).toBeInTheDocument();
+  });
+
+  it('shows a rest day placeholder when nothing is scheduled', () => {
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/rest day/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /start workout/i })).not.toBeInTheDocument();
+  });
+
+  it('navigates to the previous day', async () => {
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /previous day/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith('/workout/2026-07-26');
+  });
+
+  it('navigates to the next day', async () => {
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /next day/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith('/workout/2026-07-28');
+  });
+
+  it('disables the previous-day arrow at the start of the program', () => {
+    programData = { start_date: '2026-07-27', duration_weeks: 8 };
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: /previous day/i })).toBeDisabled();
+  });
+
+  it('disables the next-day arrow at the end of the program', () => {
+    programData = { start_date: '2026-07-21', duration_weeks: 1 };
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: /next day/i })).toBeDisabled();
+  });
+
+  it('keeps the day navigation arrows visible while the workout is loading', () => {
+    workoutForDate = { session: null, isRestDay: false, isLoading: true, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: /previous day/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /next day/i })).toBeInTheDocument();
+  });
+
+  it('shows an error state when the workout fails to load', () => {
+    workoutForDate = {
+      session: null,
+      isRestDay: false,
+      isLoading: false,
+      error: new Error('boom'),
+    };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/could not be loaded/i)).toBeInTheDocument();
+  });
+
+  it('shows the Today button when viewing a previous date', () => {
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: /go to today/i })).toBeInTheDocument();
+  });
+
+  it('hides the Today button when viewing today', () => {
+    paramsDate = '2026-08-04';
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('button', { name: /go to today/i })).not.toBeInTheDocument();
+
+    paramsDate = '2026-07-27';
+  });
+
+  it('navigates to today when clicking the Today button', async () => {
+    workoutForDate = { session: null, isRestDay: true, isLoading: false, error: null };
+
+    render(
+      <MemoryRouter>
+        <SessionDetailPage />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /go to today/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith('/workout/2026-08-04');
   });
 });

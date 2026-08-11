@@ -17,6 +17,9 @@ const mockTemplate: Template = {
   days_per_week_max: 3,
   session_duration_min: 45,
   session_duration_max: 60,
+  duration_weeks_default: 8,
+  duration_weeks_min: 4,
+  duration_weeks_max: 12,
   split: {
     sessions: [
       {

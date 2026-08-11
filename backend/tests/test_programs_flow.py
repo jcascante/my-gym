@@ -196,6 +196,91 @@ async def test_draft_persists_submitted_start_date(
 
 
 @pytest.mark.asyncio
+async def test_draft_rejects_duration_outside_template_range(
+    client, auth_headers, seeded_templates, seeded_exercises, user_environment, db_session
+):
+    from sqlalchemy import select
+
+    from app.models import ProgramTemplate
+
+    template_id = (
+        await db_session.execute(select(ProgramTemplate.id).where(ProgramTemplate.slug == "full-body-x3"))
+    ).scalar_one()
+
+    draft_body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 99,
+        "start_date": "2026-01-05",
+        "template_id": template_id,
+        "required_inputs": {"squat_start": 80, "bench_start": 60},
+    }
+    r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
+    assert r.status_code == 422
+    assert r.json()["error_code"] == "VALIDATION_ERROR"
+    assert "duration_weeks must be between 4 and 12" in r.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_draft_accepts_duration_at_template_min_boundary(
+    client, auth_headers, seeded_templates, seeded_exercises, user_environment, db_session
+):
+    from sqlalchemy import select
+
+    from app.models import ProgramTemplate
+
+    template_id = (
+        await db_session.execute(select(ProgramTemplate.id).where(ProgramTemplate.slug == "full-body-x3"))
+    ).scalar_one()
+
+    draft_body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 4,
+        "start_date": "2026-01-05",
+        "template_id": template_id,
+        "required_inputs": {"squat_start": 80, "bench_start": 60},
+    }
+    r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
+    assert r.status_code == 201
+    assert r.json()["duration_weeks"] == 4
+
+
+@pytest.mark.asyncio
+async def test_draft_accepts_duration_at_template_max_boundary(
+    client, auth_headers, seeded_templates, seeded_exercises, user_environment, db_session
+):
+    from sqlalchemy import select
+
+    from app.models import ProgramTemplate
+
+    template_id = (
+        await db_session.execute(select(ProgramTemplate.id).where(ProgramTemplate.slug == "full-body-x3"))
+    ).scalar_one()
+
+    draft_body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 12,
+        "start_date": "2026-01-05",
+        "template_id": template_id,
+        "required_inputs": {"squat_start": 80, "bench_start": 60},
+    }
+    r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
+    assert r.status_code == 201
+    assert r.json()["duration_weeks"] == 12
+
+
+@pytest.mark.asyncio
 async def test_match_unauthorized(client, user_environment):
     body = {
         "environment_id": user_environment.id,
@@ -276,6 +361,7 @@ async def test_match_returns_new_factor_keys(
             "days_per_week": 3,
             "session_duration_min": 60,
             "fitness_focus": "strength",
+            "duration_weeks": 8,
             "movement_preferences": {"kettlebell": 1.5},
             "complementary_focus": True,
         },
@@ -697,3 +783,27 @@ async def test_match_response_matches_frontend_contract(
     assert isinstance(data["total_count"], int)
     assert isinstance(data["offset"], int)
     assert isinstance(data["limit"], int)
+
+
+@pytest.mark.asyncio
+async def test_match_response_includes_duration_weeks_range(
+    authenticated_client, seeded_templates, seeded_exercises, user_environment
+):
+    """/match must expose each template's duration range for display, without using
+    duration_weeks as a scoring factor (Global Constraint of the duration-weeks plan)."""
+    response = await authenticated_client.post(
+        "/api/v1/programs/match?limit=20&offset=0",
+        json={
+            "environment_id": user_environment.id,
+            "days_per_week": 3,
+            "session_duration_min": 60,
+            "fitness_focus": "general",
+            "duration_weeks": 8,
+        },
+    )
+    assert response.status_code == 200
+    matches = response.json()["matches"]
+    full_body = next(m for m in matches if m["slug"] == "full-body-x3")
+    assert full_body["duration_weeks_default"] == 8
+    assert full_body["duration_weeks_min"] == 4
+    assert full_body["duration_weeks_max"] == 12

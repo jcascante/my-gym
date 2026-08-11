@@ -83,6 +83,7 @@ export interface MatchRequest {
   environment_id: number;
   days_per_week: number;
   session_duration_min: number;
+  duration_weeks: number;
   weight_unit: WeightUnit;
   progression_style: ProgressionStyle;
   effort_method: EffortMethod | '';

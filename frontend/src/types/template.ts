@@ -45,6 +45,9 @@ export interface Template {
   days_per_week_max: number;
   session_duration_min: number;
   session_duration_max: number;
+  duration_weeks_default: number;
+  duration_weeks_min: number;
+  duration_weeks_max: number;
   split: {
     sessions: Session[];
     schemes: Record<string, Scheme>;

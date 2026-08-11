@@ -10,7 +10,6 @@ export { TrainingEnvironmentForm } from './TrainingEnvironmentForm';
 export { EquipmentPicker } from './EquipmentPicker';
 export { InjuryRecordCard } from './InjuryRecordCard';
 export { InjuryRecordForm } from './InjuryRecordForm';
-export { ProgramCreationForm } from './ProgramCreationForm';
 export { TemplateMatchCard } from './TemplateMatchCard';
 export { TemplateMatchList } from './TemplateMatchList';
 export { RequiredInputsForm } from './RequiredInputsForm';
