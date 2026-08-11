@@ -81,6 +81,9 @@ class TemplateOut(BaseModel):
     days_per_week_max: int
     session_duration_min: int
     session_duration_max: int
+    duration_weeks_default: int
+    duration_weeks_min: int
+    duration_weeks_max: int
     split: dict[str, Any]
     progression_ref: dict[str, Any]
     required_inputs: list[dict[str, Any]]
