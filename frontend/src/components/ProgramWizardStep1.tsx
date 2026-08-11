@@ -35,6 +35,9 @@ export function ProgramWizardStep1({
   const [sessionDurationMin, setSessionDurationMin] = useState(
     initialValues?.session_duration_min.toString() ?? '60',
   );
+  const [durationWeeks, setDurationWeeks] = useState(
+    initialValues?.duration_weeks.toString() ?? '8',
+  );
   const [startDate, setStartDate] = useState(initialValues?.start_date ?? today);
   const [weightUnit, setWeightUnit] = useState<WeightUnit>(initialValues?.weight_unit ?? 'kg');
   const [progressionStyle, setProgressionStyle] = useState<ProgressionStyle>(
@@ -64,6 +67,7 @@ export function ProgramWizardStep1({
     if (initialValues) {
       setDaysPerWeek(initialValues.days_per_week.toString());
       setSessionDurationMin(initialValues.session_duration_min.toString());
+      setDurationWeeks(initialValues.duration_weeks.toString());
       setStartDate(initialValues.start_date);
       setWeightUnit(initialValues.weight_unit);
       setProgressionStyle(initialValues.progression_style);
@@ -92,6 +96,7 @@ export function ProgramWizardStep1({
       environment_id: environmentId,
       days_per_week: parseInt(daysPerWeek, 10),
       session_duration_min: parseInt(sessionDurationMin, 10),
+      duration_weeks: parseInt(durationWeeks, 10),
       start_date: startDate,
       weight_unit: weightUnit,
       progression_style: progressionStyle,
@@ -161,6 +166,19 @@ export function ProgramWizardStep1({
           min="15"
           max="300"
           step="15"
+          required
+        />
+
+        {/* Program Duration */}
+        <FormField
+          label="Program Duration (weeks)"
+          type="number"
+          name="duration_weeks"
+          value={durationWeeks}
+          onChange={(e) => setDurationWeeks(e.target.value)}
+          min="1"
+          max="52"
+          step="1"
           required
         />
 
