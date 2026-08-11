@@ -54,6 +54,7 @@ export default function ProgramBuilderPage() {
   const accept = useAcceptProgram(draft?.program_id ?? 0);
 
   const onPrefs = (values: FormMatchRequest) => {
+    setDraftError(null);
     setFormPrefs(values);
     const fitnessFocus = userProfile?.fitness_focus || 'general';
     const apiRequest: ApiMatchRequest = {
