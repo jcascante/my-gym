@@ -128,27 +128,22 @@ export function ProgramWizardStep1({
           <label className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Days per Week <span className="text-error-600">*</span>
           </label>
-          <div className="flex items-center justify-between bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-4">
+          <div className="flex items-center justify-between bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-2 h-10">
             <button
               type="button"
               onClick={() => handleDaysChange(-1)}
-              className="w-10 h-10 flex items-center justify-center rounded-md border border-neutral-300 dark:border-neutral-600 hover:border-teal-500 dark:hover:border-teal-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors active:scale-90"
+              className="w-8 h-8 flex items-center justify-center rounded-md border border-neutral-300 dark:border-neutral-600 hover:border-teal-500 dark:hover:border-teal-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors active:scale-90 text-sm"
               aria-label="Decrease days per week"
             >
               −
             </button>
-            <div className="flex flex-col items-center">
-              <span className="text-3xl font-bold text-neutral-900 dark:text-neutral-50">
-                {daysPerWeek}
-              </span>
-              <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                Days
-              </span>
-            </div>
+            <span className="text-lg font-bold text-neutral-900 dark:text-neutral-50">
+              {daysPerWeek}
+            </span>
             <button
               type="button"
               onClick={() => handleDaysChange(1)}
-              className="w-10 h-10 flex items-center justify-center rounded-md border border-neutral-300 dark:border-neutral-600 hover:border-teal-500 dark:hover:border-teal-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors active:scale-90"
+              className="w-8 h-8 flex items-center justify-center rounded-md border border-neutral-300 dark:border-neutral-600 hover:border-teal-500 dark:hover:border-teal-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors active:scale-90 text-sm"
               aria-label="Increase days per week"
             >
               +
