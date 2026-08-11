@@ -196,6 +196,63 @@ async def test_draft_persists_submitted_start_date(
 
 
 @pytest.mark.asyncio
+async def test_draft_rejects_duration_outside_template_range(
+    client, auth_headers, seeded_templates, seeded_exercises, user_environment, db_session
+):
+    from sqlalchemy import select
+
+    from app.models import ProgramTemplate
+
+    template_id = (
+        await db_session.execute(select(ProgramTemplate.id).where(ProgramTemplate.slug == "full-body-x3"))
+    ).scalar_one()
+
+    draft_body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 99,
+        "start_date": "2026-01-05",
+        "template_id": template_id,
+        "required_inputs": {"squat_start": 80, "bench_start": 60},
+    }
+    r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
+    assert r.status_code == 422
+    assert r.json()["error_code"] == "VALIDATION_ERROR"
+    assert "duration_weeks must be between 4 and 12" in r.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_draft_accepts_duration_at_template_min_boundary(
+    client, auth_headers, seeded_templates, seeded_exercises, user_environment, db_session
+):
+    from sqlalchemy import select
+
+    from app.models import ProgramTemplate
+
+    template_id = (
+        await db_session.execute(select(ProgramTemplate.id).where(ProgramTemplate.slug == "full-body-x3"))
+    ).scalar_one()
+
+    draft_body = {
+        "environment_id": user_environment.id,
+        "days_per_week": 3,
+        "session_duration_min": 60,
+        "fitness_focus": "strength",
+        "weight_unit": "kg",
+        "duration_weeks": 4,
+        "start_date": "2026-01-05",
+        "template_id": template_id,
+        "required_inputs": {"squat_start": 80, "bench_start": 60},
+    }
+    r = await client.post("/api/v1/programs/draft", json=draft_body, headers=auth_headers)
+    assert r.status_code == 201
+    assert r.json()["duration_weeks"] == 4
+
+
+@pytest.mark.asyncio
 async def test_match_unauthorized(client, user_environment):
     body = {
         "environment_id": user_environment.id,
