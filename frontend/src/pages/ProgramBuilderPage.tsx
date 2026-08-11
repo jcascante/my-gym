@@ -60,7 +60,7 @@ export default function ProgramBuilderPage() {
       session_duration_min: values.session_duration_min,
       weight_unit: values.weight_unit,
       fitness_focus: fitnessFocus,
-      duration_weeks: 8,
+      duration_weeks: values.duration_weeks,
     };
     setApiPrefs(apiRequest);
     setStep(1);
