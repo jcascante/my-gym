@@ -800,20 +800,6 @@ describe('ProgramBuilderPage', () => {
           limit: 3,
         });
 
-      let observerCallback: IntersectionObserverCallback | null = null;
-
-      // Mock IntersectionObserver to capture callback
-      (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = vi.fn(
-        function (callback: IntersectionObserverCallback) {
-          observerCallback = callback;
-          return {
-            observe: vi.fn(),
-            unobserve: vi.fn(),
-            disconnect: vi.fn(),
-          } as unknown as IntersectionObserver;
-        },
-      );
-
       render(wrap(<ProgramBuilderPage />));
 
       // Step 1: Submit preferences to trigger initial load
@@ -833,13 +819,9 @@ describe('ProgramBuilderPage', () => {
         0,
       );
 
-      // Step 3: Simulate scroll to bottom by calling observer callback
-      expect(observerCallback).not.toBeNull();
-      const scrollCallback = observerCallback as unknown as IntersectionObserverCallback;
-      scrollCallback(
-        [{ isIntersecting: true } as IntersectionObserverEntry],
-        {} as IntersectionObserver,
-      );
+      // Step 3: Click "Load more" button to load next batch
+      const loadMoreButton1 = screen.getByRole('button', { name: /Load more/ });
+      fireEvent.click(loadMoreButton1);
 
       // Step 4: Wait for second batch to load (next 3 items)
       await waitFor(() => {
@@ -855,12 +837,9 @@ describe('ProgramBuilderPage', () => {
         4,
       );
 
-      // Step 5: Simulate another scroll to bottom
-      const scrollCallback2 = observerCallback as unknown as IntersectionObserverCallback;
-      scrollCallback2(
-        [{ isIntersecting: true } as IntersectionObserverEntry],
-        {} as IntersectionObserver,
-      );
+      // Step 5: Click "Load more" button again
+      const loadMoreButton2 = screen.getByRole('button', { name: /Load more/ });
+      fireEvent.click(loadMoreButton2);
 
       // Step 6: Wait for third batch to load (final 3 items)
       await waitFor(() => {
@@ -942,19 +921,6 @@ describe('ProgramBuilderPage', () => {
         });
       });
 
-      let observerCallback: IntersectionObserverCallback | null = null;
-
-      (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = vi.fn(
-        function (callback: IntersectionObserverCallback) {
-          observerCallback = callback;
-          return {
-            observe: vi.fn(),
-            unobserve: vi.fn(),
-            disconnect: vi.fn(),
-          } as unknown as IntersectionObserver;
-        },
-      );
-
       render(wrap(<ProgramBuilderPage />));
 
       fireEvent.click(screen.getByText('Submit prefs'));
@@ -968,12 +934,9 @@ describe('ProgramBuilderPage', () => {
       const initialCallIndex = apiCalls.findIndex((call) => call.offset === 0 && call.limit === 4);
       expect(initialCallIndex).toBeGreaterThanOrEqual(0);
 
-      // Simulate scroll to load next page
-      const scrollCallback3 = observerCallback as unknown as IntersectionObserverCallback;
-      scrollCallback3(
-        [{ isIntersecting: true } as IntersectionObserverEntry],
-        {} as IntersectionObserver,
-      );
+      // Click "Load more" button to load next page
+      const loadMoreButton3 = screen.getByRole('button', { name: /Load more/ });
+      fireEvent.click(loadMoreButton3);
 
       await waitFor(() => {
         expect(screen.getByText('Template 5')).toBeInTheDocument();
@@ -982,12 +945,9 @@ describe('ProgramBuilderPage', () => {
       // Verify second call used offset=4, limit=3
       expect(apiCalls).toContainEqual({ limit: 3, offset: 4 });
 
-      // Simulate another scroll to load third page
-      const scrollCallback4 = observerCallback as unknown as IntersectionObserverCallback;
-      scrollCallback4(
-        [{ isIntersecting: true } as IntersectionObserverEntry],
-        {} as IntersectionObserver,
-      );
+      // Click "Load more" button again to load third page
+      const loadMoreButton4 = screen.getByRole('button', { name: /Load more/ });
+      fireEvent.click(loadMoreButton4);
 
       await waitFor(() => {
         expect(screen.getByText('Template 8')).toBeInTheDocument();
