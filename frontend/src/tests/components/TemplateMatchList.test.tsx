@@ -1,10 +1,7 @@
-import { it, expect, vi, describe, beforeEach, afterEach } from 'vitest';
+import { it, expect, vi, describe, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TemplateMatchList } from '@/components/TemplateMatchList';
 import type { TemplateMatch } from '@/types/program';
-
-// Type for IntersectionObserver callback
-type IOCallback = (entries: IntersectionObserverEntry[]) => void;
 
 const matches = [
   {
@@ -165,44 +162,21 @@ describe('TemplateMatchList', () => {
     expect(alerts).toHaveLength(0);
   });
 
-  // Infinite scroll tests (new)
-  describe('Infinite Scroll', () => {
-    let observerCallback: IOCallback | null = null;
-    let mockObserver: {
-      observe: ReturnType<typeof vi.fn>;
-      unobserve: ReturnType<typeof vi.fn>;
-      disconnect: ReturnType<typeof vi.fn>;
-    };
-
-    beforeEach(() => {
-      observerCallback = null;
-      mockObserver = {
-        observe: vi.fn(),
-        unobserve: vi.fn(),
-        disconnect: vi.fn(),
-      };
-
-      const IntersectionObserverMock = vi.fn((callback: IOCallback) => {
-        observerCallback = callback;
-        return mockObserver;
-      });
-
-      (globalThis as any).IntersectionObserver = IntersectionObserverMock;
-    });
-
+  // Load more button tests (new)
+  describe('Load More Button', () => {
     afterEach(() => {
       vi.clearAllMocks();
     });
 
-    // Helper to render with infinite scroll props (component will have these in Task 5)
-    const renderWithInfiniteScroll = (props: any): ReturnType<typeof render> => {
+    // Helper to render with load more props
+    const renderWithLoadMore = (props: any): ReturnType<typeof render> => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return render((<TemplateMatchList {...props} />) as any);
     };
 
     it('renders all matches passed in array', () => {
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches,
         selectedId: null,
         onSelect,
@@ -215,9 +189,9 @@ describe('TemplateMatchList', () => {
       expect(screen.getByText('Full Body x3')).toBeInTheDocument();
     });
 
-    it('renders invisible sentinel element with test id', () => {
+    it('renders "Load more" button when hasMore is true', () => {
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches,
         selectedId: null,
         onSelect,
@@ -226,14 +200,13 @@ describe('TemplateMatchList', () => {
         onLoadMore: vi.fn(),
       });
 
-      const sentinel = screen.getByTestId('template-match-sentinel');
-      expect(sentinel).toBeInTheDocument();
-      expect(sentinel).toHaveStyle({ height: '1px' });
+      const loadMoreButton = screen.getByRole('button', { name: /Load more/ });
+      expect(loadMoreButton).toBeInTheDocument();
     });
 
     it('shows loading spinner when isLoading is true', () => {
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches,
         selectedId: null,
         onSelect,
@@ -248,7 +221,7 @@ describe('TemplateMatchList', () => {
 
     it('shows "No more matches available" message when no more and not loading', () => {
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches,
         selectedId: null,
         onSelect,
@@ -262,7 +235,7 @@ describe('TemplateMatchList', () => {
 
     it('does not show "No more matches" while loading', () => {
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches,
         selectedId: null,
         onSelect,
@@ -276,7 +249,7 @@ describe('TemplateMatchList', () => {
 
     it('does not show "No more matches" when matches are empty', () => {
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches: [],
         selectedId: null,
         onSelect,
@@ -288,9 +261,9 @@ describe('TemplateMatchList', () => {
       expect(screen.queryByText('No more matches available')).not.toBeInTheDocument();
     });
 
-    it('attaches IntersectionObserver to sentinel element', () => {
+    it('shows "Load more" button when hasMore is true', () => {
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches,
         selectedId: null,
         onSelect,
@@ -299,14 +272,14 @@ describe('TemplateMatchList', () => {
         onLoadMore: vi.fn(),
       });
 
-      expect(globalThis.IntersectionObserver as any).toHaveBeenCalled();
-      expect(mockObserver.observe).toHaveBeenCalled();
+      const loadMoreButton = screen.getByRole('button', { name: /Load more/ });
+      expect(loadMoreButton).toBeInTheDocument();
     });
 
-    it('calls onLoadMore when sentinel intersects with proper conditions', () => {
+    it('calls onLoadMore when "Load more" button is clicked', () => {
       const onLoadMore = vi.fn();
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches,
         selectedId: null,
         onSelect,
@@ -315,17 +288,16 @@ describe('TemplateMatchList', () => {
         onLoadMore,
       });
 
-      if (observerCallback) {
-        observerCallback([{ isIntersecting: true } as IntersectionObserverEntry]);
-      }
+      const loadMoreButton = screen.getByRole('button', { name: /Load more/ });
+      fireEvent.click(loadMoreButton);
 
       expect(onLoadMore).toHaveBeenCalled();
     });
 
-    it('does not call onLoadMore while isLoading is true', () => {
+    it('shows loading spinner while isLoading is true', () => {
       const onLoadMore = vi.fn();
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches,
         selectedId: null,
         onSelect,
@@ -334,17 +306,16 @@ describe('TemplateMatchList', () => {
         onLoadMore,
       });
 
-      if (observerCallback) {
-        observerCallback([{ isIntersecting: true } as IntersectionObserverEntry]);
-      }
-
-      expect(onLoadMore).not.toHaveBeenCalled();
+      const spinner = screen.getByTestId('loading-spinner');
+      expect(spinner).toBeInTheDocument();
+      const loadMoreButton = screen.queryByRole('button', { name: /Load more/ });
+      expect(loadMoreButton).not.toBeInTheDocument();
     });
 
-    it('does not call onLoadMore when hasMore is false', () => {
+    it('does not show "Load more" button when hasMore is false', () => {
       const onLoadMore = vi.fn();
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches,
         selectedId: null,
         onSelect,
@@ -353,16 +324,13 @@ describe('TemplateMatchList', () => {
         onLoadMore,
       });
 
-      if (observerCallback) {
-        observerCallback([{ isIntersecting: true } as IntersectionObserverEntry]);
-      }
-
-      expect(onLoadMore).not.toHaveBeenCalled();
+      const loadMoreButton = screen.queryByRole('button', { name: /Load more/ });
+      expect(loadMoreButton).not.toBeInTheDocument();
     });
 
     it('handles empty matches with infinite scroll props', () => {
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches: [],
         selectedId: null,
         onSelect,
@@ -394,7 +362,7 @@ describe('TemplateMatchList', () => {
         },
       ];
 
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches: paginatedMatches,
         selectedId: null,
         onSelect,
@@ -409,7 +377,7 @@ describe('TemplateMatchList', () => {
 
     it('shows warning alert for infeasible matches with infinite scroll', () => {
       const onSelect = vi.fn();
-      renderWithInfiniteScroll({
+      renderWithLoadMore({
         matches: matchesInfeasible,
         selectedId: null,
         onSelect,
