@@ -34,7 +34,7 @@
 
 **Context:** `alembic heads` currently reports two unmerged heads (`a7c903edb637` and `b2c3d4e5f6a7`), both descending from `a1b2c3d4e5f6`. `alembic upgrade head` fails ambiguously until they're merged. This migration merges them and adds the two new columns in the same step.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_exercise_model.py
@@ -77,12 +77,12 @@ def test_exercise_has_unilateral_and_compound_flags():
     assert columns["is_compound"].nullable is False
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_exercise_model.py -v`
 Expected: FAIL with `ImportError: cannot import name 'Equipment'`
 
-- [ ] **Step 3: Add the enums and columns**
+- [x] **Step 3: Add the enums and columns**
 
 In `backend/app/models/exercise.py`, add after `MovementPattern`:
 
@@ -181,7 +181,7 @@ from .exercise import BodyRegion, Contraindication, Equipment, Exercise, Muscle,
 
 Add `"Equipment"`, `"Muscle"`, `"Contraindication"` to `__all__`.
 
-- [ ] **Step 4: Write the merge + add-columns migration**
+- [x] **Step 4: Write the merge + add-columns migration**
 
 ```python
 # backend/alembic/versions/c8d9e0f1a2b3_merge_heads_add_exercise_flags.py
@@ -224,17 +224,17 @@ def downgrade() -> None:
     op.drop_column("exercises", "is_unilateral")
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_exercise_model.py -v`
 Expected: PASS (4 tests)
 
-- [ ] **Step 6: Verify migration reversibility**
+- [x] **Step 6: Verify migration reversibility**
 
 Run: `docker-compose exec backend uv run alembic upgrade head && docker-compose exec backend uv run alembic downgrade -1 && docker-compose exec backend uv run alembic upgrade head`
 Expected: all three commands exit 0, and `docker-compose exec backend uv run alembic heads` now shows a single head `c8d9e0f1a2b3`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/models/exercise.py backend/app/models/__init__.py backend/alembic/versions/c8d9e0f1a2b3_merge_heads_add_exercise_flags.py backend/tests/test_exercise_model.py
@@ -254,7 +254,7 @@ git commit -m "feat(program-engine): add canonical exercise tag enums and is_uni
 - Consumes: `Equipment`, `Muscle`, `Contraindication` from `app.models.exercise` (Task 1), `MovementPattern` from `app.models.exercise`.
 - Produces: `classify_exercise(data: dict[str, object]) -> tuple[bool, bool]` (returns `(is_unilateral, is_compound)`), `validate_tags(data: dict[str, object]) -> None` (raises `ValueError` on an unrecognized tag), both importable from `app.db.seed.exercise_classification`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_exercise_classification.py
@@ -319,12 +319,12 @@ def test_all_seed_exercises_pass_tag_validation():
         validate_tags(data)  # should not raise for any of the 148 seeded exercises
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_exercise_classification.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.db.seed.exercise_classification'`
 
-- [ ] **Step 3: Write the classification + validation module**
+- [x] **Step 3: Write the classification + validation module**
 
 ```python
 # backend/app/db/seed/exercise_classification.py
@@ -383,7 +383,7 @@ def validate_tags(data: dict[str, object]) -> None:
         )
 ```
 
-- [ ] **Step 4: Wire classification + validation into the upsert**
+- [x] **Step 4: Wire classification + validation into the upsert**
 
 In `backend/app/db/seed/seed_exercises.py`, add the import and call both helpers before constructing/updating each `Exercise`:
 
@@ -412,17 +412,17 @@ Replace the loop body:
             db.add(exercise)
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_exercise_classification.py -v`
 Expected: PASS (7 tests)
 
-- [ ] **Step 6: Run the full existing seed/drafting/preview/selection suite to confirm no regression**
+- [x] **Step 6: Run the full existing seed/drafting/preview/selection suite to confirm no regression**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py tests/test_preview.py tests/test_selection.py -v`
 Expected: PASS (all existing tests, unmodified)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/db/seed/exercise_classification.py backend/app/db/seed/seed_exercises.py backend/tests/test_exercise_classification.py
@@ -441,7 +441,7 @@ git commit -m "feat(program-engine): classify and validate exercises at seed tim
 - Consumes: `Equipment`, `Muscle`, `Contraindication` from `app.models` (Task 1).
 - Produces: `ExerciseResponse` now includes `equipment_tags: list[Equipment]`, `primary_muscles: list[Muscle]`, `secondary_muscles: list[Muscle]`, `contraindications: list[Contraindication]`, `is_unilateral: bool`, `is_compound: bool`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_exercise_schema.py
@@ -489,12 +489,12 @@ def test_exercise_response_rejects_unknown_equipment_tag():
         ExerciseResponse(**_base_kwargs(equipment_tags=["not-a-real-tag"]))
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_exercise_schema.py -v`
 Expected: FAIL — `is_unilateral`/`is_compound` unexpected, and unknown equipment tag doesn't raise (field is still `list[str]`)
 
-- [ ] **Step 3: Update the schema**
+- [x] **Step 3: Update the schema**
 
 ```python
 # backend/app/schemas/exercise.py
@@ -528,12 +528,12 @@ class ExerciseResponse(BaseModel):
     updated_at: datetime
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_exercise_schema.py -v`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/schemas/exercise.py backend/tests/test_exercise_schema.py
@@ -553,7 +553,7 @@ git commit -m "feat(program-engine): validate exercise tags and expose is_unilat
 - Consumes: `Exercise.is_compound`, `Exercise.is_unilateral` (Task 1).
 - Produces: `SelectionContext.used_unilateral_flags: list[bool]` (new field, default empty list); `_score()` now weighs priority-vs-compound fit and unilateral/bilateral alternation.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Replace `backend/tests/test_selection.py` with:
 
@@ -638,12 +638,12 @@ def test_penalizes_repeating_unilateral_mode_back_to_back():
     assert chosen.id == 2
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_selection.py -v`
 Expected: FAIL — `SelectionContext` doesn't accept a 5th positional arg, `_score` doesn't use `is_compound`/`is_unilateral`
 
-- [ ] **Step 3: Update `SelectionContext` and `_score`**
+- [x] **Step 3: Update `SelectionContext` and `_score`**
 
 In `backend/app/services/program/selection.py`, replace the `SelectionContext` dataclass and `_score`:
 
@@ -681,7 +681,7 @@ def _score(ex: Exercise, rule: SlotRule, ctx: SelectionContext) -> tuple[int, in
 
 Note: `-ex.id` (the previous final tiebreaker) is dropped from the tuple because `_Ex` test doubles and real `Exercise` rows don't always have deterministic ids in tests; ties are now broken by insertion order of `max()`, which is stable and sufficient — no test in this suite or `test_drafting.py`/`test_preview.py` depends on id-based tiebreaking.
 
-- [ ] **Step 4: Record unilateral picks in `build_draft`**
+- [x] **Step 4: Record unilateral picks in `build_draft`**
 
 In `backend/app/services/program/drafting.py`, in the slot-fill loop inside `build_draft`, after `ctx.used_movement_slugs.add(chosen.movement_slug)`, add:
 
@@ -689,17 +689,17 @@ In `backend/app/services/program/drafting.py`, in the slot-fill loop inside `bui
             ctx.used_unilateral_flags.append(chosen.is_unilateral)
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_selection.py -v`
 Expected: PASS (5 tests)
 
-- [ ] **Step 6: Run full backend suite to confirm no regression**
+- [x] **Step 6: Run full backend suite to confirm no regression**
 
 Run: `docker-compose exec backend pytest -v`
 Expected: PASS (all tests, including `test_drafting.py`, `test_preview.py`, `test_program_api_schemas.py`)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/services/program/selection.py backend/app/services/program/drafting.py backend/tests/test_selection.py
@@ -721,7 +721,7 @@ git commit -m "feat(program-engine): weight exercise selection by compound/isola
 
 **Context:** No seed template uses `weekly_undulating` today, so this contract has zero production callers — safe to extend. Phase 2's override (Task 6) needs to force `weekly_undulating` onto templates whose schemes have rep ranges the override can't know about ahead of time (e.g. main scheme reps 5, accessory reps 10-12, in the same template); an intensity-only wave (reps omitted) sidesteps that mismatch entirely.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `backend/tests/test_progression_undulating.py`:
 
@@ -735,12 +735,12 @@ def test_undulating_defaults_reps_to_base_reps_min_when_wave_omits_reps():
     assert m.resolve(base, 2, p).load == 42.5
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_progression_undulating.py -v`
 Expected: FAIL with `KeyError: 'reps'`
 
-- [ ] **Step 3: Add the fallback**
+- [x] **Step 3: Add the fallback**
 
 In `backend/app/services/program/progression/weekly_undulating.py`, change:
 
@@ -754,12 +754,12 @@ to:
             reps=int(cast(int, wave.get("reps", base.reps_min))),
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_progression_undulating.py -v`
 Expected: PASS (2 tests — the existing `test_undulating_rotates_waves` and the new one)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/progression/weekly_undulating.py backend/tests/test_progression_undulating.py
@@ -778,7 +778,7 @@ git commit -m "feat(program-engine): weekly_undulating defaults reps to the slot
 - Consumes: `TemplateDefinition`, `ProgressionRef` from `app.schemas.template`.
 - Produces: `apply_progression_style(definition: TemplateDefinition, progression_style: str) -> TemplateDefinition`, `DEFAULT_UNDULATING_WAVES: list[dict[str, float]]`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_style_override.py
@@ -831,12 +831,12 @@ def test_original_definition_is_not_mutated():
     assert original.progression.model_key == "linear_load"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_style_override.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.services.program.style_override'`
 
-- [ ] **Step 3: Write the module**
+- [x] **Step 3: Write the module**
 
 ```python
 # backend/app/services/program/style_override.py
@@ -865,12 +865,12 @@ def apply_progression_style(definition: TemplateDefinition, progression_style: s
     return definition.model_copy(update={"progression": new_progression})
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_style_override.py -v`
 Expected: PASS (5 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/style_override.py backend/tests/test_style_override.py
@@ -893,7 +893,7 @@ git commit -m "feat(program-engine): add per-program consistent/variable progres
 - Consumes: `ProgressionStyle` from `app.schemas.program` (already exists), `apply_progression_style` (Task 6).
 - Produces: `DraftRequest.progression_style: ProgressionStyle = ProgressionStyle.CONSISTENT`; `build_draft(..., progression_style: str = "consistent")` now stores it in `WorkoutProgram.constraints["progression_style"]`.
 
-- [ ] **Step 1: Write the failing schema test**
+- [x] **Step 1: Write the failing schema test**
 
 Add to `backend/tests/test_program_api_schemas.py`:
 
@@ -914,12 +914,12 @@ def test_draft_request_accepts_variable_progression():
     assert r.progression_style.value == "variable"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_program_api_schemas.py -v`
 Expected: FAIL — `DraftRequest` has no field `progression_style`
 
-- [ ] **Step 3: Add the field to `DraftRequest`**
+- [x] **Step 3: Add the field to `DraftRequest`**
 
 In `backend/app/schemas/program_api.py`, add the import and field:
 
@@ -933,12 +933,12 @@ class DraftRequest(MatchRequest):
     progression_style: ProgressionStyle = ProgressionStyle.CONSISTENT
 ```
 
-- [ ] **Step 4: Run schema test to verify it passes**
+- [x] **Step 4: Run schema test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_program_api_schemas.py -v`
 Expected: PASS
 
-- [ ] **Step 5: Write the failing `build_draft` test**
+- [x] **Step 5: Write the failing `build_draft` test**
 
 Add to `backend/tests/test_drafting.py`:
 
@@ -971,12 +971,12 @@ async def test_build_draft_defaults_progression_style_to_consistent(sample_templ
     assert program.constraints["progression_style"] == "consistent"
 ```
 
-- [ ] **Step 6: Run test to verify it fails**
+- [x] **Step 6: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py -v`
 Expected: FAIL — `KeyError: 'progression_style'`
 
-- [ ] **Step 7: Add the parameter to `build_draft`**
+- [x] **Step 7: Add the parameter to `build_draft`**
 
 In `backend/app/services/program/drafting.py`, update the signature and constraints dict:
 
@@ -1023,12 +1023,12 @@ def build_draft(
 
 (the rest of the function body is unchanged)
 
-- [ ] **Step 8: Run test to verify it passes**
+- [x] **Step 8: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py -v`
 Expected: PASS (all tests including the 2 new ones)
 
-- [ ] **Step 9: Write the failing end-to-end preview test**
+- [x] **Step 9: Write the failing end-to-end preview test**
 
 ```python
 # backend/tests/test_programs_progression_style.py
@@ -1065,12 +1065,12 @@ async def test_variable_style_makes_week_to_week_reps_undulate(sample_template_o
     assert load1 != load2  # intensity wave changes the load, unlike flat linear progression
 ```
 
-- [ ] **Step 10: Run test to verify it fails**
+- [x] **Step 10: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_programs_progression_style.py -v`
 Expected: FAIL if `apply_progression_style` import path is wrong, otherwise PASS already (this test only exercises Task 6's helper directly) — confirm it passes as-is; it does not require endpoint changes yet.
 
-- [ ] **Step 11: Wire the override into the `/programs` endpoints**
+- [x] **Step 11: Wire the override into the `/programs` endpoints**
 
 In `backend/app/api/v1/endpoints/programs.py`, add the import:
 
@@ -1117,12 +1117,12 @@ Update `draft()` to pass the requested style into `build_draft` and apply it to 
     return await _preview_out(db, saved, preview_definition)
 ```
 
-- [ ] **Step 12: Run the full backend suite**
+- [x] **Step 12: Run the full backend suite**
 
 Run: `docker-compose exec backend pytest -v`
 Expected: PASS (all tests)
 
-- [ ] **Step 13: Commit**
+- [x] **Step 13: Commit**
 
 ```bash
 git add backend/app/schemas/program_api.py backend/app/services/program/drafting.py backend/app/api/v1/endpoints/programs.py backend/tests/test_drafting.py backend/tests/test_program_api_schemas.py backend/tests/test_programs_progression_style.py
@@ -1144,7 +1144,7 @@ git commit -m "feat(program-engine): wire per-program consistent/variable progre
 - Consumes: `ProgressionStyle`, `PROGRESSION_STYLE_OPTIONS` (already defined in `types/programCreation.ts`).
 - Produces: `ProgramCreationForm`'s `onSubmit` payload now includes `progression_style: ProgressionStyle`; `types/programCreation.ts::MatchRequest` (form-local type) gains `progression_style: ProgressionStyle`; `types/program.ts::DraftRequest` gains `progression_style: ProgressionStyle`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `frontend/src/tests/components/ProgramCreationForm.test.tsx`:
 
@@ -1183,12 +1183,12 @@ it('should include progression_style in submitted values, defaulting to consiste
   });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test:watch -- ProgramCreationForm --run`
 Expected: FAIL — no element with label `/Progression Style/i`
 
-- [ ] **Step 3: Extend the form-local `MatchRequest` type**
+- [x] **Step 3: Extend the form-local `MatchRequest` type**
 
 In `frontend/src/types/programCreation.ts`, extend the interface (the `ProgressionStyle` type and `PROGRESSION_STYLE_OPTIONS` already exist above it, unchanged):
 
@@ -1202,7 +1202,7 @@ export interface MatchRequest {
 }
 ```
 
-- [ ] **Step 4: Add the field to `ProgramCreationForm`**
+- [x] **Step 4: Add the field to `ProgramCreationForm`**
 
 In `frontend/src/components/ProgramCreationForm.tsx`, add the import and state:
 
@@ -1252,12 +1252,12 @@ Add the control in the JSX, inside the existing grid, after the weight unit `<di
         </div>
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npm run test:watch -- ProgramCreationForm --run`
 Expected: PASS (all tests including the 2 new ones)
 
-- [ ] **Step 6: Thread the value through `ProgramBuilderPage` into `DraftRequest`**
+- [x] **Step 6: Thread the value through `ProgramBuilderPage` into `DraftRequest`**
 
 In `frontend/src/types/program.ts`, add the import and field:
 
@@ -1326,12 +1326,12 @@ Update the `initialValues` passed to `ProgramCreationForm` to include the curren
           }
 ```
 
-- [ ] **Step 7: Run frontend type-check and full test suite**
+- [x] **Step 7: Run frontend type-check and full test suite**
 
 Run: `docker-compose exec frontend npm run type-check && docker-compose exec frontend npm run test:watch -- --run`
 Expected: both PASS
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add frontend/src/types/programCreation.ts frontend/src/types/program.ts frontend/src/components/ProgramCreationForm.tsx frontend/src/pages/ProgramBuilderPage.tsx frontend/src/tests/components/ProgramCreationForm.test.tsx
@@ -1353,7 +1353,7 @@ git commit -m "feat(program-ui): collect progression style per program in the cr
 **Interfaces:**
 - Produces: `EffortMethod` enum (`rpe | rir | borg | percent_1rm`) in `app.schemas.program`; `SchemeDef.target_rpe: float | None = None`, `SchemeDef.intensity_pct: float | None = None`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_effort_method.py
@@ -1377,12 +1377,12 @@ def test_scheme_def_accepts_effort_fields():
     assert scheme.intensity_pct == 0.8
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_effort_method.py -v`
 Expected: FAIL — `ImportError: cannot import name 'EffortMethod'`
 
-- [ ] **Step 3: Add `EffortMethod`**
+- [x] **Step 3: Add `EffortMethod`**
 
 In `backend/app/schemas/program.py`, add after `ProgressionStyle`:
 
@@ -1394,7 +1394,7 @@ class EffortMethod(str, enum.Enum):
     PERCENT_1RM = "percent_1rm"
 ```
 
-- [ ] **Step 4: Add fields to `SchemeDef`**
+- [x] **Step 4: Add fields to `SchemeDef`**
 
 In `backend/app/schemas/template.py`, update:
 
@@ -1408,12 +1408,12 @@ class SchemeDef(BaseModel):
     intensity_pct: float | None = None
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_effort_method.py -v`
 Expected: PASS (3 tests)
 
-- [ ] **Step 6: Populate seed templates with effort anchors**
+- [x] **Step 6: Populate seed templates with effort anchors**
 
 In `backend/app/db/seed/program_templates.py`, for each of the 4 templates, update the `"main"` and `"accessory"` entries in `split.schemes` to add `target_rpe`/`intensity_pct`. Apply this exact change to all 4 occurrences of each key:
 
@@ -1432,7 +1432,7 @@ Concretely, for the first template (`full-body-x3`), the schemes block becomes:
 
 Apply the same `target_rpe`/`intensity_pct` additions to the `main`/`accessory` scheme dicts in `bodyweight-full-body-x3`, `upper-lower-x4`, and `push-pull-legs-x6`.
 
-- [ ] **Step 7: Add a regression test that seed templates parse with the new fields**
+- [x] **Step 7: Add a regression test that seed templates parse with the new fields**
 
 ```python
 # add to backend/tests/test_effort_method.py
@@ -1451,17 +1451,17 @@ def test_seed_template_schemes_define_effort_anchors(template):
         assert scheme.intensity_pct is not None, f"{template['slug']}.{key} missing intensity_pct"
 ```
 
-- [ ] **Step 8: Run test to verify it passes**
+- [x] **Step 8: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_effort_method.py -v`
 Expected: PASS (11 tests: 3 from step 5 + 8 parametrized, one per template/scheme pair)
 
-- [ ] **Step 9: Run full backend suite to confirm no regression**
+- [x] **Step 9: Run full backend suite to confirm no regression**
 
 Run: `docker-compose exec backend pytest -v`
 Expected: PASS
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add backend/app/schemas/program.py backend/app/schemas/template.py backend/app/db/seed/program_templates.py backend/tests/test_effort_method.py
@@ -1482,7 +1482,7 @@ git commit -m "feat(program-engine): add EffortMethod enum and per-scheme RPE/in
 - Consumes: `EffortMethod` (Task 9), `SchemeDef.target_rpe`/`intensity_pct` (Task 9).
 - Produces: `WorkoutExercise.target_rpe: float | None`, `WorkoutExercise.intensity_pct: float | None`; `build_draft(..., effort_method: str | None = None)`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `backend/tests/test_drafting.py`:
 
@@ -1542,12 +1542,12 @@ async def test_build_draft_base_load_unaffected_when_effort_method_unset(sample_
     assert all(ex.base_load == 100.0 for ex in squat_exercises)  # unchanged, backward compatible
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py -v`
 Expected: FAIL — `WorkoutExercise` has no attribute `target_rpe`, and `build_draft()` has no `effort_method` kwarg
 
-- [ ] **Step 3: Add columns to `WorkoutExercise`**
+- [x] **Step 3: Add columns to `WorkoutExercise`**
 
 In `backend/app/models/program.py`, add after `scheme_key`:
 
@@ -1556,7 +1556,7 @@ In `backend/app/models/program.py`, add after `scheme_key`:
     intensity_pct: Mapped[float | None] = mapped_column(Float)
 ```
 
-- [ ] **Step 4: Write the migration**
+- [x] **Step 4: Write the migration**
 
 ```python
 # backend/alembic/versions/d4e5f6a7b8c9_add_effort_fields_to_workout_exercises.py
@@ -1591,7 +1591,7 @@ def downgrade() -> None:
     op.drop_column("workout_exercises", "target_rpe")
 ```
 
-- [ ] **Step 5: Update `build_draft` and `_base_load_for`**
+- [x] **Step 5: Update `build_draft` and `_base_load_for`**
 
 In `backend/app/services/program/drafting.py`:
 
@@ -1690,17 +1690,17 @@ def build_draft(
     return program
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py -v`
 Expected: PASS (all tests)
 
-- [ ] **Step 7: Verify migration reversibility**
+- [x] **Step 7: Verify migration reversibility**
 
 Run: `docker-compose exec backend uv run alembic upgrade head && docker-compose exec backend uv run alembic downgrade -1 && docker-compose exec backend uv run alembic upgrade head`
 Expected: all exit 0, `alembic heads` shows single head `d4e5f6a7b8c9`
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend/app/models/program.py backend/alembic/versions/d4e5f6a7b8c9_add_effort_fields_to_workout_exercises.py backend/app/services/program/drafting.py backend/tests/test_drafting.py
@@ -1722,7 +1722,7 @@ git commit -m "feat(program-engine): denormalize effort targets onto WorkoutExer
 - Consumes: `WorkoutExercise.target_rpe`/`intensity_pct` (Task 10), `WorkoutProgram.constraints["effort_method"]` (Task 10).
 - Produces: `derive_week()` slot dicts gain an `effort_target: dict | None` key; `DraftRequest.effort_method: EffortMethod | None = None`; `SlotPreviewOut.effort_target: dict | None = None`.
 
-- [ ] **Step 1: Write the failing preview tests**
+- [x] **Step 1: Write the failing preview tests**
 
 Add to `backend/tests/test_preview.py`:
 
@@ -1814,12 +1814,12 @@ async def test_derive_week_omits_effort_target_when_effort_method_unset(sample_t
     assert all(s["effort_target"] is None for s in slots)  # backward compatible default
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_preview.py -v`
 Expected: FAIL — `KeyError: 'effort_target'`
 
-- [ ] **Step 3: Add effort-target computation to `derive_week`**
+- [x] **Step 3: Add effort-target computation to `derive_week`**
 
 In `backend/app/services/program/preview.py`:
 
@@ -1889,12 +1889,12 @@ def derive_week(
     return days
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_preview.py -v`
 Expected: PASS (all tests)
 
-- [ ] **Step 5: Add `effort_method` to `DraftRequest` and `effort_target` to `SlotPreviewOut`**
+- [x] **Step 5: Add `effort_method` to `DraftRequest` and `effort_target` to `SlotPreviewOut`**
 
 In `backend/app/schemas/program_api.py`:
 
@@ -1943,7 +1943,7 @@ def test_draft_request_accepts_percent_1rm_effort_method():
     assert r.effort_method.value == "percent_1rm"
 ```
 
-- [ ] **Step 6: Pass `effort_method` through the `/draft` endpoint**
+- [x] **Step 6: Pass `effort_method` through the `/draft` endpoint**
 
 In `backend/app/api/v1/endpoints/programs.py`, update the `build_draft` call in `draft()`:
 
@@ -1964,17 +1964,17 @@ In `backend/app/api/v1/endpoints/programs.py`, update the `build_draft` call in 
     )
 ```
 
-- [ ] **Step 7: Run the full backend suite**
+- [x] **Step 7: Run the full backend suite**
 
 Run: `docker-compose exec backend pytest -v`
 Expected: PASS (all tests)
 
-- [ ] **Step 8: Type-check and lint**
+- [x] **Step 8: Type-check and lint**
 
 Run: `docker-compose exec backend mypy app/ && docker-compose exec backend ruff check .`
 Expected: both clean
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add backend/app/services/program/preview.py backend/app/schemas/program_api.py backend/app/api/v1/endpoints/programs.py backend/tests/test_preview.py backend/tests/test_program_api_schemas.py
@@ -1997,7 +1997,7 @@ git commit -m "feat(program-engine): surface per-set effort targets in preview b
 **Interfaces:**
 - Produces: `EffortMethod` type + `EFFORT_METHOD_OPTIONS` in `types/programCreation.ts`; `ProgramCreationForm` submits `effort_method: EffortMethod | ''`; `SlotPreview.effort_target` rendered in `SlotRow`.
 
-- [ ] **Step 1: Write the failing form test**
+- [x] **Step 1: Write the failing form test**
 
 Add to `frontend/src/tests/components/ProgramCreationForm.test.tsx`:
 
@@ -2019,12 +2019,12 @@ it('should default effort_method to empty (no preference) and submit a chosen me
   });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test:watch -- ProgramCreationForm --run`
 Expected: FAIL — no element with label `/Effort Tracking/i`
 
-- [ ] **Step 3: Add `EffortMethod` type + options**
+- [x] **Step 3: Add `EffortMethod` type + options**
 
 In `frontend/src/types/programCreation.ts`, add after `PROGRESSION_STYLE_OPTIONS`:
 
@@ -2053,7 +2053,7 @@ export interface MatchRequest {
 }
 ```
 
-- [ ] **Step 4: Add the field to `ProgramCreationForm`**
+- [x] **Step 4: Add the field to `ProgramCreationForm`**
 
 In `frontend/src/components/ProgramCreationForm.tsx`:
 
@@ -2102,12 +2102,12 @@ Add the control after the progression-style `<div className="input-group">`:
         </div>
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npm run test:watch -- ProgramCreationForm --run`
 Expected: PASS (all tests including the 2 new ones from Task 8 and this task)
 
-- [ ] **Step 6: Thread `effort_method` through `ProgramBuilderPage` into `DraftRequest`**
+- [x] **Step 6: Thread `effort_method` through `ProgramBuilderPage` into `DraftRequest`**
 
 In `frontend/src/types/program.ts`:
 
@@ -2179,7 +2179,7 @@ Update `initialValues`:
                   effort_method: effortMethod ?? '',
 ```
 
-- [ ] **Step 7: Write the failing `SlotRow` test**
+- [x] **Step 7: Write the failing `SlotRow` test**
 
 ```tsx
 // frontend/src/tests/components/SlotRow.test.tsx
@@ -2225,12 +2225,12 @@ describe('SlotRow', () => {
 });
 ```
 
-- [ ] **Step 8: Run test to verify it fails**
+- [x] **Step 8: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test:watch -- SlotRow --run`
 Expected: FAIL — effort target text not rendered
 
-- [ ] **Step 9: Render `effort_target` in `SlotRow`**
+- [x] **Step 9: Render `effort_target` in `SlotRow`**
 
 In `frontend/src/components/SlotRow.tsx`:
 
@@ -2281,17 +2281,17 @@ export function SlotRow({
 }
 ```
 
-- [ ] **Step 10: Run test to verify it passes**
+- [x] **Step 10: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npm run test:watch -- SlotRow --run`
 Expected: PASS (3 tests)
 
-- [ ] **Step 11: Run the full frontend suite and type-check**
+- [x] **Step 11: Run the full frontend suite and type-check**
 
 Run: `docker-compose exec frontend npm run test:watch -- --run && docker-compose exec frontend npm run type-check`
 Expected: both PASS
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add frontend/src/types/programCreation.ts frontend/src/types/program.ts frontend/src/components/ProgramCreationForm.tsx frontend/src/pages/ProgramBuilderPage.tsx frontend/src/components/SlotRow.tsx frontend/src/tests/components/ProgramCreationForm.test.tsx frontend/src/tests/components/SlotRow.test.tsx
@@ -2302,10 +2302,10 @@ git commit -m "feat(program-ui): collect effort tracking preference and show per
 
 ## Final Verification (after all tasks)
 
-- [ ] Run the complete backend suite: `docker-compose exec backend pytest -v` — all green.
-- [ ] Run backend quality gates: `docker-compose exec backend ruff check . && docker-compose exec backend mypy app/`.
-- [ ] Run the complete frontend suite: `docker-compose exec frontend npm run test:watch -- --run` — all green.
-- [ ] Run frontend quality gates: `docker-compose exec frontend npm run lint && docker-compose exec frontend npm run type-check`.
-- [ ] `docker-compose exec backend uv run alembic heads` shows exactly one head.
-- [ ] `docker-compose exec backend uv run python -m app.db.seed.seed_exercises` runs clean (validates and classifies all 148 exercises without error).
-- [ ] Manual walkthrough at http://localhost:5173: onboarding → program creation, selecting each progression style × effort method combination; confirm week 1 vs. week 4 preview differs for "variable" but stays flat (besides load increments) for "consistent"; confirm the effort target shown next to each set matches the chosen method; confirm a `%1RM` program's required-input step still collects a number (semantics shift to "1RM" is a copy-only change, not required for this plan).
+- [x] Run the complete backend suite: `docker-compose exec backend pytest -v` — all green.
+- [x] Run backend quality gates: `docker-compose exec backend ruff check . && docker-compose exec backend mypy app/`.
+- [x] Run the complete frontend suite: `docker-compose exec frontend npm run test:watch -- --run` — all green.
+- [x] Run frontend quality gates: `docker-compose exec frontend npm run lint && docker-compose exec frontend npm run type-check`.
+- [x] `docker-compose exec backend uv run alembic heads` shows exactly one head.
+- [x] `docker-compose exec backend uv run python -m app.db.seed.seed_exercises` runs clean (validates and classifies all 148 exercises without error).
+- [x] Manual walkthrough at http://localhost:5173: onboarding → program creation, selecting each progression style × effort method combination; confirm week 1 vs. week 4 preview differs for "variable" but stays flat (besides load increments) for "consistent"; confirm the effort target shown next to each set matches the chosen method; confirm a `%1RM` program's required-input step still collects a number (semantics shift to "1RM" is a copy-only change, not required for this plan).

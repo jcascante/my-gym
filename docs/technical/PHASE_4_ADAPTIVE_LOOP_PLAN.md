@@ -1,9 +1,24 @@
 # Phase 4 Implementation Plan — Adaptive Loop
 
 **Branch**: `engine-refactor-phase4`
-**Status**: Planning
+**Status**: Implemented and merged to `main` (PR #15, 2026-07-28); live-signal wiring and reason banners followed in #16–#22. Open items: see "Implementation Status" below.
 **Baseline**: engine-refactor (Phase 3 merged)
 **Exit Criteria**: All 6 tasks complete; pytest/mypy/ruff clean; determinism tests pass; e2e readiness workflow validated
+
+---
+
+## Implementation Status
+
+| Task | Status | Where |
+|------|--------|-------|
+| 4.1 Sensor layer | Done | Per-set RPE and session readiness logging (frontend + backend); sessions anchor live signals |
+| 4.2 Autoregulation | Done | `services/program/adaptation.py`, wired to the active week; reason banner on `WorkoutTrackingPage` |
+| 4.3 Reactive deloads | Done | `services/program/progression/deload.py` |
+| 4.4 Learning-to-rank | Partial | `scripts/train_rank_weights.py` writes a JSON artifact (not `engine.yaml`). Blocked: no `exercise_swap_logs` table/model yet, and the ≥5,000-pair gate needs real usage data |
+| 4.5 Version pinning | Done | `services/program/versioning.py` |
+| 4.6 Calibration job | Done | `scripts/calibrate_score.py` (isotonic regression on RPE predictions) |
+
+Phase 5 remains deferred post-MVP.
 
 ---
 

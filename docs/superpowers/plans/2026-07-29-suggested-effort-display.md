@@ -28,7 +28,7 @@
 - Consumes: nothing new — `_effort_target(scheme: SetScheme, target_rpe: float | None, intensity_pct: float | None, effort_method: str | None) -> dict[str, Any] | None`, called from `derive_week` at `preview.py:187` as `_effort_target(scheme, ex.target_rpe, ex.intensity_pct, effort_method)` where `effort_method = program.constraints.get("effort_method")` (`preview.py:114`).
 - Produces: same signature and return shape, only the `None`-method branch changes.
 
-- [ ] **Step 1: Rewrite the now-contradicted test to expect an RPE fallback**
+- [x] **Step 1: Rewrite the now-contradicted test to expect an RPE fallback**
 
 Replace the test at `backend/tests/test_preview.py:226-250`:
 
@@ -65,12 +65,12 @@ async def test_derive_week_defaults_effort_target_to_rpe_when_effort_method_unse
 
 **Do not** rename the old test and keep both — the old name and assertion (`all(s["effort_target"] is None ...)`) directly contradict the new behavior, so it must be replaced, not duplicated.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `docker-compose exec -T backend uv run pytest tests/test_preview.py::test_derive_week_defaults_effort_target_to_rpe_when_effort_method_unset -v`
 Expected: FAIL — every slot's `effort_target` is currently `None`.
 
-- [ ] **Step 3: Update `_effort_target` to default a null method to RPE**
+- [x] **Step 3: Update `_effort_target` to default a null method to RPE**
 
 In `backend/app/services/program/preview.py`, replace:
 
@@ -111,17 +111,17 @@ def _effort_target(
     return None
 ```
 
-- [ ] **Step 4: Run the full preview test file to verify the new test passes and nothing else broke**
+- [x] **Step 4: Run the full preview test file to verify the new test passes and nothing else broke**
 
 Run: `docker-compose exec -T backend uv run pytest tests/test_preview.py -v`
 Expected: all tests PASS, including `test_derive_week_defaults_effort_target_to_rpe_when_effort_method_unset`, `test_derive_week_includes_rpe_effort_target_when_requested`, `test_derive_week_converts_rpe_to_rir`, and `test_derive_week_percent_1rm_target_includes_load`.
 
-- [ ] **Step 5: Run the broader backend suite for regressions**
+- [x] **Step 5: Run the broader backend suite for regressions**
 
 Run: `docker-compose exec -T backend uv run pytest tests/test_effort_method.py tests/test_scheduling.py tests/test_drafting.py tests/services/progression/test_autoregulation.py -v`
 Expected: all PASS — these exercise adjacent code (`_base_load_for`, autoregulation) that reads `effort_method` too but was not modified.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/app/services/program/preview.py backend/tests/test_preview.py
@@ -140,7 +140,7 @@ git commit -m "fix: default program effort method to RPE when unset"
 - Consumes: `EffortTarget` from `@/types/program` (`{ method: 'rpe' | 'rir' | 'borg' | 'percent_1rm'; value?: number; pct?: number; target_load?: number | null }`), already imported in `effortDisplay.ts`.
 - Produces: `formatEffortSuffix(load: number | null, effortTarget: EffortTarget | null): string | null`, consumed by Task 3 and Task 4.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `frontend/src/utils/__tests__/effortDisplay.test.ts` (new `describe` block, same file, after the existing `formatEffortDisplay` block):
 
@@ -187,12 +187,12 @@ Also update the existing `percent_1rm` test in the `formatEffortDisplay` block (
   });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd frontend && npm test -- effortDisplay.test.ts`
 Expected: FAIL — `formatEffortSuffix` is not exported/defined yet, and the updated `percent_1rm` expectation (`@70% 1RM`) doesn't match the current `@70%` output.
 
-- [ ] **Step 3: Implement `formatEffortSuffix` and update the shared label mapping**
+- [x] **Step 3: Implement `formatEffortSuffix` and update the shared label mapping**
 
 Replace the full contents of `frontend/src/utils/effortDisplay.ts` with:
 
@@ -251,12 +251,12 @@ export function formatEffortSuffix(
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npm test -- effortDisplay.test.ts`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/utils/effortDisplay.ts frontend/src/utils/__tests__/effortDisplay.test.ts
@@ -275,7 +275,7 @@ git commit -m "feat: add formatEffortSuffix for loaded-slot effort targets"
 - Consumes: `formatEffortSuffix(load: number | null, effortTarget: EffortTarget | null): string | null` from Task 2 (`@/utils/effortDisplay`, imported here as `../utils/effortDisplay` matching this file's existing import style).
 - Produces: no new exports; visual change only.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `frontend/src/components/ExerciseSection.test.tsx`, inside the `describe('ExerciseSection', ...)` block:
 
@@ -314,12 +314,12 @@ Add to `frontend/src/components/ExerciseSection.test.tsx`, inside the `describe(
 
 (`rest_seconds: 90` from the shared `exercise()` fixture is why the expected string reads `Rest 1:30`, matching the existing `Target:` line's minute:second formatting at `ExerciseSection.tsx:69-70`.)
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd frontend && npm test -- ExerciseSection.test.tsx`
 Expected: FAIL — the `Target:` line currently renders `Target: 2 x 8 @80 lbs · Rest 1:30`, with no `RPE 8`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `frontend/src/components/ExerciseSection.tsx`, update the import and add the suffix:
 
@@ -350,12 +350,12 @@ Replace the `Target:` line:
 
 The collapsed header's `{effortDisplay}` span (line 56-58) is unchanged — it never renders `effortSuffix`.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npm test -- ExerciseSection.test.tsx`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/components/ExerciseSection.tsx frontend/src/components/ExerciseSection.test.tsx
@@ -376,7 +376,7 @@ git commit -m "feat: show suggested effort next to loaded sets in exercise targe
 - Consumes: `formatEffortSuffix(load: number | null, effortTarget: EffortTarget | null): string | null` from Task 2 (`@/utils/effortDisplay`, matching both files' existing import path).
 - Produces: no new exports; visual change only.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `frontend/src/tests/components/SlotRow.test.tsx`, inside `describe('SlotRow', ...)`:
 
@@ -413,12 +413,12 @@ Add to `frontend/src/tests/components/ExerciseSlotCard.test.tsx`, inside `descri
     });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd frontend && npm test -- SlotRow.test.tsx ExerciseSlotCard.test.tsx`
 Expected: FAIL — neither `RPE 8` nor `RIR 2` render today.
 
-- [ ] **Step 3: Implement in `SlotRow.tsx`**
+- [x] **Step 3: Implement in `SlotRow.tsx`**
 
 Update the import:
 
@@ -452,7 +452,7 @@ Add a chip next to the existing `effortDisplay` span (inside the `flex flex-wrap
             )}
 ```
 
-- [ ] **Step 4: Implement in `ExerciseSlotCard.tsx`**
+- [x] **Step 4: Implement in `ExerciseSlotCard.tsx`**
 
 Update the import:
 
@@ -486,12 +486,12 @@ Add a chip next to the existing `effortDisplay` span (inside the `flex flex-wrap
           )}
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `cd frontend && npm test -- SlotRow.test.tsx ExerciseSlotCard.test.tsx`
 Expected: all PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/src/components/SlotRow.tsx frontend/src/components/ExerciseSlotCard.tsx frontend/src/tests/components/SlotRow.test.tsx frontend/src/tests/components/ExerciseSlotCard.test.tsx
@@ -506,17 +506,17 @@ git commit -m "feat: show suggested effort chip for loaded slots in plan preview
 
 **Interfaces:** none
 
-- [ ] **Step 1: Run the full backend suite**
+- [x] **Step 1: Run the full backend suite**
 
 Run: `docker-compose exec -T backend uv run pytest`
 Expected: all PASS, no new failures.
 
-- [ ] **Step 2: Run the full frontend suite**
+- [x] **Step 2: Run the full frontend suite**
 
 Run: `cd frontend && npm test -- --run`
 Expected: all PASS, no new failures.
 
-- [ ] **Step 3: Manually verify in the running app**
+- [x] **Step 3: Manually verify in the running app**
 
 With `docker-compose up` already running (per `CLAUDE.md`'s quick-start), open a workout tracking session for a program whose `effort_method` is unset (drafted via the wizard's "Not sure yet / skip" option) and confirm:
 - A loadless accessory slot's header reads e.g. `3 x 12 @ RPE 7` (unchanged from before).

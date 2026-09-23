@@ -46,7 +46,7 @@
   - Response shape validation
   - Pagination behavior
 
-- [ ] **Step 1: Write test for initial load (no pagination params)**
+- [x] **Step 1: Write test for initial load (no pagination params)**
 
 Add to `backend/tests/test_programs_flow.py`:
 
@@ -75,7 +75,7 @@ async def test_match_endpoint_returns_default_batch_size(client: TestClient):
     assert len(data["matches"]) <= 4
 ```
 
-- [ ] **Step 2: Write test for pagination with limit and offset**
+- [x] **Step 2: Write test for pagination with limit and offset**
 
 ```python
 @pytest.mark.asyncio
@@ -100,7 +100,7 @@ async def test_match_endpoint_with_limit_and_offset(client: TestClient):
     assert data["total_count"] >= len(data["matches"])
 ```
 
-- [ ] **Step 3: Write test for invalid query params**
+- [x] **Step 3: Write test for invalid query params**
 
 ```python
 @pytest.mark.asyncio
@@ -119,7 +119,7 @@ async def test_match_endpoint_rejects_negative_limit(client: TestClient):
     assert response.status_code == 422  # Validation error
 ```
 
-- [ ] **Step 4: Run tests to verify they fail**
+- [x] **Step 4: Run tests to verify they fail**
 
 ```bash
 cd backend
@@ -130,7 +130,7 @@ pytest tests/test_programs_flow.py::test_match_endpoint_rejects_negative_limit -
 
 Expected: All 3 tests FAIL (endpoint doesn't support pagination yet)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/tests/test_programs_flow.py
@@ -154,7 +154,7 @@ git commit -m "test(backend): add pagination query parameter tests for match end
   - Updated `/match` endpoint that passes `limit`/`offset` to `rank_templates()`
   - Response shape: `TemplateMatchResponse` with matches, total_count, offset, limit
 
-- [ ] **Step 1: Add query parameters to endpoint signature**
+- [x] **Step 1: Add query parameters to endpoint signature**
 
 Modify `backend/app/api/v1/endpoints/programs.py` line 111:
 
@@ -170,7 +170,7 @@ async def match(
 ) -> TemplateMatchResponse:
 ```
 
-- [ ] **Step 2: Pass pagination params to rank_templates**
+- [x] **Step 2: Pass pagination params to rank_templates**
 
 Modify line 144 in the same function, in the `rank_templates()` call:
 
@@ -187,7 +187,7 @@ Modify line 144 in the same function, in the `rank_templates()` call:
     )
 ```
 
-- [ ] **Step 3: Calculate effective limit for response**
+- [x] **Step 3: Calculate effective limit for response**
 
 Modify line 176 (after the rank_templates call, before the return):
 
@@ -201,7 +201,7 @@ Modify line 176 (after the rank_templates call, before the return):
     )
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 ```bash
 cd backend
@@ -212,7 +212,7 @@ pytest tests/test_programs_flow.py::test_match_endpoint_rejects_negative_limit -
 
 Expected: All 3 tests PASS
 
-- [ ] **Step 5: Run full backend test suite**
+- [x] **Step 5: Run full backend test suite**
 
 ```bash
 cd backend
@@ -224,7 +224,7 @@ ruff check app/ tests/
 
 Expected: All tests pass, type-check clean, linting clean
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/app/api/v1/endpoints/programs.py backend/tests/test_programs_flow.py
@@ -246,7 +246,7 @@ git commit -m "feat(backend): add limit/offset pagination parameters to match en
 - Produces:
   - Integration test verifying full pagination flow
 
-- [ ] **Step 1: Write full pagination flow test**
+- [x] **Step 1: Write full pagination flow test**
 
 Add to `backend/tests/test_programs_flow.py`:
 
@@ -287,7 +287,7 @@ async def test_match_endpoint_pagination_flow_full_sequence(client: TestClient):
     assert len(ids1 & ids2) == 0, "Pagination returned duplicate templates"
 ```
 
-- [ ] **Step 2: Run test to verify full flow**
+- [x] **Step 2: Run test to verify full flow**
 
 ```bash
 cd backend
@@ -296,7 +296,7 @@ pytest tests/test_programs_flow.py::test_match_endpoint_pagination_flow_full_seq
 
 Expected: PASS
 
-- [ ] **Step 3: Run all backend tests**
+- [x] **Step 3: Run all backend tests**
 
 ```bash
 cd backend
@@ -305,7 +305,7 @@ pytest tests/ -q
 
 Expected: All tests pass (no regressions)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add backend/tests/test_programs_flow.py
@@ -327,7 +327,7 @@ git commit -m "test(backend): add full pagination flow integration test for matc
 - Produces:
   - Validation that response exactly matches what frontend expects
 
-- [ ] **Step 1: Write contract validation test**
+- [x] **Step 1: Write contract validation test**
 
 Add to `backend/tests/test_programs_flow.py`:
 
@@ -375,7 +375,7 @@ async def test_match_response_matches_frontend_contract(client: TestClient):
     assert isinstance(data["limit"], int)
 ```
 
-- [ ] **Step 2: Run contract test**
+- [x] **Step 2: Run contract test**
 
 ```bash
 cd backend
@@ -384,7 +384,7 @@ pytest tests/test_programs_flow.py::test_match_response_matches_frontend_contrac
 
 Expected: PASS
 
-- [ ] **Step 3: Run full suite one final time**
+- [x] **Step 3: Run full suite one final time**
 
 ```bash
 cd backend
@@ -396,7 +396,7 @@ ruff check app/ tests/
 
 Expected: All passing
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add backend/tests/test_programs_flow.py

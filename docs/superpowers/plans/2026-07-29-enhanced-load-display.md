@@ -26,7 +26,7 @@
 **Interfaces:**
 - Produces: `formatEffortDisplay(sets: number, reps: number, load: number | null, weightUnit: WeightUnit, effortTarget: EffortTarget | null): string`
 
-- [ ] **Step 1: Write test file with all effort scenarios**
+- [x] **Step 1: Write test file with all effort scenarios**
 
 Create `frontend/src/utils/__tests__/effortDisplay.test.ts`:
 
@@ -89,7 +89,7 @@ describe('formatEffortDisplay', () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify all fail**
+- [x] **Step 2: Run tests to verify all fail**
 
 ```bash
 cd /Users/jorgecascante/develop/my-gym
@@ -98,7 +98,7 @@ npm test -- frontend/src/utils/__tests__/effortDisplay.test.ts
 
 Expected: All 8 tests fail with "formatEffortDisplay not defined"
 
-- [ ] **Step 3: Implement formatEffortDisplay utility**
+- [x] **Step 3: Implement formatEffortDisplay utility**
 
 Create `frontend/src/utils/effortDisplay.ts`:
 
@@ -142,7 +142,7 @@ export function formatEffortDisplay(
 }
 ```
 
-- [ ] **Step 4: Run tests to verify all pass**
+- [x] **Step 4: Run tests to verify all pass**
 
 ```bash
 npm test -- frontend/src/utils/__tests__/effortDisplay.test.ts
@@ -150,7 +150,7 @@ npm test -- frontend/src/utils/__tests__/effortDisplay.test.ts
 
 Expected: All 8 tests pass
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/utils/effortDisplay.ts frontend/src/utils/__tests__/effortDisplay.test.ts
@@ -169,7 +169,7 @@ git commit -m "feat: add formatEffortDisplay utility for consistent effort displ
 - Consumes: `formatEffortDisplay(sets, reps, load, weightUnit, effortTarget): string` from Task 1
 - Produces: ExerciseSection now accepts `weightUnit: WeightUnit` prop (required)
 
-- [ ] **Step 1: Update ExerciseSection tests to add weightUnit prop**
+- [x] **Step 1: Update ExerciseSection tests to add weightUnit prop**
 
 In `frontend/src/components/ExerciseSection.test.tsx`, update all render calls to include the prop:
 
@@ -195,7 +195,7 @@ const exercise = (overrides: Partial<ExerciseProgress> = {}): ExerciseProgress =
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail (missing weightUnit prop)**
+- [x] **Step 2: Run tests to verify they fail (missing weightUnit prop)**
 
 ```bash
 npm test -- frontend/src/components/ExerciseSection.test.tsx
@@ -203,7 +203,7 @@ npm test -- frontend/src/components/ExerciseSection.test.tsx
 
 Expected: Tests fail with "Property 'weightUnit' is missing in type"
 
-- [ ] **Step 3: Update ExerciseSection component signature and header display**
+- [x] **Step 3: Update ExerciseSection component signature and header display**
 
 In `frontend/src/components/ExerciseSection.tsx`:
 
@@ -307,7 +307,7 @@ export const ExerciseSection: React.FC<ExerciseSectionProps> = ({
 };
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 ```bash
 npm test -- frontend/src/components/ExerciseSection.test.tsx
@@ -315,7 +315,7 @@ npm test -- frontend/src/components/ExerciseSection.test.tsx
 
 Expected: All tests pass
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/components/ExerciseSection.tsx frontend/src/components/ExerciseSection.test.tsx
@@ -334,7 +334,7 @@ git commit -m "feat: display effort in ExerciseSection header and details using 
 - Consumes: `formatEffortDisplay(sets, reps, load, weightUnit, effortTarget): string` from Task 1
 - Produces: SetRow now accepts `weightUnit: WeightUnit` prop (required)
 
-- [ ] **Step 1: Update SetRow component signature**
+- [x] **Step 1: Update SetRow component signature**
 
 In `frontend/src/components/SetRow.tsx`, add the import and prop:
 
@@ -368,7 +368,7 @@ export const SetRow: React.FC<SetRowProps> = ({
 }
 ```
 
-- [ ] **Step 2: Update SetRow summary mode display**
+- [x] **Step 2: Update SetRow summary mode display**
 
 Replace the summary mode return (around line 105-121) with:
 
@@ -405,7 +405,7 @@ if (mode === 'summary' && loggedSet) {
 }
 ```
 
-- [ ] **Step 3: Run component visually (dev server)**
+- [x] **Step 3: Run component visually (dev server)**
 
 ```bash
 npm run dev
@@ -416,7 +416,7 @@ Navigate to a workout tracking page and verify:
 - ExerciseSection expanded view shows effort in details (e.g., "Target: 4 x 10 @80 lbs")
 - SetRow summary (after logging) shows effort (e.g., "Set 1 · 1 x 8 @80 lbs")
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 ```bash
 npm test -- frontend/src/components/SetRow.test.tsx
@@ -424,7 +424,7 @@ npm test -- frontend/src/components/SetRow.test.tsx
 
 Expected: Tests pass (or update them if they have hardcoded display assertions)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/components/SetRow.tsx
@@ -442,7 +442,7 @@ git commit -m "feat: display effort in SetRow summary using formatEffortDisplay"
 - Consumes: `userProfile.weight_unit` (WeightUnit from auth store)
 - Produces: ExerciseSection receives weightUnit prop
 
-- [ ] **Step 1: Add weightUnit extraction in WorkoutTrackingPage**
+- [x] **Step 1: Add weightUnit extraction in WorkoutTrackingPage**
 
 In `frontend/src/pages/WorkoutTrackingPage.tsx`, after the `effortMethod` extraction (around line 22):
 
@@ -465,7 +465,7 @@ You'll also need to add the import:
 import type { WeightUnit } from '@/types/programCreation';
 ```
 
-- [ ] **Step 2: Pass weightUnit to ExerciseSection**
+- [x] **Step 2: Pass weightUnit to ExerciseSection**
 
 Find the ExerciseSection render call (around line 180-190) and add the prop:
 
@@ -480,7 +480,7 @@ Find the ExerciseSection render call (around line 180-190) and add the prop:
 />
 ```
 
-- [ ] **Step 3: Run the app and test**
+- [x] **Step 3: Run the app and test**
 
 ```bash
 npm run dev
@@ -491,7 +491,7 @@ Navigate to a workout tracking page and verify:
 - Exercises show effort with correct units
 - SetRow summary shows correct units after logging
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/src/pages/WorkoutTrackingPage.tsx
@@ -510,7 +510,7 @@ git commit -m "feat: thread weight_unit from userProfile to ExerciseSection and 
 - Consumes: Same formatEffortDisplay utility
 - Produces: Schedule view also shows effort display (optional enhancement)
 
-- [ ] **Step 1: Check if schedule view needs weightUnit**
+- [x] **Step 1: Check if schedule view needs weightUnit**
 
 Open `frontend/src/components/DraftProgramView.tsx` and look for where exercises are displayed in the schedule/list view (not the tracking detail view). Check if it shows exercise details like "4 x 10 @80 lbs" or just "4 x 10".
 
@@ -518,7 +518,7 @@ Open `frontend/src/components/DraftProgramView.tsx` and look for where exercises
 grep -n "load\|reps\|sets" frontend/src/components/DraftProgramView.tsx | head -20
 ```
 
-- [ ] **Step 2: If schedule view displays exercises, add weightUnit prop**
+- [x] **Step 2: If schedule view displays exercises, add weightUnit prop**
 
 If DraftProgramView shows exercises, add `weightUnit` prop similar to Task 4. If it doesn't display detailed exercise info (only exercise names), skip this step.
 
@@ -529,7 +529,7 @@ git add frontend/src/components/DraftProgramView.tsx
 git commit -m "feat: display effort in schedule view using formatEffortDisplay"
 ```
 
-- [ ] **Step 3: If no changes needed, mark complete**
+- [x] **Step 3: If no changes needed, mark complete**
 
 If the schedule view doesn't show detailed exercise loads/reps, no changes are needed. Mark as complete.
 
@@ -540,36 +540,36 @@ If the schedule view doesn't show detailed exercise loads/reps, no changes are n
 **Files:**
 - Test: Manual testing across scheduling and tracking views
 
-- [ ] **Step 1: Start dev server**
+- [x] **Step 1: Start dev server**
 
 ```bash
 npm run dev
 ```
 
-- [ ] **Step 2: Test scenario 1: Weight-based effort**
+- [x] **Step 2: Test scenario 1: Weight-based effort**
 
 1. Navigate to a workout with exercises that have `load` values
 2. Check ExerciseSection header displays effort (e.g., "4 x 10 @80 lbs")
 3. Click to expand, verify details show effort (e.g., "Target: 4 x 10 @80 lbs")
 4. Log a set and verify summary shows effort (e.g., "Set 1 · 1 x 8 @80 lbs")
 
-- [ ] **Step 3: Test scenario 2: Effort-target-based (RPE/RIR/Borg/Percent)**
+- [x] **Step 3: Test scenario 2: Effort-target-based (RPE/RIR/Borg/Percent)**
 
 1. If available, navigate to a workout with exercises that have NO `load` but have `effort_target`
 2. Verify ExerciseSection displays effort (e.g., "4 x 10 @RPE 7" or "4 x 10 @RIR 2")
 3. Expand and verify details show correct format
 4. Log a set and verify summary shows effort correctly
 
-- [ ] **Step 4: Test scenario 3: Weight units (kg vs lbs)**
+- [x] **Step 4: Test scenario 3: Weight units (kg vs lbs)**
 
 1. If your test user has `weight_unit: 'kg'`, verify displays show "kg" instead of "lbs"
 2. Check both header, details, and SetRow summary
 
-- [ ] **Step 5: Test scenario 4: No load, no effort_target**
+- [x] **Step 5: Test scenario 4: No load, no effort_target**
 
 1. If any exercise has neither load nor effort_target, verify it displays "4 x 10" (no @)
 
-- [ ] **Step 6: Run full test suite**
+- [x] **Step 6: Run full test suite**
 
 ```bash
 npm test
@@ -577,7 +577,7 @@ npm test
 
 Expected: All tests pass, no regressions in other components
 
-- [ ] **Step 7: Commit if any manual-test fixes were needed**
+- [x] **Step 7: Commit if any manual-test fixes were needed**
 
 ```bash
 git add .

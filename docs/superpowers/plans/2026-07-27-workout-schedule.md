@@ -110,7 +110,7 @@
   - `app.models.logging.WorkoutSetLog.session_id: int` — **NOT NULL** FK.
   - `app.models.logging.UserWorkoutLog.session_id: int` — **NOT NULL** FK.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `backend/tests/test_session_model.py`:
 
@@ -188,12 +188,12 @@ async def test_readiness_log_without_a_session_is_rejected(db_session: AsyncSess
         await db_session.commit()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_session_model.py -v`
 Expected: FAIL — `ImportError: cannot import name 'SessionStatus' from 'app.models'`
 
-- [ ] **Step 3: Write the model**
+- [x] **Step 3: Write the model**
 
 Create `backend/app/models/session.py`:
 
@@ -237,7 +237,7 @@ class WorkoutSession(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
 ```
 
-- [ ] **Step 4: Add the session column to both log tables**
+- [x] **Step 4: Add the session column to both log tables**
 
 In `backend/app/models/logging.py`, add to `WorkoutSetLog` after `workout_exercise_id`, and to `UserWorkoutLog` after `workout_id`:
 
@@ -247,7 +247,7 @@ In `backend/app/models/logging.py`, add to `WorkoutSetLog` after `workout_exerci
 
 NOT NULL on both is the invariant this plan exists to establish — a log that cannot name its session must not be writable.
 
-- [ ] **Step 5: Export from the models package**
+- [x] **Step 5: Export from the models package**
 
 In `backend/app/models/__init__.py`, add the import next to the other model imports:
 
@@ -257,14 +257,14 @@ from .session import SessionStatus, WorkoutSession
 
 and add `"SessionStatus"` and `"WorkoutSession"` to `__all__`.
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_session_model.py -v`
 Expected: PASS (5 tests)
 
 Other suites will now fail to construct logs without a `session_id`. That is expected and is fixed in Tasks 9 and 9.1 — do not relax the constraint to quiet them.
 
-- [ ] **Step 7: Write the migration**
+- [x] **Step 7: Write the migration**
 
 Create `backend/alembic/versions/a3f81c9d2e40_add_workout_sessions.py`:
 
@@ -337,7 +337,7 @@ def downgrade() -> None:
     SESSION_STATUS.drop(op.get_bind(), checkfirst=True)
 ```
 
-- [ ] **Step 8: Verify the migration round-trips**
+- [x] **Step 8: Verify the migration round-trips**
 
 Run:
 ```bash
@@ -347,7 +347,7 @@ docker-compose exec backend alembic upgrade head
 ```
 Expected: all three succeed with no error. `alembic heads` reports exactly one head, `a3f81c9d2e40`.
 
-- [ ] **Step 9: Type check and commit**
+- [x] **Step 9: Type check and commit**
 
 ```bash
 docker-compose exec backend mypy app/
@@ -369,7 +369,7 @@ git commit -m "feat(sessions): add WorkoutSession model and migration"
   - `weekday_offsets(n: int) -> list[int]` — evenly spread day offsets for `n` sessions per week. Raises `ValueError` outside 1..7.
   - `session_date(start_date: date, week: int, index: int, offsets: list[int]) -> date`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `backend/tests/test_scheduling.py`:
 
@@ -427,12 +427,12 @@ def test_session_date_crosses_a_month_boundary() -> None:
     assert session_date(start, 2, 3, offsets) == date(2026, 8, 7)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_scheduling.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.services.program.scheduling'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `backend/app/services/program/scheduling.py`:
 
@@ -462,12 +462,12 @@ def session_date(start_date: date, week: int, index: int, offsets: list[int]) ->
     return start_date + timedelta(days=(week - 1) * 7 + offsets[index])
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_scheduling.py -v`
 Expected: PASS (14 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/scheduling.py backend/tests/test_scheduling.py
@@ -487,7 +487,7 @@ git commit -m "feat(sessions): add schedule date arithmetic"
 - Consumes: `weekday_offsets`, `session_date` (Task 2); `WorkoutSession`, `SessionStatus` (Task 1).
 - Produces: `async def materialize_sessions(db: AsyncSession, program: WorkoutProgram) -> list[WorkoutSession]` — inserts one session per (week, workout), writes the resolved offsets to `program.constraints["training_day_offsets"]`, and returns the created rows. Returns `[]` and inserts nothing when the program has no `start_date`, no workouts, or already has sessions.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `backend/tests/test_scheduling.py`:
 
@@ -577,12 +577,12 @@ async def test_materialize_skips_a_program_without_a_start_date(
     assert await materialize_sessions(db_session, three_day_program) == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_scheduling.py -v -k materialize`
 Expected: FAIL — `ImportError: cannot import name 'materialize_sessions'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Append to `backend/app/services/program/scheduling.py`:
 
@@ -627,12 +627,12 @@ async def materialize_sessions(db: AsyncSession, program: WorkoutProgram) -> lis
     return sessions
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_scheduling.py -v`
 Expected: PASS (19 tests)
 
-- [ ] **Step 5: Wire it into program acceptance**
+- [x] **Step 5: Wire it into program acceptance**
 
 In `backend/app/api/v1/endpoints/programs.py`, add to the imports:
 
@@ -655,7 +655,7 @@ async def accept(
     return await _preview_out(db, program, definition, user)
 ```
 
-- [ ] **Step 6: Write the acceptance test**
+- [x] **Step 6: Write the acceptance test**
 
 Append to `backend/tests/test_scheduling.py`:
 
@@ -693,12 +693,12 @@ async def test_accepting_a_program_materializes_its_sessions(
     assert min(s.scheduled_date for s in sessions) == date(2026, 7, 27)
 ```
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [x] **Step 7: Run tests to verify they pass**
 
 Run: `docker-compose exec backend pytest tests/test_scheduling.py tests/test_programs_flow.py -v`
 Expected: PASS. If the draft payload above is rejected, read the request schema in `backend/app/schemas/program_api.py` and the existing draft calls in `backend/tests/test_programs_flow.py`, and align the fixture payload — do not change the endpoint.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix
@@ -718,7 +718,7 @@ git commit -m "feat(sessions): materialize sessions when a program is accepted"
 - Consumes: `WorkoutSession`, `SessionStatus` (Task 1).
 - Produces: `async def flip_missed(db: AsyncSession, program_id: int, today: date) -> None` — sets `status = MISSED` on every `SCHEDULED` row of that program dated before `today`. Touches nothing in any other status.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `backend/tests/test_scheduling.py`:
 
@@ -788,12 +788,12 @@ async def test_flip_does_not_touch_todays_session(
     assert {s.status for s in result.scalars().all()} == {SessionStatus.SCHEDULED}
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_scheduling.py -v -k flip`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.crud.session'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `backend/app/crud/session.py`:
 
@@ -826,12 +826,12 @@ async def flip_missed(db: AsyncSession, program_id: int, today: date) -> None:
     await db.commit()
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_scheduling.py -v`
 Expected: PASS (24 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/crud/session.py backend/tests/test_scheduling.py
@@ -853,7 +853,7 @@ git commit -m "feat(sessions): flip past scheduled sessions to missed"
   - `async def get_session(db, session_id: int, user_id: int) -> WorkoutSession | None` — ownership-scoped, flipping missed rows for that program first.
   - `async def set_session_status(db, session: WorkoutSession, status: SessionStatus) -> WorkoutSession` — writes `completed_at` when moving to `COMPLETED`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `backend/tests/test_scheduling.py`:
 
@@ -908,12 +908,12 @@ async def test_completing_a_session_stamps_completed_at(
     assert updated.completed_at is not None
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_scheduling.py -v -k "range_query or get_session or completing"`
 Expected: FAIL — `ImportError: cannot import name 'get_sessions_in_range'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Append to `backend/app/crud/session.py`:
 
@@ -976,12 +976,12 @@ async def set_session_status(
     return session
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_scheduling.py -v`
 Expected: PASS (28 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 docker-compose exec backend mypy app/
@@ -1006,7 +1006,7 @@ git commit -m "feat(sessions): add session range and detail queries"
   - `SessionSetLogCreate` — `workout_exercise_id: int`, `set_number: int`, `actual_weight: float | None`, `actual_reps: int | None`, `actual_rpe: float | None`, `effort_method: Literal["rpe", "rir", "borg"]`. No `workout_id`; the session supplies it. This **replaces** `WorkoutSetLogCreate`, which is deleted — there is no second validator set to share or duplicate.
   - `WorkoutSetLogOut.session_id: int`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `backend/tests/test_session_schemas.py`:
 
@@ -1045,12 +1045,12 @@ def test_session_set_log_rejects_a_bad_rpe() -> None:
         SessionSetLogCreate(workout_exercise_id=3, set_number=1, actual_rpe=99.0)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_session_schemas.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.schemas.session'`
 
-- [ ] **Step 3: Write the schemas**
+- [x] **Step 3: Write the schemas**
 
 Create `backend/app/schemas/session.py`:
 
@@ -1127,7 +1127,7 @@ class SessionSetLogCreate(BaseModel):
         return v
 ```
 
-- [ ] **Step 4: Retire WorkoutSetLogCreate**
+- [x] **Step 4: Retire WorkoutSetLogCreate**
 
 In `backend/app/schemas/logging.py`:
 
@@ -1143,12 +1143,12 @@ In `backend/app/schemas/logging.py`:
 
 Imports in `crud/logging.py` and `endpoints/logging.py` still reference `WorkoutSetLogCreate` and will fail until Task 9. That is expected — do not re-add the class.
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_session_schemas.py -v`
 Expected: PASS (3 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 docker-compose exec backend mypy app/
@@ -1169,7 +1169,7 @@ git commit -m "feat(sessions): add session request and response schemas"
 - Consumes: `get_sessions_in_range`, `get_session` (Task 5); `ScheduleEntryOut`, `SessionDetailOut` (Task 6).
 - Produces: `sessions_router` — an `APIRouter(prefix="/users/me", tags=["sessions"])` exporting `GET /schedule` and `GET /sessions/{session_id}`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `backend/tests/test_sessions_api.py`:
 
@@ -1263,12 +1263,12 @@ async def test_session_detail_404s_for_a_stranger(
 
 Copy the `other_user` / `other_user_token` fixtures from `backend/tests/test_logging.py:14-38` into this file.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_sessions_api.py -v`
 Expected: FAIL — 404 on every route; the router does not exist yet.
 
-- [ ] **Step 3: Write the endpoints**
+- [x] **Step 3: Write the endpoints**
 
 Create `backend/app/api/v1/endpoints/sessions.py`:
 
@@ -1379,7 +1379,7 @@ async def get_session_detail(
 
 `slots` and `logged_sets` are filled in by Task 8. Leaving them empty here keeps this task's tests honest about what is actually wired.
 
-- [ ] **Step 4: Register the router**
+- [x] **Step 4: Register the router**
 
 In `backend/app/main.py`, add the import alongside the other endpoint imports:
 
@@ -1393,12 +1393,12 @@ and after line 94:
 app.include_router(sessions_router, prefix=settings.API_V1_STR)
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_sessions_api.py -v`
 Expected: PASS (4 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix
@@ -1422,7 +1422,7 @@ git commit -m "feat(sessions): add schedule and session detail endpoints"
   - `app.services.program.loading.load_program_with_definition(db, user_id: int, program_id: int) -> tuple[WorkoutProgram, TemplateDefinition]` — the body currently inlined in `programs.py:_load`, made importable. Raises `ProgramNotFoundError`.
   - `SessionDetailOut.slots` populated from `derive_week(program, definition, session.week)`, and `logged_sets` from the session's set logs.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `backend/tests/test_sessions_api.py`:
 
@@ -1467,12 +1467,12 @@ async def test_session_detail_slots_come_from_the_sessions_own_week(
     assert detail_1["slots"][0]["load"] != detail_4["slots"][0]["load"]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_sessions_api.py -v -k own_week`
 Expected: FAIL — `assert len([]) > 0`, because `slots` is hardcoded empty.
 
-- [ ] **Step 3: Extract the program+definition loader**
+- [x] **Step 3: Extract the program+definition loader**
 
 `programs.py:_load` already resolves a program into a `(WorkoutProgram, TemplateDefinition)` pair with the progression style applied. Sessions need the same pair, so move it somewhere both can import.
 
@@ -1511,7 +1511,7 @@ adding `from app.services.program.loading import load_program_with_definition` t
 
 Run `docker-compose exec backend pytest tests/test_programs_flow.py -v` and confirm it still passes before continuing.
 
-- [ ] **Step 4: Populate slots and logged sets**
+- [x] **Step 4: Populate slots and logged sets**
 
 In `backend/app/api/v1/endpoints/sessions.py`, add imports:
 
@@ -1559,12 +1559,12 @@ Replace the `program = (await db.execute(select(WorkoutProgram)...)).scalar_one(
 
 `load_program_with_definition` wraps `get_program`, which eager-loads workouts and their exercises — `derive_week` walks `program.workouts[*].exercises`, so the bare `select(WorkoutProgram)` from Task 7 would lazy-load and fail.
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_sessions_api.py -v`
 Expected: PASS (5 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix
@@ -1592,7 +1592,7 @@ git commit -m "feat(sessions): resolve session slots from the session's own week
   - `crud_logging.append_set_log(db, user_id, session, data: SessionSetLogCreate) -> WorkoutSetLog` and `create_workout_log(db, user_id, session, data) -> UserWorkoutLog` — both take the session, not a bare `workout_id`.
 - Removes: every workout-scoped logging route, and the `router` / `users_workout_router` split in `logging.py`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `backend/tests/test_sessions_api.py`:
 
@@ -1703,12 +1703,12 @@ async def test_a_set_log_is_always_anchored_to_its_session(
     assert [log.workout_id for log in logs] == [entry["workout_id"]]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_sessions_api.py -v -k "set_log or completing or readiness or stranger"`
 Expected: FAIL — 405 or 404; the write routes do not exist.
 
-- [ ] **Step 3: Make the CRUD writers session-scoped**
+- [x] **Step 3: Make the CRUD writers session-scoped**
 
 In `backend/app/crud/logging.py`, replace the `WorkoutSetLogCreate` import with `SessionSetLogCreate` from `app.schemas.session`, import `WorkoutSession` from `app.models.session`, and rewrite both writers so the session — not a caller-supplied `workout_id` — determines what the log is attached to:
 
@@ -1756,7 +1756,7 @@ async def create_workout_log(
 
 `workout_id` is kept as a denormalised convenience for the existing queries; `session_id` is the authority. Leave `get_workout_log`, `get_user_workout_logs`, and `get_set_logs` as they are — Task 9.1 revisits the signal queries.
 
-- [ ] **Step 4: Write the endpoints**
+- [x] **Step 4: Write the endpoints**
 
 Append to `backend/app/api/v1/endpoints/sessions.py`:
 
@@ -1826,7 +1826,7 @@ async def complete_session(
     return await _session_detail(db, session, user)
 ```
 
-- [ ] **Step 5: Extract the shared response builder**
+- [x] **Step 5: Extract the shared response builder**
 
 `complete_session` must not call the `get_session_detail` route handler. Move the whole `SessionDetailOut(...)` construction from Task 8 into a module-level helper and have both call it:
 
@@ -1879,7 +1879,7 @@ async def get_session_detail(
     return await _session_detail(db, await _owned_session(db, session_id, user), user)
 ```
 
-- [ ] **Step 6: Delete the legacy logging routes**
+- [x] **Step 6: Delete the legacy logging routes**
 
 Session-scoped routes are now the only way to log. In `backend/app/api/v1/endpoints/logging.py`, delete `create_session_log`, `get_session_log`, `append_set_log`, `get_workout_sets`, `create_set_log`, and `create_readiness` — every route in the file — along with both `router` and `users_workout_router`. The file's remaining content is unused; delete the file.
 
@@ -1889,17 +1889,17 @@ In `backend/tests/test_logging.py`, delete the tests that exercise the removed H
 
 Anything still importing `WorkoutSetLogCreate` is now dead; `docker-compose exec backend grep -rn "WorkoutSetLogCreate\|users_workout_router\|logging_router" app/ tests/` must come back empty.
 
-- [ ] **Step 7: Run test to verify it passes**
+- [x] **Step 7: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_sessions_api.py tests/test_logging.py -v`
 Expected: PASS (11 tests in `test_sessions_api.py`, plus the surviving CRUD tests).
 
-- [ ] **Step 8: Run the full backend suite**
+- [x] **Step 8: Run the full backend suite**
 
 Run: `docker-compose exec backend pytest`
 Expected: `test_programs_live_signals.py` and `test_adaptation.py` may still fail — they construct logs without a session and are fixed in Task 9.1. Everything else passes. Report which suites fail and why; do not relax the NOT NULL constraint.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix && docker-compose exec backend black .
@@ -1931,7 +1931,7 @@ engine's own suites.
   Both join `WorkoutSetLog.session_id` / `UserWorkoutLog.session_id` to `WorkoutSession.id` and filter on `WorkoutSession.program_id`, so a log can only ever influence the program whose session it belongs to.
 - Removes: `get_set_logs_for_workouts`, `get_workout_logs_for_workouts`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `backend/tests/test_signal_queries.py`:
 
@@ -2057,12 +2057,12 @@ async def test_readiness_is_scoped_to_one_program(
     assert await get_readiness_for_sessions(db_session, program_b.id, test_user.id, since) == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_signal_queries.py -v`
 Expected: FAIL — `ImportError: cannot import name 'get_set_logs_for_sessions'`
 
-- [ ] **Step 3: Write the queries**
+- [x] **Step 3: Write the queries**
 
 In `backend/app/crud/logging.py`, delete `get_set_logs_for_workouts` and `get_workout_logs_for_workouts`, and add:
 
@@ -2111,7 +2111,7 @@ async def get_readiness_for_sessions(
 
 Add `from app.models.session import WorkoutSession` to the imports.
 
-- [ ] **Step 4: Rewire `_preview_out`**
+- [x] **Step 4: Rewire `_preview_out`**
 
 In `backend/app/api/v1/endpoints/programs.py`, change the import on line 19 to the two new names, and replace the signal-loading block (lines 115-123) with:
 
@@ -2128,12 +2128,12 @@ In `backend/app/api/v1/endpoints/programs.py`, change the import on line 19 to t
 
 The `workout_ids` local is now unused — delete it.
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `docker-compose exec backend pytest tests/test_signal_queries.py tests/test_programs_live_signals.py -v`
 Expected: `test_signal_queries.py` PASS (3 tests). `test_programs_live_signals.py` builds logs without a session and will need each construction updated to create a `WorkoutSession` and pass its id — do that, keeping every existing assertion about which weeks receive signals unchanged.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix
@@ -2153,7 +2153,7 @@ git commit -m "feat(signals): scope live-signal queries through sessions"
 - Consumes: `WorkoutSetLog.session_id` (Task 1).
 - Produces: `compute_adjustment` groups EWMA samples by `log.session_id` instead of `log.created_at.date()`. Its signature, `MIN_SESSIONS`, EWMA parameters, and clamp range are unchanged.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `backend/tests/test_adaptation.py`:
 
@@ -2203,12 +2203,12 @@ def test_one_session_spanning_midnight_counts_as_one_sample() -> None:
 
 The first test currently fails because three same-day sessions collapse to one date key; the second fails because one session split across midnight looks like two.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_adaptation.py -v -k "one_day or midnight"`
 Expected: FAIL on both.
 
-- [ ] **Step 3: Change the grouping key**
+- [x] **Step 3: Change the grouping key**
 
 In `backend/app/services/progression/autoregulation.py`, replace `_session_key` and its use:
 
@@ -2221,12 +2221,12 @@ and change the `sessions` dict annotation in `compute_adjustment` from `dict[dat
 
 `ordered_keys = sorted(sessions.keys())` still orders correctly: session ids are monotonic in creation order, and a program's sessions are inserted week-ascending by `materialize_sessions`. Update the module docstring's description of how sessions are identified, and drop the now-unused `date`/`datetime` imports if nothing else needs them.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `docker-compose exec backend pytest tests/test_adaptation.py -v`
 Expected: PASS. Existing tests in this file construct logs without `session_id`; give each the session id its date key previously implied, preserving what each test was asserting about sample counts.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix
@@ -2246,29 +2246,29 @@ git commit -m "fix(autoregulation): group EWMA samples by session, not calendar 
 - Consumes: everything from Tasks 1-9.2.
 - Produces: a green backend suite with the session model fully in place.
 
-- [ ] **Step 1: Run the full suite and inventory the failures**
+- [x] **Step 1: Run the full suite and inventory the failures**
 
 Run: `docker-compose exec backend pytest -x -q 2>&1 | tail -40`
 
 Every remaining failure should be a test constructing a `WorkoutSetLog` or `UserWorkoutLog` without a `session_id`. List them before fixing anything.
 
-- [ ] **Step 2: Fix each failing test at the fixture level**
+- [x] **Step 2: Fix each failing test at the fixture level**
 
 For each, create the `WorkoutSession` the log belongs to and pass its id. Preserve every existing assertion — these suites encode the progression engine's contract, and this task must not change what they assert, only how their fixtures are built.
 
 If a test genuinely cannot be expressed under the new model, stop and report it rather than weakening the assertion. That would mean the session model contradicts the engine's contract, which is a plan-level problem.
 
-- [ ] **Step 3: Verify the deload trigger is untouched**
+- [x] **Step 3: Verify the deload trigger is untouched**
 
 Run: `docker-compose exec backend pytest tests/test_progression_deload.py -v`
 Expected: PASS with no edits to `deload.py`. `compute_deload_trigger` keeps its 14-day time window and its signature; only the sourcing of `readiness_logs` changed, in Task 9.1.
 
-- [ ] **Step 4: Run the whole suite**
+- [x] **Step 4: Run the whole suite**
 
 Run: `docker-compose exec backend pytest`
 Expected: PASS, everything.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 docker-compose exec backend mypy app/ && docker-compose exec backend ruff check . --fix && docker-compose exec backend black .
@@ -2298,7 +2298,7 @@ git commit -m "test(signals): anchor engine test fixtures to sessions"
   - `postSessionReadiness(sessionId: number, readiness: number, phase?: 'pre' | 'post'): Promise<void>`
   - `completeSession(sessionId: number): Promise<SessionDetail>`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/src/tests/api/sessions.test.ts`:
 
@@ -2356,12 +2356,12 @@ describe('sessions api', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/api/sessions.test.ts`
 Expected: FAIL — cannot resolve `@/api/sessions`
 
-- [ ] **Step 3: Write the types**
+- [x] **Step 3: Write the types**
 
 Create `frontend/src/types/session.ts`:
 
@@ -2412,7 +2412,7 @@ export interface SessionSetLogPayload {
 }
 ```
 
-- [ ] **Step 4: Write the API client**
+- [x] **Step 4: Write the API client**
 
 Create `frontend/src/api/sessions.ts`:
 
@@ -2456,12 +2456,12 @@ export async function completeSession(sessionId: number): Promise<SessionDetail>
 }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/api/sessions.test.ts`
 Expected: PASS (4 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 docker-compose exec frontend npm run type-check
@@ -2488,7 +2488,7 @@ git commit -m "feat(sessions): add session types and API client"
   - `weekRange(startDate: string, week: number): { start: string; end: string }` — the ISO date bounds of a program week.
   - `toIsoDate(d: Date): string`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/src/tests/hooks/useSchedule.test.tsx`:
 
@@ -2554,12 +2554,12 @@ describe('useSchedule', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/hooks/useSchedule.test.tsx`
 Expected: FAIL — cannot resolve `@/hooks/useSchedule`
 
-- [ ] **Step 3: Write the hooks**
+- [x] **Step 3: Write the hooks**
 
 Create `frontend/src/hooks/useSchedule.ts`:
 
@@ -2616,12 +2616,12 @@ export function useSession(sessionId: number | null) {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/hooks/useSchedule.test.tsx`
 Expected: PASS (4 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 docker-compose exec frontend npm run type-check
@@ -2646,7 +2646,7 @@ git commit -m "feat(sessions): add schedule and session query hooks"
   - `SessionStatusBadgeProps { status: SessionStatus; scheduledDate: string; today: string }` — all three required.
   - `ScheduleRowProps { entry: ScheduleEntry; today: string; onSelect: (sessionId: number) => void }`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/src/tests/components/ScheduleRow.test.tsx`:
 
@@ -2707,12 +2707,12 @@ describe('ScheduleRow', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/components/ScheduleRow.test.tsx`
 Expected: FAIL — cannot resolve `@/components/ScheduleRow`
 
-- [ ] **Step 3: Write SessionStatusBadge**
+- [x] **Step 3: Write SessionStatusBadge**
 
 Create `frontend/src/components/SessionStatusBadge.tsx`:
 
@@ -2761,7 +2761,7 @@ export function SessionStatusBadge({ status, scheduledDate, today }: SessionStat
 
 Confirm `success-*`, `error-*`, and `warning-*` exist in `frontend/tailwind.config.js`. If a scale is missing, substitute the nearest one that is defined rather than inventing a class.
 
-- [ ] **Step 4: Write ScheduleRow**
+- [x] **Step 4: Write ScheduleRow**
 
 Create `frontend/src/components/ScheduleRow.tsx`:
 
@@ -2806,7 +2806,7 @@ export function ScheduleRow({ entry, today, onSelect }: ScheduleRowProps) {
 }
 ```
 
-- [ ] **Step 5: Export both components**
+- [x] **Step 5: Export both components**
 
 In `frontend/src/components/index.ts`, append:
 
@@ -2815,12 +2815,12 @@ export { SessionStatusBadge } from './SessionStatusBadge';
 export { ScheduleRow } from './ScheduleRow';
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/components/ScheduleRow.test.tsx`
 Expected: PASS (6 tests)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 docker-compose exec frontend npm run lint -- --fix && docker-compose exec frontend npm run type-check
@@ -2842,7 +2842,7 @@ git commit -m "feat(sessions): add schedule row and status badge"
 - Consumes: `useSchedule`, `weekRange`, `toIsoDate` (Task 11); `useActiveProgram` from `@/hooks/usePrograms`; `ScheduleRow` (Task 12).
 - Produces: the `/schedule` route.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/src/tests/pages/SchedulePage.test.tsx`:
 
@@ -2969,12 +2969,12 @@ describe('SchedulePage', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/pages/SchedulePage.test.tsx`
 Expected: FAIL — cannot resolve `@/pages/SchedulePage`
 
-- [ ] **Step 3: Write the page**
+- [x] **Step 3: Write the page**
 
 Create `frontend/src/pages/SchedulePage.tsx`:
 
@@ -3083,7 +3083,7 @@ export default function SchedulePage() {
 
 `ProgramPreview` does not currently expose `start_date`. Add `start_date?: string | null` to the `ProgramPreview` interface in `frontend/src/types/program.ts`, and add `start_date=program.start_date` to `ProgramPreviewOut` in `backend/app/schemas/program_api.py` and `_preview_out` in `backend/app/api/v1/endpoints/programs.py`. Add a backend assertion for it in `backend/tests/test_sessions_api.py`.
 
-- [ ] **Step 4: Add the route**
+- [x] **Step 4: Add the route**
 
 In `frontend/src/App.tsx`, import the page and add inside the authenticated block:
 
@@ -3091,7 +3091,7 @@ In `frontend/src/App.tsx`, import the page and add inside the authenticated bloc
 <Route path="/schedule" element={<SchedulePage />} />
 ```
 
-- [ ] **Step 5: Add the header nav entry**
+- [x] **Step 5: Add the header nav entry**
 
 In `frontend/src/components/Header.tsx`, add a Schedule button beside the logo button (around line 66), inside the same flex container:
 
@@ -3106,12 +3106,12 @@ In `frontend/src/components/Header.tsx`, add a Schedule button beside the logo b
 
 Wrap it and the logo button in a `<div className="flex items-center gap-2">` so the header's `justify-between` still puts the user menu on the right.
 
-- [ ] **Step 6: Run tests to verify they pass**
+- [x] **Step 6: Run tests to verify they pass**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/pages/SchedulePage.test.tsx`
 Expected: PASS (6 tests)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 docker-compose exec frontend npm run lint -- --fix && docker-compose exec frontend npm run type-check
@@ -3132,7 +3132,7 @@ git commit -m "feat(sessions): add the schedule page"
 - Consumes: `useSession` (Task 11); `SessionDetail` (Task 10).
 - Produces: the `/sessions/:sessionId` route.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/src/tests/pages/SessionDetailPage.test.tsx`:
 
@@ -3263,12 +3263,12 @@ describe('SessionDetailPage', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/pages/SessionDetailPage.test.tsx`
 Expected: FAIL — cannot resolve `@/pages/SessionDetailPage`
 
-- [ ] **Step 3: Write the page**
+- [x] **Step 3: Write the page**
 
 Create `frontend/src/pages/SessionDetailPage.tsx`:
 
@@ -3385,7 +3385,7 @@ export default function SessionDetailPage() {
 }
 ```
 
-- [ ] **Step 4: Add the route**
+- [x] **Step 4: Add the route**
 
 In `frontend/src/App.tsx`, import the page and add:
 
@@ -3393,12 +3393,12 @@ In `frontend/src/App.tsx`, import the page and add:
 <Route path="/sessions/:sessionId" element={<SessionDetailPage />} />
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/pages/SessionDetailPage.test.tsx`
 Expected: PASS (4 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 docker-compose exec frontend npm run lint -- --fix && docker-compose exec frontend npm run type-check
@@ -3420,7 +3420,7 @@ git commit -m "feat(sessions): add the session detail page"
   `{ exercises, currentIndex, currentExercise, completedSetsCount, isExerciseComplete, completedExercises, progressPercentage, isLastExercise, recordSet, goToNext }`.
   `recordSet(set: { weight?: number; reps?: number; effort?: number; effort_method?: EffortMethod })` appends to the current exercise and returns `true` when that append completed it.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/src/tests/hooks/useSessionProgress.test.tsx`:
 
@@ -3495,12 +3495,12 @@ describe('useSessionProgress', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/hooks/useSessionProgress.test.tsx`
 Expected: FAIL — cannot resolve `@/hooks/useSessionProgress`
 
-- [ ] **Step 3: Write the hook**
+- [x] **Step 3: Write the hook**
 
 Create `frontend/src/hooks/useSessionProgress.ts`:
 
@@ -3582,12 +3582,12 @@ export function useSessionProgress(slots: SlotPreview[]) {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/hooks/useSessionProgress.test.tsx`
 Expected: PASS (4 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 docker-compose exec frontend npm run type-check
@@ -3610,7 +3610,7 @@ git commit -m "refactor(tracking): extract session progress into a hook"
 - Consumes: `useSession` (Task 11), `useSessionProgress` (Task 15), `logSessionSet` / `postSessionReadiness` / `completeSession` (Task 10).
 - Produces: the `/sessions/:sessionId/track` route.
 
-- [ ] **Step 1: Rewrite the page test**
+- [x] **Step 1: Rewrite the page test**
 
 Replace `frontend/src/tests/pages/WorkoutTrackingPage.test.tsx` with:
 
@@ -3719,12 +3719,12 @@ describe('WorkoutTrackingPage', () => {
 
 The "Complete Workout" button only renders once the last exercise is complete. If the second test cannot reach it, log the single set through the `SetLogger` first — read `frontend/src/components/SetLogger.tsx` for its field labels and submit button, and drive it the way `SetLogger.test.tsx` does.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/pages/WorkoutTrackingPage.test.tsx`
 Expected: FAIL — the page still reads `workoutId` and `useWorkoutDetails`.
 
-- [ ] **Step 3: Retarget the page**
+- [x] **Step 3: Retarget the page**
 
 In `frontend/src/pages/WorkoutTrackingPage.tsx`:
 
@@ -3847,7 +3847,7 @@ The `navigate('/')` is the fix for the dead `/dashboard` target.
           ) : (
 ```
 
-- [ ] **Step 4: Update the route and delete the dead hook**
+- [x] **Step 4: Update the route and delete the dead hook**
 
 In `frontend/src/App.tsx`, replace the `/workouts/:workoutId` route with:
 
@@ -3861,12 +3861,12 @@ Then:
 rm frontend/src/hooks/useWorkoutDetails.ts frontend/src/tests/hooks/useWorkoutDetails.test.tsx
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `docker-compose exec frontend npm run test`
 Expected: PASS. Any suite still importing `useWorkoutDetails` must be updated, not re-added.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 docker-compose exec frontend npm run lint -- --fix && docker-compose exec frontend npm run type-check
@@ -3888,7 +3888,7 @@ git commit -m "feat(tracking): drive workout tracking from sessions"
 - Consumes: `useTodaySession` (Task 11).
 - Produces: `WorkoutCardProps` becomes `{ entry: ScheduleEntry; programName: string; onSelect: () => void }`.
 
-- [ ] **Step 1: Rewrite the dashboard test**
+- [x] **Step 1: Rewrite the dashboard test**
 
 Replace `frontend/src/tests/pages/DashboardPage.test.tsx` with:
 
@@ -3997,12 +3997,12 @@ describe('DashboardPage', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test -- src/tests/pages/DashboardPage.test.tsx`
 Expected: FAIL — the page still calls `getTodayWorkout` off the program preview.
 
-- [ ] **Step 3: Update WorkoutCard**
+- [x] **Step 3: Update WorkoutCard**
 
 Change `frontend/src/components/WorkoutCard.tsx` to take a `ScheduleEntry`:
 
@@ -4055,7 +4055,7 @@ export function WorkoutCard({ entry, programName, onSelect }: WorkoutCardProps) 
 
 Update `frontend/src/tests/components/WorkoutCard.test.tsx` to build a `ScheduleEntry` and pass `entry` / `onSelect`, preserving its existing assertions about the heading and meta line.
 
-- [ ] **Step 4: Update the dashboard**
+- [x] **Step 4: Update the dashboard**
 
 In `frontend/src/pages/DashboardPage.tsx`, replace the `useActiveProgram`-derived `getTodayWorkout` block (lines 11-35) with:
 
@@ -4105,7 +4105,7 @@ Add `import { useTodaySession } from '@/hooks/useSchedule';`, and replace the "T
 
 Delete the now-unused `getTodayWorkout`, `displayWeekNumber`, and `activeProgramId`, and change the "This Week" section's guard from `activeProgramId && program` to `program`.
 
-- [ ] **Step 5: Delete the legacy API modules**
+- [x] **Step 5: Delete the legacy API modules**
 
 The backend routes these call were deleted in Task 9, so they are dead code pointing at 404s. Confirm nothing still imports them:
 
@@ -4115,12 +4115,12 @@ docker-compose exec frontend grep -rn "logSetLog\|postWorkoutReadiness\|api/logg
 
 Then `rm frontend/src/api/logging.ts frontend/src/api/workouts.ts` along with any test files covering them. If the grep finds a live caller, fix that caller to use `@/api/sessions` — do not keep the module alive.
 
-- [ ] **Step 6: Run the full frontend suite**
+- [x] **Step 6: Run the full frontend suite**
 
 Run: `docker-compose exec frontend npm run test`
 Expected: PASS across all suites.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 docker-compose exec frontend npm run lint -- --fix && docker-compose exec frontend npm run type-check
@@ -4134,12 +4134,12 @@ git commit -m "feat(dashboard): drive the workout card from today's session"
 
 **Files:** none — verification only.
 
-- [ ] **Step 1: Run the whole backend suite**
+- [x] **Step 1: Run the whole backend suite**
 
 Run: `docker-compose exec backend pytest`
 Expected: PASS, no skips beyond those already present on `main`.
 
-- [ ] **Step 2: Run backend quality gates**
+- [x] **Step 2: Run backend quality gates**
 
 ```bash
 docker-compose exec backend ruff check .
@@ -4148,7 +4148,7 @@ docker-compose exec backend mypy app/
 ```
 Expected: all clean.
 
-- [ ] **Step 3: Run the whole frontend suite and gates**
+- [x] **Step 3: Run the whole frontend suite and gates**
 
 ```bash
 docker-compose exec frontend npm run test
@@ -4157,7 +4157,7 @@ docker-compose exec frontend npm run type-check
 ```
 Expected: all clean.
 
-- [ ] **Step 4: Verify the migration from empty**
+- [x] **Step 4: Verify the migration from empty**
 
 ```bash
 docker-compose down -v && docker-compose up -d
@@ -4166,7 +4166,7 @@ docker-compose exec backend python -m app.db.seed.seed_exercises
 ```
 Expected: migration applies cleanly to a fresh database; `alembic heads` reports one head.
 
-- [ ] **Step 5: Verify no path back to workout-scoped logging survives**
+- [x] **Step 5: Verify no path back to workout-scoped logging survives**
 
 ```bash
 docker-compose exec backend grep -rn "WorkoutSetLogCreate\|get_set_logs_for_workouts\|get_workout_logs_for_workouts\|users_workout_router" app/ tests/
@@ -4175,11 +4175,11 @@ docker-compose exec frontend grep -rn "api/logging\|api/workouts\|useWorkoutDeta
 
 Expected: both empty. Any hit is a leftover route into the ambiguity this plan removed.
 
-- [ ] **Step 6: Walk the flow by hand**
+- [x] **Step 6: Walk the flow by hand**
 
 Create a program, accept it, then confirm: `/schedule` lists the current week with correct dates; prev/next moves weeks and the URL `?week=` follows; tapping a session opens `/sessions/:id` with the right prescription for that week; Start opens the tracker; logging a set then reloading `/sessions/:id` shows it as in progress with the set recorded; completing returns to `/` and the session reads done; a past unstarted session reads missed.
 
-- [ ] **Step 7: Report**
+- [x] **Step 7: Report**
 
 State plainly which of the above passed and which did not. Do not mark the plan complete with any step failing.
 

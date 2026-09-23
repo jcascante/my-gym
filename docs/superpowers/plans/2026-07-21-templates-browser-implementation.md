@@ -43,7 +43,7 @@
 **Interfaces:**
 - Produces: TypeScript types for `Template`, `Session`, `Slot`, `Scheme`, `RequiredInput`
 
-- [ ] **Step 1: Create template type definitions file**
+- [x] **Step 1: Create template type definitions file**
 
 Create `frontend/src/types/template.ts`:
 
@@ -104,7 +104,7 @@ export interface Template {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add frontend/src/types/template.ts
@@ -123,7 +123,7 @@ git commit -m "types: add template type definitions"
 - Consumes: `Template` type from Task 1
 - Produces: `listTemplates(): Promise<Template[]>` function
 
-- [ ] **Step 1: Create templates API client**
+- [x] **Step 1: Create templates API client**
 
 Create `frontend/src/api/templates.ts`:
 
@@ -146,7 +146,7 @@ export async function listTemplates(): Promise<Template[]> {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add frontend/src/api/templates.ts
@@ -168,7 +168,7 @@ git commit -m "api: add templates API client"
   - `isExpanded: boolean`
   - `onToggle: () => void`
 
-- [ ] **Step 1: Write failing unit test for compact row rendering**
+- [x] **Step 1: Write failing unit test for compact row rendering**
 
 Create `frontend/src/tests/components/TemplateListItem.test.tsx`:
 
@@ -311,7 +311,7 @@ describe('TemplateListItem', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 cd frontend && npm run test -- TemplateListItem.test.tsx
@@ -319,7 +319,7 @@ cd frontend && npm run test -- TemplateListItem.test.tsx
 
 Expected: FAIL — "TemplateListItem not found"
 
-- [ ] **Step 3: Create TemplateListItem component**
+- [x] **Step 3: Create TemplateListItem component**
 
 Create `frontend/src/components/TemplateListItem.tsx`:
 
@@ -519,7 +519,7 @@ export default function TemplateListItem({ template, isExpanded, onToggle }: Tem
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 cd frontend && npm run test -- TemplateListItem.test.tsx
@@ -527,7 +527,7 @@ cd frontend && npm run test -- TemplateListItem.test.tsx
 
 Expected: PASS (all tests)
 
-- [ ] **Step 5: Run type check and linter**
+- [x] **Step 5: Run type check and linter**
 
 ```bash
 cd frontend && npm run type-check && npm run lint
@@ -535,7 +535,7 @@ cd frontend && npm run type-check && npm run lint
 
 Expected: PASS (no type errors, no lint errors)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/src/components/TemplateListItem.tsx frontend/src/tests/components/TemplateListItem.test.tsx
@@ -554,7 +554,7 @@ git commit -m "feat(components): add TemplateListItem accordion component"
 - Consumes: `Template` type, `listTemplates()` API function, `TemplateListItem` component
 - Produces: `TemplatesPage` component (no props, route component)
 
-- [ ] **Step 1: Write failing integration test**
+- [x] **Step 1: Write failing integration test**
 
 Create `frontend/src/tests/pages/TemplatesPage.test.tsx`:
 
@@ -735,7 +735,7 @@ describe('TemplatesPage', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 cd frontend && npm run test -- TemplatesPage.test.tsx
@@ -743,7 +743,7 @@ cd frontend && npm run test -- TemplatesPage.test.tsx
 
 Expected: FAIL — "TemplatesPage not found"
 
-- [ ] **Step 3: Create TemplatesPage component**
+- [x] **Step 3: Create TemplatesPage component**
 
 Create `frontend/src/pages/TemplatesPage.tsx`:
 
@@ -847,7 +847,7 @@ export default function TemplatesPage() {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 cd frontend && npm run test -- TemplatesPage.test.tsx
@@ -855,7 +855,7 @@ cd frontend && npm run test -- TemplatesPage.test.tsx
 
 Expected: PASS (all tests)
 
-- [ ] **Step 5: Run type check and linter**
+- [x] **Step 5: Run type check and linter**
 
 ```bash
 cd frontend && npm run type-check && npm run lint
@@ -863,7 +863,7 @@ cd frontend && npm run type-check && npm run lint
 
 Expected: PASS (no type errors, no lint errors)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/src/pages/TemplatesPage.tsx frontend/src/tests/pages/TemplatesPage.test.tsx
@@ -881,13 +881,13 @@ git commit -m "feat(pages): add TemplatesPage with accordion template browser"
 - Consumes: `TemplatesPage` component from Task 4
 - Produces: `/templates` route
 
-- [ ] **Step 1: Read App.tsx to find where to add the route**
+- [x] **Step 1: Read App.tsx to find where to add the route**
 
 ```bash
 grep -n "Route path=" /Users/jorgecascante/develop/my-gym/frontend/src/App.tsx | head -10
 ```
 
-- [ ] **Step 2: Add import for TemplatesPage**
+- [x] **Step 2: Add import for TemplatesPage**
 
 In `frontend/src/App.tsx`, find the import section and add:
 
@@ -895,7 +895,7 @@ In `frontend/src/App.tsx`, find the import section and add:
 import TemplatesPage from '@/pages/TemplatesPage';
 ```
 
-- [ ] **Step 3: Add route for /templates**
+- [x] **Step 3: Add route for /templates**
 
 Find the `<Routes>` section and add this route (after other authenticated routes, before closing `</Routes>`):
 
@@ -903,7 +903,7 @@ Find the `<Routes>` section and add this route (after other authenticated routes
 <Route path="/templates" element={<TemplatesPage />} />
 ```
 
-- [ ] **Step 4: Run type check**
+- [x] **Step 4: Run type check**
 
 ```bash
 cd frontend && npm run type-check
@@ -911,7 +911,7 @@ cd frontend && npm run type-check
 
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/App.tsx
@@ -924,7 +924,7 @@ git commit -m "feat(routing): add /templates route for template browser"
 
 **No automated tests; manual verification of working feature**
 
-- [ ] **Step 1: Start dev server**
+- [x] **Step 1: Start dev server**
 
 ```bash
 cd /Users/jorgecascante/develop/my-gym
@@ -933,7 +933,7 @@ docker-compose up
 
 Wait for frontend (http://localhost:5173) to be ready.
 
-- [ ] **Step 2: Verify backend endpoint exists**
+- [x] **Step 2: Verify backend endpoint exists**
 
 ```bash
 curl http://localhost:8000/api/v1/templates -H "Authorization: Bearer <test_token>"
@@ -942,26 +942,26 @@ curl http://localhost:8000/api/v1/templates -H "Authorization: Bearer <test_toke
 If 404: backend endpoint not implemented yet (out of scope for this plan).
 If 500 or valid response: proceed.
 
-- [ ] **Step 3: Login and navigate to /templates**
+- [x] **Step 3: Login and navigate to /templates**
 
 - Go to http://localhost:5173
 - Login with a test account
 - Navigate to http://localhost:5173/templates
 
-- [ ] **Step 4: Verify page layout**
+- [x] **Step 4: Verify page layout**
 
 - Page loads and shows "Program Templates" header
 - List of templates appears (if backend returns data)
 - Each template shows compact row with name, experience level, goals, days/week, duration
 
-- [ ] **Step 5: Verify accordion behavior**
+- [x] **Step 5: Verify accordion behavior**
 
 - Click a template row → expands and shows full details
 - Description, configuration, progression, split, schemes, required inputs all visible
 - Click again → collapses
 - Click another template → first collapses, second expands (only one open)
 
-- [ ] **Step 6: Verify error handling**
+- [x] **Step 6: Verify error handling**
 
 - Stop backend: `docker-compose down backend`
 - Refresh page
@@ -969,7 +969,7 @@ If 500 or valid response: proceed.
 - Click Retry button → attempts to fetch again
 - Alert should show appropriate error message
 
-- [ ] **Step 7: Verify responsive design**
+- [x] **Step 7: Verify responsive design**
 
 - Resize browser to mobile width (320px)
 - Compact row should be readable
@@ -977,13 +977,13 @@ If 500 or valid response: proceed.
 - Expanded view should not overflow horizontally
 - Test on tablet size (768px) and desktop
 
-- [ ] **Step 8: Verify dark mode**
+- [x] **Step 8: Verify dark mode**
 
 - Toggle dark mode (if theme toggle available)
 - Colors should adjust correctly
 - Text readable in both modes
 
-- [ ] **Step 9: Run full test suite**
+- [x] **Step 9: Run full test suite**
 
 ```bash
 cd frontend && npm run test
@@ -991,7 +991,7 @@ cd frontend && npm run test
 
 Expected: All tests pass, coverage >80%
 
-- [ ] **Step 10: Run linter and type checker**
+- [x] **Step 10: Run linter and type checker**
 
 ```bash
 cd frontend && npm run lint && npm run type-check
@@ -999,7 +999,7 @@ cd frontend && npm run lint && npm run type-check
 
 Expected: PASS
 
-- [ ] **Step 11: Final commit (if any tweaks needed)**
+- [x] **Step 11: Final commit (if any tweaks needed)**
 
 If manual testing found any issues, fix them and commit:
 

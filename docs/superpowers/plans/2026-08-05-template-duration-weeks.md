@@ -28,7 +28,7 @@
 **Interfaces:**
 - Produces: `ProgramTemplate.duration_weeks_default: int`, `ProgramTemplate.duration_weeks_min: int`, `ProgramTemplate.duration_weeks_max: int` — used by Task 2 (seed data), Task 4 (`TemplateOut`), and Task 5 (`/draft` validation).
 
-- [ ] **Step 1: Write the failing test for the model defaults**
+- [x] **Step 1: Write the failing test for the model defaults**
 
 Add to `backend/tests/test_program_models.py` (new test, after `test_workout_exercise_rotation_pool_defaults_to_empty_list`):
 
@@ -58,12 +58,12 @@ async def test_program_template_duration_fields_default_when_omitted(db_session:
     assert template.duration_weeks_max == 12
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `docker compose exec backend uv run pytest tests/test_program_models.py::test_program_template_duration_fields_default_when_omitted -v`
 Expected: FAIL with `sqlite3.IntegrityError` / `NotNullViolation` (or a `TypeError` if the columns don't exist yet) — the columns don't exist on `ProgramTemplate` yet.
 
-- [ ] **Step 3: Add the columns to the model**
+- [x] **Step 3: Add the columns to the model**
 
 In `backend/app/models/program.py`, inside `class ProgramTemplate`, right after the `session_duration_max` line:
 
@@ -75,7 +75,7 @@ In `backend/app/models/program.py`, inside `class ProgramTemplate`, right after 
     duration_weeks_max: Mapped[int] = mapped_column(Integer, nullable=False, default=12)
 ```
 
-- [ ] **Step 4: Write the migration**
+- [x] **Step 4: Write the migration**
 
 Create `backend/alembic/versions/d1fcbf156087_add_duration_weeks_range_to_program_templates.py`:
 
@@ -149,22 +149,22 @@ def downgrade() -> None:
     op.drop_column("program_templates", "duration_weeks_default")
 ```
 
-- [ ] **Step 5: Apply the migration**
+- [x] **Step 5: Apply the migration**
 
 Run: `docker compose exec backend uv run alembic upgrade head`
 Expected: migration `d1fcbf156087` applies with no errors.
 
-- [ ] **Step 6: Run the test to verify it passes**
+- [x] **Step 6: Run the test to verify it passes**
 
 Run: `docker compose exec backend uv run pytest tests/test_program_models.py::test_program_template_duration_fields_default_when_omitted -v`
 Expected: PASS
 
-- [ ] **Step 7: Verify the migration downgrades cleanly**
+- [x] **Step 7: Verify the migration downgrades cleanly**
 
 Run: `docker compose exec backend uv run alembic downgrade -1 && docker compose exec backend uv run alembic upgrade head`
 Expected: both commands succeed with no errors, leaving the DB back at head.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend/app/models/program.py backend/alembic/versions/d1fcbf156087_add_duration_weeks_range_to_program_templates.py backend/tests/test_program_models.py
@@ -183,7 +183,7 @@ git commit -m "feat: add duration_weeks range columns to program_templates"
 - Consumes: `ProgramTemplate.duration_weeks_default/min/max` (Task 1).
 - Produces: every seeded `ProgramTemplate` row has real, template-specific duration values — consumed by Task 4 (`TemplateOut` responses) and Task 5 (`/draft` validation).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Replace `backend/tests/test_seed_templates.py` with:
 
@@ -227,12 +227,12 @@ async def test_seed_sets_duration_weeks_range_per_template(db_session):
         assert r.duration_weeks_min <= r.duration_weeks_default <= r.duration_weeks_max
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `docker compose exec backend uv run pytest tests/test_seed_templates.py::test_seed_sets_duration_weeks_range_per_template -v`
 Expected: FAIL — `full_body.duration_weeks_min` etc. are the Task 1 model defaults (`4, 8, 12`), so the `full-body-x3` assertion actually already passes, but the `push-pull-legs-x6` assertion fails because it still has the generic model default `(4, 8, 12)` instead of `(6, 12, 18)`.
 
-- [ ] **Step 3: Add duration fields to each of the 10 seed entries**
+- [x] **Step 3: Add duration fields to each of the 10 seed entries**
 
 In `backend/app/db/seed/program_templates.py`, insert three keys immediately after each entry's `"session_duration_max"` line:
 
@@ -318,7 +318,7 @@ In `backend/app/db/seed/program_templates.py`, insert three keys immediately aft
 
 Since several entries share the same `"session_duration_max"` value, locate each insertion point by the `"slug"` a few lines above it, not by the value alone.
 
-- [ ] **Step 4: Run the seed against a real DB and the tests**
+- [x] **Step 4: Run the seed against a real DB and the tests**
 
 Run: `docker compose exec backend uv run python -m app.db.seed.seed_program_templates`
 Expected: completes with no errors (upserts by slug, so safe to re-run).
@@ -326,7 +326,7 @@ Expected: completes with no errors (upserts by slug, so safe to re-run).
 Run: `docker compose exec backend uv run pytest tests/test_seed_templates.py -v`
 Expected: PASS (both tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/db/seed/program_templates.py backend/tests/test_seed_templates.py
@@ -345,7 +345,7 @@ git commit -m "feat: seed per-template duration_weeks ranges"
 - Consumes: none new.
 - Produces: `MatchRequest`/`DraftRequest` now require an explicit `duration_weeks: int` (no default) — every caller (API clients, tests) must supply it explicitly.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `backend/tests/test_program_api_schemas.py`, after `test_match_request_defaults`:
 
@@ -355,12 +355,12 @@ def test_match_request_requires_duration_weeks():
         MatchRequest(environment_id=1, days_per_week=3, session_duration_min=60, fitness_focus="strength")
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `docker compose exec backend uv run pytest tests/test_program_api_schemas.py::test_match_request_requires_duration_weeks -v`
 Expected: FAIL — `duration_weeks` currently defaults to `8`, so no `ValidationError` is raised.
 
-- [ ] **Step 3: Remove the default**
+- [x] **Step 3: Remove the default**
 
 In `backend/app/schemas/program_api.py`, in `class MatchRequest`:
 
@@ -375,7 +375,7 @@ class MatchRequest(BaseModel):
     progression_style: ProgressionStyle = ProgressionStyle.CONSISTENT
 ```
 
-- [ ] **Step 4: Fix the now-broken `_base_kwargs()` test helper**
+- [x] **Step 4: Fix the now-broken `_base_kwargs()` test helper**
 
 In `backend/tests/test_program_api_schemas.py`:
 
@@ -390,17 +390,17 @@ def _base_kwargs():
     )
 ```
 
-- [ ] **Step 5: Run the full schema test file**
+- [x] **Step 5: Run the full schema test file**
 
 Run: `docker compose exec backend uv run pytest tests/test_program_api_schemas.py -v`
 Expected: PASS (all tests, including the new one and the five `_base_kwargs()`-based tests that previously relied on the removed default).
 
-- [ ] **Step 6: Run the full backend suite to catch any other caller**
+- [x] **Step 6: Run the full backend suite to catch any other caller**
 
 Run: `docker compose exec backend uv run pytest -v`
 Expected: PASS. (All `/match` and `/draft` calls in `test_programs_flow.py` already pass `"duration_weeks": 8` explicitly in their JSON bodies, so they're unaffected.)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/schemas/program_api.py backend/tests/test_program_api_schemas.py
@@ -420,7 +420,7 @@ git commit -m "feat: require duration_weeks on MatchRequest instead of defaultin
 - Consumes: `ProgramTemplate.duration_weeks_default/min/max` (Task 1), seeded values (Task 2).
 - Produces: `GET /api/v1/templates` response items include `duration_weeks_default`, `duration_weeks_min`, `duration_weeks_max` — consumed by the frontend `Template` type (Task 8).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `backend/tests/test_templates_endpoint.py`:
 
@@ -441,12 +441,12 @@ async def test_list_templates_includes_duration_weeks_range(
     assert full_body["duration_weeks_max"] == 12
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `docker compose exec backend uv run pytest tests/test_templates_endpoint.py -v`
 Expected: FAIL with a `KeyError: 'duration_weeks_default'` — the response doesn't include the field yet.
 
-- [ ] **Step 3: Add the fields to `TemplateOut`**
+- [x] **Step 3: Add the fields to `TemplateOut`**
 
 In `backend/app/schemas/template.py`, in `class TemplateOut`:
 
@@ -471,7 +471,7 @@ class TemplateOut(BaseModel):
     required_inputs: list[dict[str, Any]]
 ```
 
-- [ ] **Step 4: Populate the fields in the endpoint**
+- [x] **Step 4: Populate the fields in the endpoint**
 
 In `backend/app/api/v1/endpoints/templates.py`:
 
@@ -495,12 +495,12 @@ In `backend/app/api/v1/endpoints/templates.py`:
             )
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `docker compose exec backend uv run pytest tests/test_templates_endpoint.py -v`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/app/schemas/template.py backend/app/api/v1/endpoints/templates.py backend/tests/test_templates_endpoint.py
@@ -519,7 +519,7 @@ git commit -m "feat: expose duration_weeks range on the templates list endpoint"
 - Consumes: `ProgramTemplate.duration_weeks_min/max` (Task 1, Task 2), `app.core.ValidationError` (existing, `backend/app/core/exceptions.py:52`).
 - Produces: `/draft` returns 422 with `{"detail": "duration_weeks must be between {min} and {max} for this template", "error_code": "VALIDATION_ERROR"}` when out of range.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `backend/tests/test_programs_flow.py`, after `test_draft_requires_start_date`:
 
@@ -581,12 +581,12 @@ async def test_draft_accepts_duration_at_template_min_boundary(
     assert r.json()["duration_weeks"] == 4
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `docker compose exec backend uv run pytest tests/test_programs_flow.py::test_draft_rejects_duration_outside_template_range tests/test_programs_flow.py::test_draft_accepts_duration_at_template_min_boundary -v`
 Expected: the first test FAILs because `/draft` currently returns 201 for any `duration_weeks` value (no range check exists); the second currently PASSes already (no regression to introduce).
 
-- [ ] **Step 3: Add the validation**
+- [x] **Step 3: Add the validation**
 
 In `backend/app/api/v1/endpoints/programs.py`, in the `draft` endpoint, right after the existing template lookup (which already raises `ProgramTemplateNotFoundError`):
 
@@ -613,17 +613,17 @@ from app.core import (
 )
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `docker compose exec backend uv run pytest tests/test_programs_flow.py -v`
 Expected: PASS (all tests in the file, including the two new ones).
 
-- [ ] **Step 5: Run the full backend suite**
+- [x] **Step 5: Run the full backend suite**
 
 Run: `docker compose exec backend uv run pytest -v`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/app/api/v1/endpoints/programs.py backend/tests/test_programs_flow.py
@@ -642,7 +642,7 @@ git commit -m "feat: reject draft duration_weeks outside the chosen template's r
 **Interfaces:**
 - Produces: `MatchRequest` (form type) gains `duration_weeks: number`; `ProgramWizardStep1`'s `onSubmit` payload includes it — consumed by Task 7 (`ProgramBuilderPage`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `frontend/src/tests/components/ProgramWizardStep1.test.tsx`, inside the `describe('ProgramWizardStep1', ...)` block:
 
@@ -672,12 +672,12 @@ Add to `frontend/src/tests/components/ProgramWizardStep1.test.tsx`, inside the `
   });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `cd frontend && npx vitest run src/tests/components/ProgramWizardStep1.test.tsx`
 Expected: FAIL — `getByLabelText(/program duration/i)` finds no element.
 
-- [ ] **Step 3: Add `duration_weeks` to the form type**
+- [x] **Step 3: Add `duration_weeks` to the form type**
 
 In `frontend/src/types/programCreation.ts`, in `interface MatchRequest`:
 
@@ -697,7 +697,7 @@ export interface MatchRequest {
 }
 ```
 
-- [ ] **Step 4: Add the field to `ProgramWizardStep1`**
+- [x] **Step 4: Add the field to `ProgramWizardStep1`**
 
 In `frontend/src/components/ProgramWizardStep1.tsx`, add state (after `sessionDurationMin`):
 
@@ -741,17 +741,17 @@ Add the input, right after the Session Duration `FormField` and before the Start
         />
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/tests/components/ProgramWizardStep1.test.tsx`
 Expected: PASS (all tests in the file).
 
-- [ ] **Step 6: Type-check**
+- [x] **Step 6: Type-check**
 
 Run: `cd frontend && npm run type-check`
 Expected: no errors. (This will still show an error for `ProgramBuilderPage.tsx`'s hardcoded `duration_weeks: 8` line and its test mock until Task 7 is done — that's expected at this point.)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/src/types/programCreation.ts frontend/src/components/ProgramWizardStep1.tsx frontend/src/tests/components/ProgramWizardStep1.test.tsx
@@ -770,7 +770,7 @@ git commit -m "feat: add program duration input to the builder's Preferences ste
 - Consumes: `FormMatchRequest.duration_weeks` (Task 6).
 - Produces: the real `duration_weeks` value (not a hardcoded `8`) flows into every `/match` and `/draft` call.
 
-- [ ] **Step 1: Update the mocked `ProgramWizard` to supply `duration_weeks`**
+- [x] **Step 1: Update the mocked `ProgramWizard` to supply `duration_weeks`**
 
 In `frontend/src/tests/pages/ProgramBuilderPage.test.tsx`, in the `vi.mock('@/components/ProgramWizard', ...)` block, add `duration_weeks: 8` to the object passed to `onComplete` (after `session_duration_min: 60,`):
 
@@ -783,12 +783,12 @@ In `frontend/src/tests/pages/ProgramBuilderPage.test.tsx`, in the `vi.mock('@/co
           weight_unit: 'kg',
 ```
 
-- [ ] **Step 2: Run the existing test suite to confirm the current hardcode masks the change**
+- [x] **Step 2: Run the existing test suite to confirm the current hardcode masks the change**
 
 Run: `cd frontend && npx vitest run src/tests/pages/ProgramBuilderPage.test.tsx`
 Expected: PASS — at this point `ProgramBuilderPage.tsx` still hardcodes `duration_weeks: 8`, so the assertion at `expect.objectContaining({ ..., duration_weeks: 8 })` passes regardless of what the mock now sends. This step is a checkpoint, not a red/green TDD step — it confirms the mock update alone doesn't break anything before wiring the real code path in Step 3.
 
-- [ ] **Step 3: Wire the real value through**
+- [x] **Step 3: Wire the real value through**
 
 In `frontend/src/pages/ProgramBuilderPage.tsx`, in `onPrefs`:
 
@@ -809,22 +809,22 @@ In `frontend/src/pages/ProgramBuilderPage.tsx`, in `onPrefs`:
   };
 ```
 
-- [ ] **Step 4: Run the test suite to verify it still passes for the right reason**
+- [x] **Step 4: Run the test suite to verify it still passes for the right reason**
 
 Run: `cd frontend && npx vitest run src/tests/pages/ProgramBuilderPage.test.tsx`
 Expected: PASS — now genuinely exercising the `values.duration_weeks -> apiRequest.duration_weeks` wiring instead of an unrelated hardcode.
 
-- [ ] **Step 5: Type-check the whole frontend**
+- [x] **Step 5: Type-check the whole frontend**
 
 Run: `cd frontend && npm run type-check`
 Expected: no errors.
 
-- [ ] **Step 6: Run the full frontend test suite**
+- [x] **Step 6: Run the full frontend test suite**
 
 Run: `cd frontend && npm test -- --run`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/src/pages/ProgramBuilderPage.tsx frontend/src/tests/pages/ProgramBuilderPage.test.tsx
@@ -844,7 +844,7 @@ git commit -m "feat: stop hardcoding duration_weeks in the program builder"
 - Consumes: `TemplateOut.duration_weeks_default/min/max` (Task 4, via the `/templates` API response).
 - Produces: none consumed elsewhere — this is a leaf display change.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `frontend/src/tests/components/TemplateListItem.test.tsx`, add the three new fields to `mockTemplate` (after `session_duration_max: 60,`):
 
@@ -885,12 +885,12 @@ Add new tests inside `describe('TemplateListItem', ...)`:
   });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `cd frontend && npx vitest run src/tests/components/TemplateListItem.test.tsx`
 Expected: FAIL — TypeScript compile error on `mockTemplate` missing the new required `Template` fields, and the new duration assertions find no matching text.
 
-- [ ] **Step 3: Add the fields to the `Template` type**
+- [x] **Step 3: Add the fields to the `Template` type**
 
 In `frontend/src/types/template.ts`, in `interface Template`:
 
@@ -917,7 +917,7 @@ export interface Template {
 }
 ```
 
-- [ ] **Step 4: Add a duration-range formatter and wire it into both views**
+- [x] **Step 4: Add a duration-range formatter and wire it into both views**
 
 In `frontend/src/components/TemplateListItem.tsx`, add a local helper above the component:
 
@@ -955,17 +955,17 @@ Add a fifth tile to the expanded Configuration grid, right after the Session Dur
               </div>
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/tests/components/TemplateListItem.test.tsx`
 Expected: PASS (all tests in the file).
 
-- [ ] **Step 6: Type-check and run the full frontend suite**
+- [x] **Step 6: Type-check and run the full frontend suite**
 
 Run: `cd frontend && npm run type-check && npm test -- --run`
 Expected: no errors, all tests PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/src/types/template.ts frontend/src/components/TemplateListItem.tsx frontend/src/tests/components/TemplateListItem.test.tsx
@@ -978,27 +978,27 @@ git commit -m "feat: display each template's duration range in the template brow
 
 **Files:** none (manual check only, no code changes)
 
-- [ ] **Step 1: Start the stack**
+- [x] **Step 1: Start the stack**
 
 Run: `docker-compose up -d` (backend + db), and separately `cd frontend && npm run dev`.
 
-- [ ] **Step 2: Re-seed templates so the running DB has the new duration values**
+- [x] **Step 2: Re-seed templates so the running DB has the new duration values**
 
 Run: `docker compose exec backend uv run python -m app.db.seed.seed_program_templates`
 
-- [ ] **Step 3: Walk the builder flow in the browser**
+- [x] **Step 3: Walk the builder flow in the browser**
 
 Navigate to the program builder, fill out Preferences (confirm "Program Duration (weeks)" appears, defaulted to 8), pick a template, and confirm the draft is created successfully with the entered duration.
 
-- [ ] **Step 4: Trigger the validation error**
+- [x] **Step 4: Trigger the validation error**
 
 Repeat the flow entering a duration outside a template's range (e.g. `20` weeks against `full-body-x3`'s 4-12 range) and confirm the draft request fails with a visible error rather than silently succeeding.
 
-- [ ] **Step 5: Check the template browser**
+- [x] **Step 5: Check the template browser**
 
 Navigate to the templates browser page and confirm each template's card/row shows its duration range (or a single number for templates with a fixed duration), both collapsed and expanded.
 
-- [ ] **Step 6: Report findings**
+- [x] **Step 6: Report findings**
 
 If anything looks wrong, note it — no commit for this task, it's verification only.
 

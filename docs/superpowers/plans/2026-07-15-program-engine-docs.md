@@ -25,11 +25,11 @@
 
 **Interfaces:** none (static doc).
 
-- [ ] **Step 1: Copy the shell**
+- [x] **Step 1: Copy the shell**
 
 Read `docs/technical/EXERCISE_LIBRARY_TECHNICAL.html`, copy its `<head>`/`<style>`/header/container scaffold into the new file, and change the `<title>` to `Program Generation Engine - Technical Documentation` and the header `<h1>` to match.
 
-- [ ] **Step 2: Author the body sections**
+- [x] **Step 2: Author the body sections**
 
 Include these sections (content drawn verbatim/condensed from the spec — no placeholders):
 
@@ -45,12 +45,12 @@ Include these sections (content drawn verbatim/condensed from the spec — no pl
 10. **Testing & performance** — TDD, golden-file snapshots, latency (spec §10).
 11. **Template authoring roadmap** — MVP seeded catalog now; form builder + LLM-assisted authoring + ownership deferred (spec §12).
 
-- [ ] **Step 3: Verify it renders and has no broken internal anchors**
+- [x] **Step 3: Verify it renders and has no broken internal anchors**
 
 Run: `python3 -m http.server -d docs 8080 &` then open `http://localhost:8080/technical/PROGRAM_GENERATION_TECHNICAL.html`.
 Expected: styled page, all sections present, no console errors. Stop the server afterward (`kill %1`).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/technical/PROGRAM_GENERATION_TECHNICAL.html
@@ -67,11 +67,11 @@ git commit -m "docs: technical documentation for program generation engine"
 
 **Interfaces:** none (static doc).
 
-- [ ] **Step 1: Copy the shell**
+- [x] **Step 1: Copy the shell**
 
 Read `docs/user/EXERCISE_LIBRARY.html`; copy its scaffold/CSS. Set `<title>` to `Building Your Program - MyGym` and header accordingly.
 
-- [ ] **Step 2: Author the body (task-oriented, non-technical)**
+- [x] **Step 2: Author the body (task-oriented, non-technical)**
 
 Sections, written for an end user (no schema/jargon):
 
@@ -85,9 +85,9 @@ Sections, written for an end user (no schema/jargon):
 
 Keep paragraphs short; use `<ol>`/`<ul>` and callout boxes consistent with the existing user docs.
 
-- [ ] **Step 3: Verify rendering** (same local-server check as Task 1, `http://localhost:8080/user/PROGRAM_BUILDER.html`).
+- [x] **Step 3: Verify rendering** (same local-server check as Task 1, `http://localhost:8080/user/PROGRAM_BUILDER.html`).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/user/PROGRAM_BUILDER.html
@@ -104,24 +104,24 @@ git commit -m "docs: user guide for the program builder"
 
 **Interfaces:** none.
 
-- [ ] **Step 1: Find the existing nav pattern**
+- [x] **Step 1: Find the existing nav pattern**
 
 Run: `grep -rn "EXERCISE_LIBRARY" docs/*.html docs/technical/index.html`
 Note the exact markup used to link the Exercise Library doc in each index.
 
-- [ ] **Step 2: Add a technical nav entry**
+- [x] **Step 2: Add a technical nav entry**
 
 In `docs/technical/index.html`, duplicate the Exercise Library link block and point it at `PROGRAM_GENERATION_TECHNICAL.html` with title "Program Generation Engine" and a one-line description.
 
-- [ ] **Step 3: Add a user nav entry**
+- [x] **Step 3: Add a user nav entry**
 
 In the user-facing index (`docs/index.html` and/or the user index), duplicate the Exercise Library user-guide link and point it at `user/PROGRAM_BUILDER.html` titled "Building Your Program".
 
-- [ ] **Step 4: Verify all links resolve**
+- [x] **Step 4: Verify all links resolve**
 
 Run: `python3 -m http.server -d docs 8080 &`; from `http://localhost:8080/` and `http://localhost:8080/technical/index.html`, click through to both new pages. Expected: no 404s. `kill %1` when done.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/index.html docs/technical/index.html
