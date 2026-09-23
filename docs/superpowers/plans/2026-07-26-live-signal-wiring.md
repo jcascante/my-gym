@@ -35,7 +35,7 @@
 - Consumes: existing `DraftRequest(MatchRequest)` schema, existing `build_draft(...)` signature, existing `WorkoutProgram` model (`start_date: date | None` column already exists — see `backend/app/models/program.py:65`).
 - Produces: `DraftRequest.start_date: date` (required on the wire); `build_draft(..., start_date: date | None = None, ...)`; every `WorkoutProgram` created via the real `/programs/draft` endpoint now has a real `start_date`. Task 4 depends on this to compute "current week".
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `backend/tests/test_programs_flow.py` (near the other draft-related tests, e.g. after `test_draft_malformed_required_inputs_returns_422`):
 
@@ -89,12 +89,12 @@ async def test_draft_persists_submitted_start_date(
 
 Both tests use the file's existing `text` import (already imported at the top of `test_programs_flow.py`).
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `docker-compose exec backend pytest tests/test_programs_flow.py -k "start_date" -v`
 Expected: `test_draft_requires_start_date` FAILS (endpoint currently accepts the request and returns 201, not 422 — `start_date` isn't a field yet). `test_draft_persists_submitted_start_date` FAILS (`start_date` column stays `NULL`, not `'2026-08-03'`).
 
-- [ ] **Step 3: Add `start_date` to `DraftRequest`**
+- [x] **Step 3: Add `start_date` to `DraftRequest`**
 
 In `backend/app/schemas/program_api.py`, add the import and field:
 
@@ -113,7 +113,7 @@ class DraftRequest(MatchRequest):
     start_date: date
 ```
 
-- [ ] **Step 4: Thread `start_date` through `build_draft`**
+- [x] **Step 4: Thread `start_date` through `build_draft`**
 
 In `backend/app/services/program/drafting.py`, add the import:
 
@@ -170,7 +170,7 @@ def build_draft(
 
 (`start_date` defaults to `None` — see Global Constraints for why this is a default here even though it's required at the schema layer.)
 
-- [ ] **Step 5: Pass `data.start_date` from the endpoint**
+- [x] **Step 5: Pass `data.start_date` from the endpoint**
 
 In `backend/app/api/v1/endpoints/programs.py`, in `draft()`:
 
@@ -196,7 +196,7 @@ In `backend/app/api/v1/endpoints/programs.py`, in `draft()`:
     )
 ```
 
-- [ ] **Step 6: Fix existing tests broken by the now-required field**
+- [x] **Step 6: Fix existing tests broken by the now-required field**
 
 `DraftRequest.start_date` is required, so every existing test that POSTs to `/api/v1/programs/draft` needs a `start_date` in its request body. Add `"start_date": "2026-01-05"` to these 5 `body` dicts in `backend/tests/test_programs_flow.py` (the value is arbitrary — none of these tests exercise the live-signal feature):
 
@@ -234,12 +234,12 @@ def _match_body(environment_id: int) -> dict:
     }
 ```
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [x] **Step 7: Run tests to verify they pass**
 
 Run: `docker-compose exec backend pytest tests/test_programs_flow.py tests/test_telemetry_endpoints.py -v`
 Expected: all PASS, including the two new tests from Step 1.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend/app/schemas/program_api.py backend/app/services/program/drafting.py backend/app/api/v1/endpoints/programs.py backend/tests/test_programs_flow.py backend/tests/test_telemetry_endpoints.py
@@ -260,7 +260,7 @@ git commit -m "feat(backend): persist a real start_date at program-draft time"
 
 This task doesn't follow the usual red/green TDD ordering: the migration is a single `UPDATE` statement with no function signature to fail against. Instead, the test below locks in the exact SQL string's behavior first; the migration file then reuses that identical string, so the test doubles as regression coverage for the migration.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 Create `backend/tests/test_start_date_backfill.py`:
 
@@ -333,12 +333,12 @@ async def test_backfill_is_idempotent(db_session: AsyncSession, test_user: User)
     assert program.start_date == date(2026, 3, 15)
 ```
 
-- [ ] **Step 2: Run the test to verify it passes**
+- [x] **Step 2: Run the test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_start_date_backfill.py -v`
 Expected: both tests PASS — this proves the `_BACKFILL_SQL` string is correct (NULL-only, idempotent) before it's baked into a migration file.
 
-- [ ] **Step 3: Create the migration**
+- [x] **Step 3: Create the migration**
 
 Create `backend/alembic/versions/9f1a2b3c4d5e_backfill_start_date_on_workout_programs.py`:
 
@@ -376,12 +376,12 @@ def downgrade() -> None:
     pass
 ```
 
-- [ ] **Step 4: Apply the migration to the local dev database**
+- [x] **Step 4: Apply the migration to the local dev database**
 
 Run: `docker-compose exec backend alembic upgrade head`
 Expected: migration `9f1a2b3c4d5e` applies cleanly with no errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/alembic/versions/9f1a2b3c4d5e_backfill_start_date_on_workout_programs.py backend/tests/test_start_date_backfill.py
@@ -400,7 +400,7 @@ git commit -m "feat(backend): backfill start_date for programs created before it
 - Consumes: existing `UserWorkoutLog` model (`backend/app/models/logging.py`), existing `test_program_with_workout` fixture (`backend/tests/test_logging.py`).
 - Produces: `async def get_workout_logs_for_workouts(db: AsyncSession, workout_ids: list[int], user_id: int, since: date) -> list[UserWorkoutLog]`. Task 4 imports and calls this directly.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `backend/tests/test_logging.py`, update the imports at the top:
 
@@ -490,12 +490,12 @@ async def test_get_workout_logs_for_workouts_respects_since(
     assert old.id not in log_ids
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `docker-compose exec backend pytest tests/test_logging.py -k "get_workout_logs_for_workouts" -v`
 Expected: FAIL with `AttributeError: module 'app.crud.logging' has no attribute 'get_workout_logs_for_workouts'`.
 
-- [ ] **Step 3: Implement the crud function**
+- [x] **Step 3: Implement the crud function**
 
 In `backend/app/crud/logging.py`, update the top import and add the function after `get_set_logs`:
 
@@ -520,12 +520,12 @@ async def get_workout_logs_for_workouts(
     return list(result.scalars().all())
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `docker-compose exec backend pytest tests/test_logging.py -v`
 Expected: all PASS (including the two new tests and every pre-existing test in the file).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/crud/logging.py backend/tests/test_logging.py
@@ -544,7 +544,7 @@ git commit -m "feat(backend): add program-scoped readiness-log query"
 - Consumes: `get_set_logs(db, workout_id, user_id)` (`app/crud/logging.py:70`, unchanged), `get_workout_logs_for_workouts(db, workout_ids, user_id, since)` (Task 3), `derive_week(program, definition, week, exercises, set_logs_by_exercise=None, readiness_logs=None, ...)` (unchanged, `app/services/program/preview.py:93`), `DELOAD_LOOKBACK_DAYS` (`app/core/constants.py:176`).
 - Produces: `_preview_out(db, program, definition, user, advisories=None)` — every call site in this file is updated to pass `user`. No other module calls `_preview_out` (it is module-private).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `backend/tests/test_programs_live_signals.py`:
 
@@ -778,12 +778,12 @@ async def test_null_start_date_falls_back_to_nominal_without_error(
     assert day.reactive_deload is False
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `docker-compose exec backend pytest tests/test_programs_live_signals.py -v`
 Expected: FAIL with `TypeError: _preview_out() missing 1 required positional argument: 'user'` (or similar) — `_preview_out` doesn't accept a `user` parameter yet.
 
-- [ ] **Step 3: Implement the wiring**
+- [x] **Step 3: Implement the wiring**
 
 In `backend/app/api/v1/endpoints/programs.py`, add imports:
 
@@ -874,7 +874,7 @@ async def _preview_out(
     )
 ```
 
-- [ ] **Step 4: Update every call site to pass `user`**
+- [x] **Step 4: Update every call site to pass `user`**
 
 In `draft()`:
 ```python
@@ -906,17 +906,17 @@ In `accept()`:
     return await _preview_out(db, program, definition, user)
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `docker-compose exec backend pytest tests/test_programs_live_signals.py -v`
 Expected: all 6 tests PASS.
 
-- [ ] **Step 6: Run the full backend suite**
+- [x] **Step 6: Run the full backend suite**
 
 Run: `docker-compose exec backend pytest`
 Expected: all PASS — this confirms the `_preview_out` signature change didn't break `test_programs_flow.py`, `test_telemetry_endpoints.py`, or any other caller.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/api/v1/endpoints/programs.py backend/tests/test_programs_live_signals.py
@@ -936,7 +936,7 @@ git commit -m "feat(backend): wire live autoregulation/deload signals into the c
 - Consumes: existing `FormField` component (`type="date"` passes straight through to a native `<input>`, no changes needed there).
 - Produces: `MatchRequest.start_date: string` (form-values type). Task 6 reads this off `formPrefs.start_date` in `ProgramBuilderPage.tsx`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/src/tests/components/ProgramWizardStep1.test.tsx`:
 
@@ -973,12 +973,12 @@ describe('ProgramWizardStep1', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npx vitest run src/tests/components/ProgramWizardStep1.test.tsx`
 Expected: FAIL — `getByLabelText(/start date/i)` finds no matching element yet.
 
-- [ ] **Step 3: Add `start_date` to the form-values type**
+- [x] **Step 3: Add `start_date` to the form-values type**
 
 In `frontend/src/types/programCreation.ts`:
 
@@ -997,7 +997,7 @@ export interface MatchRequest {
 }
 ```
 
-- [ ] **Step 4: Add the field to `ProgramWizardStep1`**
+- [x] **Step 4: Add the field to `ProgramWizardStep1`**
 
 In `frontend/src/components/ProgramWizardStep1.tsx`, add `today` and the new state (right after the component opens, and after `sessionDurationMin`'s state declaration respectively):
 
@@ -1059,12 +1059,12 @@ Add the field to the JSX, right after the "Session Duration" `FormField` and bef
         />
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npx vitest run src/tests/components/ProgramWizardStep1.test.tsx`
 Expected: both tests PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/src/types/programCreation.ts frontend/src/components/ProgramWizardStep1.tsx frontend/src/tests/components/ProgramWizardStep1.test.tsx
@@ -1084,7 +1084,7 @@ git commit -m "feat(frontend): collect a start date in the program-creation wiza
 - Consumes: `formPrefs.start_date` (produced by Task 5's `MatchRequest.start_date`), existing `createDraft.mutateAsync(req: DraftRequest)` (`frontend/src/hooks/usePrograms.ts:108`, unchanged).
 - Produces: `DraftRequest.start_date: string` — the last field this feature needs; `createDraft`'s request body now always includes a real `start_date`, satisfying backend Task 1's now-required `DraftRequest.start_date`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `frontend/src/tests/pages/ProgramBuilderPage.test.tsx`, the shared `ProgramWizard` mock at the top of the file must also hand back `start_date` (its `onComplete` payload is typed as `MatchRequest`, which now requires it after Task 5 — otherwise this file fails `npm run type-check`). Update the mock:
 
@@ -1179,12 +1179,12 @@ Add a new test (near the other `Details step skip UX` tests, inside `describe('P
   });
 ```
 
-- [ ] **Step 2: Run tests to verify the new one fails**
+- [x] **Step 2: Run tests to verify the new one fails**
 
 Run: `docker-compose exec frontend npx vitest run src/tests/pages/ProgramBuilderPage.test.tsx`
 Expected: the new test FAILS (`createDraft` is called without `start_date`); every pre-existing test in the file still PASSES (they use `objectContaining`, which ignores the extra `start_date` key now present in the mock's payload).
 
-- [ ] **Step 3: Add `start_date` to `DraftRequest`**
+- [x] **Step 3: Add `start_date` to `DraftRequest`**
 
 In `frontend/src/types/program.ts`:
 
@@ -1200,7 +1200,7 @@ export interface DraftRequest extends MatchRequest {
 
 (`MatchRequest` here already has `duration_weeks`/`fitness_focus`/etc.; `start_date` is inherited if added to the base interface, but the base `MatchRequest` in `program.ts` is the *API-facing* type built by `onPrefs`, not the form type from Task 5 — it does not go through the wizard, so add it directly on `DraftRequest` as shown above rather than on `program.ts`'s `MatchRequest`.)
 
-- [ ] **Step 4: Pass `formPrefs.start_date` through `makeDraft`**
+- [x] **Step 4: Pass `formPrefs.start_date` through `makeDraft`**
 
 In `frontend/src/pages/ProgramBuilderPage.tsx`:
 
@@ -1221,17 +1221,17 @@ In `frontend/src/pages/ProgramBuilderPage.tsx`:
   };
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `docker-compose exec frontend npx vitest run src/tests/pages/ProgramBuilderPage.test.tsx`
 Expected: all PASS.
 
-- [ ] **Step 6: Run the full frontend check**
+- [x] **Step 6: Run the full frontend check**
 
 Run: `docker-compose exec frontend npm run type-check && docker-compose exec frontend npm run test -- run`
 Expected: no TypeScript errors, full test suite PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/src/types/program.ts frontend/src/pages/ProgramBuilderPage.tsx frontend/src/tests/pages/ProgramBuilderPage.test.tsx

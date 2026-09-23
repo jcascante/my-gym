@@ -52,7 +52,7 @@ Full spec: `docs/superpowers/specs/2026-07-26-adjustment-reason-banner-design.md
 - Consumes: nothing new (pure function of a `float`).
 - Produces: `describe_adjustment(factor: float) -> str | None`, importable as `app.services.progression.autoregulation.describe_adjustment` and `app.services.progression.describe_adjustment`. Used by Task 3.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `backend/tests/services/progression/test_autoregulation.py`:
 
@@ -91,12 +91,12 @@ def test_describe_adjustment_at_max_factor_boundary():
 
 (Only add the `describe_adjustment` import to the existing `from app.services.progression.autoregulation import (...)` block at the top of the file — don't duplicate the import line.)
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `docker-compose exec backend pytest backend/tests/services/progression/test_autoregulation.py -v`
 Expected: FAIL — `ImportError: cannot import name 'describe_adjustment'`
 
-- [ ] **Step 3: Implement `describe_adjustment`**
+- [x] **Step 3: Implement `describe_adjustment`**
 
 Append to `backend/app/services/progression/autoregulation.py` (after `compute_adjustment`):
 
@@ -115,12 +115,12 @@ def describe_adjustment(factor: float) -> str | None:
     return f"Recent sessions had room to spare — load increased {pct}%"
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `docker-compose exec backend pytest backend/tests/services/progression/test_autoregulation.py -v`
 Expected: PASS (all tests, including the 5 new ones)
 
-- [ ] **Step 5: Export from the package `__init__.py`**
+- [x] **Step 5: Export from the package `__init__.py`**
 
 In `backend/app/services/progression/__init__.py`, replace the full contents with:
 
@@ -131,12 +131,12 @@ from app.services.progression.deload import compute_deload_trigger  # noqa: F401
 __all__ = ["compute_adjustment", "describe_adjustment", "compute_deload_trigger"]
 ```
 
-- [ ] **Step 6: Run mypy**
+- [x] **Step 6: Run mypy**
 
 Run: `docker-compose exec backend mypy app/`
 Expected: PASS (no type errors)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/services/progression/autoregulation.py backend/app/services/progression/__init__.py backend/tests/services/progression/test_autoregulation.py
@@ -162,7 +162,7 @@ Claude-Session: https://claude.ai/code/session_01KodZ1LEDUDxdMCQQLmdVq9"
 - Consumes: nothing (no parameters).
 - Produces: `describe_reactive_deload() -> str`, importable as `app.services.progression.deload.describe_reactive_deload` and `app.services.progression.describe_reactive_deload`. Used by Task 3.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `backend/tests/services/progression/test_deload.py`:
 
@@ -180,12 +180,12 @@ def test_describe_reactive_deload_returns_fixed_user_facing_copy():
 
 (Only add the `describe_reactive_deload` import to the existing `from app.services.progression.deload import (...)` block at the top of the file — don't duplicate the import line.)
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest backend/tests/services/progression/test_deload.py -v`
 Expected: FAIL — `ImportError: cannot import name 'describe_reactive_deload'`
 
-- [ ] **Step 3: Implement `describe_reactive_deload`**
+- [x] **Step 3: Implement `describe_reactive_deload`**
 
 Append to `backend/app/services/progression/deload.py` (after `compute_deload_trigger`):
 
@@ -199,12 +199,12 @@ def describe_reactive_deload() -> str:
     return "Readiness has been low recently — built in a lighter week"
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest backend/tests/services/progression/test_deload.py -v`
 Expected: PASS (all tests, including the new one)
 
-- [ ] **Step 5: Update the package `__init__.py`**
+- [x] **Step 5: Update the package `__init__.py`**
 
 In `backend/app/services/progression/__init__.py`, replace the full contents with:
 
@@ -220,12 +220,12 @@ __all__ = [
 ]
 ```
 
-- [ ] **Step 6: Run mypy**
+- [x] **Step 6: Run mypy**
 
 Run: `docker-compose exec backend mypy app/`
 Expected: PASS (no type errors)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/services/progression/deload.py backend/app/services/progression/__init__.py backend/tests/services/progression/test_deload.py
@@ -252,7 +252,7 @@ Claude-Session: https://claude.ai/code/session_01KodZ1LEDUDxdMCQQLmdVq9"
 - Consumes: `describe_adjustment` (Task 1), `describe_reactive_deload` (Task 2).
 - Produces: `derive_week`'s per-slot dicts now include `"adjustment_reason": str | None`; per-workout-day dicts now include `"reactive_deload": bool` and `"deload_reason": str | None`. `SlotPreviewOut.adjustment_reason: str | None`, `WorkoutPreviewOut.reactive_deload: bool`, `WorkoutPreviewOut.deload_reason: str | None`. Consumed by Task 4 (frontend types).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `backend/tests/test_preview.py` (after `test_derive_week_reactive_deload_determinism_same_history_byte_identical`, i.e. at the end of the file):
 
@@ -333,12 +333,12 @@ async def test_derive_week_workout_preview_out_roundtrip_with_new_fields(sample_
             assert hasattr(slot_out, "adjustment_reason")
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `docker-compose exec backend pytest backend/tests/test_preview.py -v -k "adjustment_reason or reactive_deload_flag or workout_preview_out_roundtrip_with_new"`
 Expected: FAIL — `KeyError: 'adjustment_reason'` (and similar for `reactive_deload`/`deload_reason`)
 
-- [ ] **Step 3: Update imports in `preview.py`**
+- [x] **Step 3: Update imports in `preview.py`**
 
 In `backend/app/services/program/preview.py`, change:
 
@@ -354,7 +354,7 @@ from app.services.progression.autoregulation import compute_adjustment, describe
 from app.services.progression.deload import compute_deload_trigger, describe_reactive_deload
 ```
 
-- [ ] **Step 4: Wire the deload reason into `derive_week`**
+- [x] **Step 4: Wire the deload reason into `derive_week`**
 
 Change:
 
@@ -379,7 +379,7 @@ to:
             deload_reason = describe_reactive_deload()
 ```
 
-- [ ] **Step 5: Wire the adjustment reason into the per-slot loop**
+- [x] **Step 5: Wire the adjustment reason into the per-slot loop**
 
 Change:
 
@@ -407,7 +407,7 @@ to:
                     adjustment_reason = describe_adjustment(autoreg_factor)
 ```
 
-- [ ] **Step 6: Add the new fields to the slot and day dicts**
+- [x] **Step 6: Add the new fields to the slot and day dicts**
 
 Change the slot dict:
 
@@ -467,7 +467,7 @@ to:
         )
 ```
 
-- [ ] **Step 7: Update `SlotPreviewOut` and `WorkoutPreviewOut`**
+- [x] **Step 7: Update `SlotPreviewOut` and `WorkoutPreviewOut`**
 
 In `backend/app/schemas/program_api.py`, change:
 
@@ -528,12 +528,12 @@ class WorkoutPreviewOut(BaseModel):
     deload_reason: str | None = None
 ```
 
-- [ ] **Step 8: Run the new and existing preview tests**
+- [x] **Step 8: Run the new and existing preview tests**
 
 Run: `docker-compose exec backend pytest backend/tests/test_preview.py -v`
 Expected: PASS (all tests, including the 5 new ones — this also re-runs every pre-existing `derive_week` test to confirm nothing else broke)
 
-- [ ] **Step 9: Run the full backend suite, mypy, ruff**
+- [x] **Step 9: Run the full backend suite, mypy, ruff**
 
 Run: `docker-compose exec backend pytest`
 Expected: PASS (≥80% coverage maintained)
@@ -544,7 +544,7 @@ Expected: PASS
 Run: `docker-compose exec backend ruff check .`
 Expected: PASS
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add backend/app/services/program/preview.py backend/app/schemas/program_api.py backend/tests/test_preview.py
@@ -574,7 +574,7 @@ Claude-Session: https://claude.ai/code/session_01KodZ1LEDUDxdMCQQLmdVq9"
 - Consumes: the three new backend fields from Task 3 (`adjustment_reason`, `reactive_deload`, `deload_reason`).
 - Produces: `SlotPreview.adjustment_reason: string | null`, `WorkoutPreview.reactive_deload: boolean`, `WorkoutPreview.deload_reason: string | null`, `WorkoutDetails.reactive_deload: boolean`, `WorkoutDetails.deload_reason: string | null`, and `formatSlotNote('autoregulated')`/`formatSlotNote('reactive_deload')` friendly labels. Consumed by Task 5.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `frontend/src/tests/utils/slotNote.test.ts`:
 
@@ -588,12 +588,12 @@ it('labels a reactive_deload note the same as a scheduled deload', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test -- slotNote.test.ts`
 Expected: FAIL — both new labels currently fall through to the "renders as-is" default (`'autoregulated'` and `'reactive_deload'` returned verbatim, not the friendly labels)
 
-- [ ] **Step 3: Update `slotNote.ts`**
+- [x] **Step 3: Update `slotNote.ts`**
 
 Change:
 
@@ -615,12 +615,12 @@ const NOTE_LABELS: Record<string, string> = {
 };
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npm run test -- slotNote.test.ts`
 Expected: PASS (all 5 tests)
 
-- [ ] **Step 5: Update `SlotPreview`/`WorkoutPreview` types**
+- [x] **Step 5: Update `SlotPreview`/`WorkoutPreview` types**
 
 In `frontend/src/types/program.ts`, change:
 
@@ -681,7 +681,7 @@ export interface WorkoutPreview {
 }
 ```
 
-- [ ] **Step 6: Thread the workout-level fields through `useWorkoutDetails`**
+- [x] **Step 6: Thread the workout-level fields through `useWorkoutDetails`**
 
 In `frontend/src/hooks/useWorkoutDetails.ts`, change:
 
@@ -735,17 +735,17 @@ to:
         }
 ```
 
-- [ ] **Step 7: Run type-check**
+- [x] **Step 7: Run type-check**
 
 Run: `docker-compose exec frontend npm run type-check`
 Expected: PASS. If it fails because an unrelated test fixture (e.g. `frontend/src/tests/pages/ProgramPreviewPage.test.tsx`'s mocked `WorkoutPreview` object literals) is now missing `reactive_deload`/`deload_reason`, add `reactive_deload: false, deload_reason: null` to each mocked workout object there — that file's mocks intentionally mirror the full backend shape (see its existing `rotation_pool`/`tempo`/`warmup_sets` fields).
 
-- [ ] **Step 8: Run the full frontend test suite**
+- [x] **Step 8: Run the full frontend test suite**
 
 Run: `docker-compose exec frontend npm run test`
 Expected: PASS (no regressions)
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add frontend/src/types/program.ts frontend/src/hooks/useWorkoutDetails.ts frontend/src/utils/slotNote.ts frontend/src/tests/utils/slotNote.test.ts
@@ -773,7 +773,7 @@ Claude-Session: https://claude.ai/code/session_01KodZ1LEDUDxdMCQQLmdVq9"
 
 `WorkoutTrackingPage.tsx` currently has no test file at all — this task creates the first one, scoped to the new banner/reason behavior (not full page coverage, which is out of scope for this feature).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `frontend/src/tests/pages/WorkoutTrackingPage.test.tsx`:
 
@@ -904,12 +904,12 @@ it('shows a friendly label and the reason for an autoregulated exercise', () => 
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `docker-compose exec frontend npm run test -- WorkoutTrackingPage.test.tsx`
 Expected: FAIL — banner text/`Load adjusted` label not found (current page renders the raw `note` string, no banner)
 
-- [ ] **Step 3: Add the `Alert` import and dismiss state**
+- [x] **Step 3: Add the `Alert` import and dismiss state**
 
 In `frontend/src/pages/WorkoutTrackingPage.tsx`, change:
 
@@ -943,7 +943,7 @@ import { formatSlotNote } from '@/utils/slotNote';
 import type { EffortMethod } from '@/types/programCreation';
 ```
 
-- [ ] **Step 4: Add `adjustment_reason` to the `ExerciseProgress` interface**
+- [x] **Step 4: Add `adjustment_reason` to the `ExerciseProgress` interface**
 
 Change:
 
@@ -976,7 +976,7 @@ interface ExerciseProgress {
 }
 ```
 
-- [ ] **Step 5: Populate `adjustment_reason` when building `exercises`, and add dismiss state**
+- [x] **Step 5: Populate `adjustment_reason` when building `exercises`, and add dismiss state**
 
 Change:
 
@@ -1034,7 +1034,7 @@ to:
   }, [workoutDetails]);
 ```
 
-- [ ] **Step 6: Render the banner**
+- [x] **Step 6: Render the banner**
 
 Change:
 
@@ -1068,7 +1068,7 @@ to:
           <Card className="mb-8">
 ```
 
-- [ ] **Step 7: Render the friendly label and reason for the per-exercise note**
+- [x] **Step 7: Render the friendly label and reason for the per-exercise note**
 
 Change:
 
@@ -1101,12 +1101,12 @@ to:
               )}
 ```
 
-- [ ] **Step 8: Run tests to verify they pass**
+- [x] **Step 8: Run tests to verify they pass**
 
 Run: `docker-compose exec frontend npm run test -- WorkoutTrackingPage.test.tsx`
 Expected: PASS (all 4 new tests)
 
-- [ ] **Step 9: Run the full frontend suite, type-check, lint**
+- [x] **Step 9: Run the full frontend suite, type-check, lint**
 
 Run: `docker-compose exec frontend npm run test`
 Expected: PASS (no regressions)
@@ -1117,7 +1117,7 @@ Expected: PASS
 Run: `docker-compose exec frontend npm run lint`
 Expected: PASS
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add frontend/src/pages/WorkoutTrackingPage.tsx frontend/src/tests/pages/WorkoutTrackingPage.test.tsx

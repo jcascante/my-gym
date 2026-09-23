@@ -37,6 +37,8 @@
 
 ## Task 4.1b: Frontend SetLogger Component
 
+> **Superseded:** `SetLogger` was later replaced by `SetRow`/`ExerciseSection` (free-order workout tracking, commit `7f02c8b`); the steps below were completed as written, then the component was removed.
+
 **Files:**
 - Create: `frontend/src/components/SetLogger.tsx`
 - Create: `frontend/src/components/SetLogger.test.tsx`
@@ -57,7 +59,7 @@
 
 ### Step 1: Write the failing test
 
-- [ ] Open `frontend/src/components/SetLogger.test.tsx` (create new file)
+- [x] Open `frontend/src/components/SetLogger.test.tsx` (create new file)
 
 ```typescript
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -142,7 +144,7 @@ Expected: FAIL — component does not exist.
 
 ### Step 2: Implement SetLogger component
 
-- [ ] Create `frontend/src/components/SetLogger.tsx`
+- [x] Create `frontend/src/components/SetLogger.tsx`
 
 ```typescript
 import React, { useState } from 'react';
@@ -282,14 +284,14 @@ export const SetLogger: React.FC<SetLoggerProps> = ({
 
 ### Step 3: Run tests to verify they pass
 
-- [ ] Run: `cd frontend && npm run test -- SetLogger.test.tsx`
+- [x] Run: `cd frontend && npm run test -- SetLogger.test.tsx`
 Expected: PASS (all 7 tests).
 
 ---
 
 ### Step 4: Integrate SetLogger into WorkoutTrackingPage
 
-- [ ] Open `frontend/src/pages/WorkoutTrackingPage.tsx`
+- [x] Open `frontend/src/pages/WorkoutTrackingPage.tsx`
 
 Find the section where sets are logged (likely a loop over `currentWorkout.exercises[i].sets`) and add the SetLogger component. Example integration:
 
@@ -320,17 +322,17 @@ import { SetLogger } from '../components/SetLogger';
 
 ### Step 5: Run full frontend test suite
 
-- [ ] Run: `cd frontend && npm run test`
+- [x] Run: `cd frontend && npm run test`
 Expected: PASS (all tests including SetLogger and updated WorkoutTrackingPage tests).
 
-- [ ] Run: `cd frontend && npm run type-check`
+- [x] Run: `cd frontend && npm run type-check`
 Expected: PASS (no TypeScript errors).
 
 ---
 
 ### Step 6: Commit
 
-- [ ] Stage and commit:
+- [x] Stage and commit:
 
 ```bash
 git add frontend/src/components/SetLogger.tsx frontend/src/components/SetLogger.test.tsx frontend/src/pages/WorkoutTrackingPage.tsx
@@ -361,7 +363,7 @@ Claude-Session: https://claude.ai/code/session_01R61M9QX1crhxixZH3f3bpu"
 
 ### Step 1: Add readiness schema to logging.py
 
-- [ ] Open `backend/app/schemas/logging.py` (created in 4.1a)
+- [x] Open `backend/app/schemas/logging.py` (created in 4.1a)
 
 Add this after existing schemas:
 
@@ -396,7 +398,7 @@ class UserWorkoutLogOut(BaseModel):
 
 ### Step 2: Add PATCH endpoint to logging.py
 
-- [ ] Open `backend/app/api/v1/endpoints/logging.py` (exists from 4.1a)
+- [x] Open `backend/app/api/v1/endpoints/logging.py` (exists from 4.1a)
 
 Add this endpoint:
 
@@ -457,7 +459,7 @@ async def update_workout_readiness(
 
 ### Step 3: Add CRUD helper (if not present from 4.1a)
 
-- [ ] Open `backend/app/crud/logging.py` (create if missing)
+- [x] Open `backend/app/crud/logging.py` (create if missing)
 
 ```python
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -499,7 +501,7 @@ async def update_user_workout_log(
 
 ### Step 4: Add tests to test_logging.py
 
-- [ ] Open `backend/tests/api/v1/endpoints/test_logging.py` (add to file from 4.1a)
+- [x] Open `backend/tests/api/v1/endpoints/test_logging.py` (add to file from 4.1a)
 
 ```python
 import pytest
@@ -576,17 +578,17 @@ async def test_patch_readiness_not_found(
 
 ### Step 5: Run backend tests
 
-- [ ] Run: `docker-compose exec backend pytest backend/tests/api/v1/endpoints/test_logging.py -v`
+- [x] Run: `docker-compose exec backend pytest backend/tests/api/v1/endpoints/test_logging.py -v`
 Expected: PASS (all readiness tests + existing 4.1a tests).
 
-- [ ] Run: `docker-compose exec backend mypy app/`
+- [x] Run: `docker-compose exec backend mypy app/`
 Expected: PASS (no type errors).
 
 ---
 
 ### Step 6: Commit
 
-- [ ] Stage and commit:
+- [x] Stage and commit:
 
 ```bash
 git add backend/app/schemas/logging.py backend/app/api/v1/endpoints/logging.py backend/app/crud/logging.py backend/tests/api/v1/endpoints/test_logging.py
@@ -616,7 +618,7 @@ Claude-Session: https://claude.ai/code/session_01R61M9QX1crhxixZH3f3bpu"
 
 ### Step 1: Write readiness prompt test
 
-- [ ] Open `frontend/src/pages/WorkoutTrackingPage.test.tsx`
+- [x] Open `frontend/src/pages/WorkoutTrackingPage.test.tsx`
 
 Add test:
 
@@ -651,7 +653,7 @@ Expected: FAIL (readiness UI not implemented).
 
 ### Step 2: Add ReadinessModal component
 
-- [ ] Create `frontend/src/components/ReadinessModal.tsx`
+- [x] Create `frontend/src/components/ReadinessModal.tsx`
 
 ```typescript
 import React, { useState } from 'react';
@@ -732,7 +734,7 @@ export const ReadinessModal: React.FC<ReadinessModalProps> = ({
 
 ### Step 3: Integrate ReadinessModal into WorkoutTrackingPage
 
-- [ ] Open `frontend/src/pages/WorkoutTrackingPage.tsx`
+- [x] Open `frontend/src/pages/WorkoutTrackingPage.tsx`
 
 Add state and UI:
 
@@ -788,7 +790,7 @@ const handleCompleteWorkout = () => {
 
 ### Step 4: Add API function
 
-- [ ] Open `frontend/src/api/workouts.ts` (or create if missing)
+- [x] Open `frontend/src/api/workouts.ts` (or create if missing)
 
 ```typescript
 export const patchWorkoutReadiness = async (
@@ -811,17 +813,17 @@ export const patchWorkoutReadiness = async (
 
 ### Step 5: Run tests
 
-- [ ] Run: `cd frontend && npm run test -- WorkoutTrackingPage.test.tsx`
+- [x] Run: `cd frontend && npm run test -- WorkoutTrackingPage.test.tsx`
 Expected: PASS (readiness prompt tests pass).
 
-- [ ] Run: `cd frontend && npm run type-check`
+- [x] Run: `cd frontend && npm run type-check`
 Expected: PASS.
 
 ---
 
 ### Step 6: Commit
 
-- [ ] Stage and commit:
+- [x] Stage and commit:
 
 ```bash
 git add frontend/src/components/ReadinessModal.tsx frontend/src/pages/WorkoutTrackingPage.tsx frontend/src/api/workouts.ts

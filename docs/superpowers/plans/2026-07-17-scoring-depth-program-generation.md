@@ -34,7 +34,7 @@
 
 **Context:** This is the single authority mapping the granular `Exercise.equipment_tags` (38 values, see `backend/app/models/exercise.py:38-76`) up to 7 coarse families. `bench` and `squat_rack` are support furniture, not a movement family of their own — mapped to `bodyweight` (neutral by default); since `movement_preference_weight` takes the **max** across an exercise's tags, this never drags down a barbell-tagged compound lift.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_preferences.py
@@ -82,12 +82,12 @@ def test_bodyweight_none_tag_reads_neutral_family_by_default():
     assert movement_preference_weight(ex, {"bodyweight": 1.7}) == 1.7
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_preferences.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.services.program.preferences'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/services/program/preferences.py
@@ -159,12 +159,12 @@ def movement_preference_weight(ex: Exercise, prefs: dict[str, float]) -> float:
     return max(weights) if weights else 1.0
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_preferences.py -v`
 Expected: PASS (5 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/preferences.py backend/tests/test_preferences.py
@@ -186,7 +186,7 @@ git commit -m "feat(program-engine): add equipment-family map for movement prefe
 
 **Context:** `progression_style` moves from `DraftRequest`-only to `MatchRequest` (backward compatible — it has a default) because Phase 4's periodization matching factor needs it at **match** time, before a template is chosen. `movement_preferences` is validated for numeric range only (`[0.0, 2.0]`) — not against known family names — because schemas must not import from `app.services` (checked: no existing schema imports `app.services`, keeping that one-directional). An unknown family key is harmless: `movement_preference_weight` just never looks it up, consistent with "soft, never a hard filter."
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_program_api_schemas.py — add these, keep existing tests unmodified
@@ -229,12 +229,12 @@ def test_draft_request_inherits_new_signals():
     assert req.variety_preference.value == "high"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_program_api_schemas.py -v`
 Expected: FAIL — `MatchRequest` has no field `movement_preferences`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/schemas/program.py — add this enum near ProgressionStyle/EffortMethod
@@ -353,12 +353,12 @@ class ProgramCreationRequest(BaseModel):
     variety_preference: VarietyPreference = VarietyPreference.LOW
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_program_api_schemas.py -v`
 Expected: PASS (all tests, including the 5 pre-existing ones unmodified)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/schemas/program.py backend/app/schemas/program_api.py backend/tests/test_program_api_schemas.py
@@ -379,7 +379,7 @@ git commit -m "feat(program-engine): add movement/complementary/variety signals 
 
 **Context:** Current alembic head is `d4e5f6a7b8c9` (confirmed via `down_revision` chain — no other heads exist). This is a plain additive column; no data backfill needed since `default=list` at the Python level and `server_default="[]"` at the DB level both produce an empty list for existing/new rows.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_program_models.py — add this test, keep the existing one unmodified
@@ -418,12 +418,12 @@ async def test_workout_exercise_rotation_pool_defaults_to_empty_list(db_session:
     assert slot.rotation_pool == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_program_models.py -v`
 Expected: FAIL — `TypeError: 'rotation_pool' is an invalid keyword argument` or `AttributeError`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/models/program.py — add to WorkoutExercise, right after is_user_swapped
@@ -465,7 +465,7 @@ def downgrade() -> None:
     op.drop_column("workout_exercises", "rotation_pool")
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_program_models.py -v`
 Expected: PASS (both tests)
@@ -474,7 +474,7 @@ Also verify the migration applies cleanly against Postgres:
 Run: `docker-compose exec backend alembic upgrade head` then `docker-compose exec backend alembic downgrade -1 && docker-compose exec backend alembic upgrade head`
 Expected: no errors in either direction
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/models/program.py backend/alembic/versions/e1f2a3b4c5d6_add_rotation_pool_to_workout_exercises.py backend/tests/test_program_models.py
@@ -497,7 +497,7 @@ git commit -m "feat(program-engine): add rotation_pool column to workout_exercis
 
 **Context:** This replaces the tuple `_score` with a weighted linear sum of a normalized feature dict. Manually verifying against the 5 existing `test_selection.py` cases with default weights (`priority_fit=1.5`, `unilateral_balance=0.5`, others tied at 1.0 given empty/neutral context) shows every existing assertion still resolves to the same winner — **no re-baselining needed for this fixture set**. Still run the full suite in Step 4 to confirm; if any assertion legitimately flips due to a genuine tie-break change under the new formula, update that one assertion with a comment `# re-baselined for weighted scoring (docs/superpowers/plans/2026-07-17-scoring-depth-program-generation.md)` — do not touch assertions that still pass.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_selection.py — add these new tests below the existing 5 (which stay unmodified)
@@ -542,12 +542,12 @@ def test_ranked_pool_for_slot_returns_descending_order():
     assert [ex.id for ex in ranked] == [1, 2]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_selection.py -v`
 Expected: FAIL — `SelectionContext.__init__() got an unexpected keyword argument 'movement_preferences'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/services/program/selection.py — full new file content
@@ -719,12 +719,12 @@ def coverage_deficit(muscles: list[str], coverage: "Counter[str]") -> float:
 
 (This is in fact the complete, correct formula from spec §14.3 — Task 6 only *adds* `is_core`/`antagonist_pattern` to this file, it does not change this function.)
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_selection.py -v`
 Expected: PASS (all 8 tests: 5 pre-existing + 3 new). If a pre-existing test fails, inspect whether the new winner is a legitimate pick under the weighted formula (not a logic bug) before updating its assertion.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/selection.py backend/app/services/program/complementation.py backend/tests/test_selection.py
@@ -744,7 +744,7 @@ git commit -m "feat(program-engine): weighted exercise scoring with movement-pre
 - Consumes: `SelectionContext.movement_preferences` (Task 4), `DraftRequest.movement_preferences` (Task 2).
 - Produces: `build_draft(...)` output now includes `"movement_preferences"` in `program.constraints`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_drafting.py — add this test
@@ -763,12 +763,12 @@ async def test_build_draft_stores_movement_preferences_in_constraints(sample_tem
     assert program.constraints["movement_preferences"] == {"kettlebell": 1.5}
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py -v -k movement_preferences`
 Expected: FAIL — `KeyError: 'movement_preferences'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/services/program/drafting.py — modify the constraints dict inside build_draft
@@ -829,12 +829,12 @@ async def _ctx_for(
     )
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py backend/tests/test_programs_flow.py -v`
 Expected: PASS (all tests, including all pre-existing ones)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/drafting.py backend/app/api/v1/endpoints/programs.py backend/tests/test_drafting.py
@@ -854,7 +854,7 @@ git commit -m "feat(program-engine): wire movement_preferences through draft/fee
 **Interfaces:**
 - Produces: `coverage_deficit(muscles, coverage) -> float` (unchanged from the Task 4 stub), `is_core(ex) -> bool`, `antagonist_pattern(pattern: str) -> str | None`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_complementation.py
@@ -898,12 +898,12 @@ def test_antagonist_pattern_pairs():
     assert antagonist_pattern("isolation") is None
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_complementation.py -v`
 Expected: FAIL — `ImportError: cannot import name 'is_core'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/services/program/complementation.py — full new file content
@@ -938,12 +938,12 @@ def antagonist_pattern(pattern: str) -> str | None:
     return ANTAGONIST_PATTERNS.get(pattern)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_complementation.py tests/test_selection.py -v`
 Expected: PASS (complementation tests + selection tests still green, since `_extract_features` already used `coverage_deficit` from this module)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/complementation.py backend/tests/test_complementation.py
@@ -965,7 +965,7 @@ git commit -m "feat(program-engine): add is_core + antagonist-pattern grouping t
 
 **Context:** This is the piece that turns "focus upper body" into "upper-body primary + balanced pull/rear-delt/core accessories" — after each slot is filled, the chosen exercise's `primary_muscles` are added to a running `Counter`, so later accessory slots in the same session see which muscles are already well-trained and the `complementary_coverage` feature (Task 4) rewards the under-trained ones.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_drafting.py — add these two tests
@@ -999,12 +999,12 @@ async def test_build_draft_updates_muscle_coverage_after_each_pick(sample_templa
     assert sum(ctx.muscle_coverage.values()) > 0  # at least one primary muscle was tallied
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py -v -k "complementary_focus or muscle_coverage"`
 Expected: FAIL — `KeyError: 'complementary_focus'` / coverage assertion fails (still 0)
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/services/program/drafting.py — full new file content
@@ -1146,12 +1146,12 @@ async def _ctx_for(
     )
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py tests/test_programs_flow.py -v`
 Expected: PASS (all tests, including all pre-existing ones)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/drafting.py backend/app/api/v1/endpoints/programs.py backend/tests/test_drafting.py
@@ -1174,7 +1174,7 @@ git commit -m "feat(program-engine): track live muscle coverage and wire complem
 
 **Context:** `rank_templates` gains an optional `definitions: dict[int, TemplateDefinition]` parameter rather than re-parsing `ProgramTemplate.split`/`progression_ref` raw JSON itself — this mirrors how `drafting.py`/`preview.py`/`adaptation.py` already consume the parsed `TemplateDefinition`, and the `match()` endpoint already builds this dict today for feasibility checking (`programs.py:73-78`). When `definitions` is omitted (as in today's tests, which use a bare `_T` fixture with no `split`), the three new factors default to neutral values (`0.5`, `0.5`, `0.3`) — identical for every template, so relative ranking is unaffected and existing assertions hold.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_matching.py — add these tests below the existing 2 (which stay unmodified)
@@ -1227,12 +1227,12 @@ def test_periodization_rewards_matching_progression_style():
     assert by_id[2].factors["periodization"] == 0.3
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_matching.py -v`
 Expected: FAIL — `KeyError: 'movement_preference'` (factors dict doesn't have the new keys yet)
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/services/program/matching.py — full new file content
@@ -1415,12 +1415,12 @@ def rank_templates(
     return top_3
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_matching.py -v`
 Expected: PASS (all 4 tests: 2 pre-existing + 2 new)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/matching.py backend/tests/test_matching.py
@@ -1438,7 +1438,7 @@ git commit -m "feat(program-engine): weighted template matching with movement/fo
 **Interfaces:**
 - Consumes: `MatchRequest.movement_preferences`/`complementary_focus`/`progression_style` (Task 2), `rank_templates(..., definitions=..., all_exercises=...)` (Task 8).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_programs_flow.py — add this test; check the existing file first for
@@ -1465,12 +1465,12 @@ async def test_match_returns_new_factor_keys(authenticated_client, user_environm
     assert "periodization" in body[0]["factors"]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_programs_flow.py -v -k new_factor_keys`
 Expected: FAIL — `KeyError: 'movement_preference'` (endpoint doesn't pass `definitions`/`all_exercises` to `rank_templates` yet)
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/api/v1/endpoints/programs.py — replace the body of match()
@@ -1512,12 +1512,12 @@ async def match(
     ]
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_programs_flow.py -v`
 Expected: PASS (all tests, including all pre-existing ones)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/api/v1/endpoints/programs.py backend/tests/test_programs_flow.py
@@ -1538,7 +1538,7 @@ git commit -m "feat(program-engine): wire movement/complementary/periodization s
 - Produces: `pool_size_for(variety_preference: str) -> int` (`low`→1, `medium`→2, `high`→3, unknown→1), `rotation_pool_ids(ranked: list, n: int) -> list[int]`.
 - Consumes: nothing new (works on any object with an `.id` attribute, e.g. `Exercise`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_variety.py
@@ -1570,12 +1570,12 @@ def test_rotation_pool_ids_handles_pool_smaller_than_n():
     assert rotation_pool_ids(ranked, 3) == [1]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_variety.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.services.program.variety'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/services/program/variety.py
@@ -1592,12 +1592,12 @@ def rotation_pool_ids(ranked: list[Any], n: int) -> list[int]:
     return [ex.id for ex in ranked[:n]]
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_variety.py -v`
 Expected: PASS (4 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/variety.py backend/tests/test_variety.py
@@ -1618,7 +1618,7 @@ git commit -m "feat(program-engine): add variety-level rotation pool sizing"
 - Consumes: `ranked_pool_for_slot` (Task 4), `pool_size_for`/`rotation_pool_ids` (Task 10).
 - Produces: `build_draft(..., variety_preference: str = "low")`, `WorkoutExercise.rotation_pool` populated for non-primary slots; primary slots always get a single-entry pool (never rotate).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_drafting.py — add these tests
@@ -1672,12 +1672,12 @@ async def test_build_draft_defaults_variety_preference_to_low(sample_template_or
     assert all(len(ex.rotation_pool) == 1 for w in program.workouts for ex in w.exercises)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py -v -k rotation_pool`
 Expected: FAIL — `AttributeError`/`KeyError` (rotation_pool not populated, variety_preference not in constraints)
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/services/program/drafting.py — full new file content
@@ -1804,12 +1804,12 @@ def build_draft(
     )
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_drafting.py tests/test_programs_flow.py -v`
 Expected: PASS (all tests, including all pre-existing ones)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/drafting.py backend/app/api/v1/endpoints/programs.py backend/tests/test_drafting.py
@@ -1829,7 +1829,7 @@ git commit -m "feat(program-engine): populate rotation_pool at draft time by var
 
 **Context:** `SlotPreviewOut.rotation_pool` was already added to the schema in Task 2. Rotation is a pure function of the week index: `rotation_pool[(week - 1) % len(pool)]` when `len(pool) > 1`, else the stored `exercise_id` — today's exact behavior, since every existing `WorkoutExercise` has `rotation_pool == []` (Task 3's default) or a single-entry pool (Task 11, when `variety_preference="low"`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_preview.py — add this test
@@ -1863,12 +1863,12 @@ async def test_derive_week_rotates_through_pool_by_week_index(sample_template_or
     assert slot1["rotation_pool"] == rotating.rotation_pool
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec backend pytest tests/test_preview.py -v -k rotates_through_pool`
 Expected: FAIL — `KeyError: 'rotation_pool'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # backend/app/services/program/preview.py — full new file content
@@ -1945,12 +1945,12 @@ def derive_week(
     return days
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec backend pytest tests/test_preview.py -v`
 Expected: PASS (all tests, including all pre-existing ones)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/preview.py backend/tests/test_preview.py
@@ -1975,7 +1975,7 @@ git commit -m "feat(program-engine): apply week-to-week rotation pools in derive
 
 **Context:** `TemplateMatchCard.tsx` already renders `Object.entries(match.factors)` generically (verified: no hardcoded factor-key list), so Phase 4's three new backend factors (`movement_preference`, `focus_complement`, `periodization`) show up in the "why this fits" UI automatically — **no frontend change needed there**.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // frontend/src/tests/components/ProgramCreationForm.test.tsx — add this test
@@ -1999,12 +1999,12 @@ it('should include movement preferences, complementary focus, and variety in sub
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npx vitest run src/tests/components/ProgramCreationForm.test.tsx`
 Expected: FAIL — `onSubmit` called without `movement_preferences`/`complementary_focus`/`variety_preference` keys
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```typescript
 // frontend/src/types/programCreation.ts — add these exports (keep everything else in the file)
@@ -2360,7 +2360,7 @@ Also update the `initialValues` object passed to `<ProgramCreationForm>` in the 
           }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npx vitest run src/tests/components/ProgramCreationForm.test.tsx`
 Expected: PASS (all tests, including all pre-existing ones)
@@ -2368,7 +2368,7 @@ Expected: PASS (all tests, including all pre-existing ones)
 Then: `docker-compose exec frontend npm run type-check`
 Expected: no errors
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/types/programCreation.ts frontend/src/types/program.ts frontend/src/components/ProgramCreationForm.tsx frontend/src/pages/ProgramBuilderPage.tsx frontend/src/tests/components/ProgramCreationForm.test.tsx
@@ -2387,7 +2387,7 @@ git commit -m "feat(program-ui): collect movement preferences, complementary foc
 **Interfaces:**
 - Produces: `SlotPreview.rotation_pool: number[]` type field; `SlotRow` renders a small "🔁 rotates weekly" badge when `slot.rotation_pool.length > 1`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // frontend/src/tests/components/SlotRow.test.tsx — add this test; update baseSlot to include
@@ -2406,12 +2406,12 @@ it('does not show a rotation badge for a single-exercise pool', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker-compose exec frontend npx vitest run src/tests/components/SlotRow.test.tsx`
 Expected: FAIL — type error (`rotation_pool` missing on `SlotPreview`) / badge text not found
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```typescript
 // frontend/src/types/program.ts — add to SlotPreview
@@ -2507,7 +2507,7 @@ export function SlotRow({
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker-compose exec frontend npx vitest run src/tests/components/SlotRow.test.tsx`
 Expected: PASS (all tests, including all pre-existing ones)
@@ -2515,7 +2515,7 @@ Expected: PASS (all tests, including all pre-existing ones)
 Then: `docker-compose exec frontend npm run type-check`
 Expected: no errors
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/types/program.ts frontend/src/components/SlotRow.tsx frontend/src/tests/components/SlotRow.test.tsx
@@ -2535,11 +2535,11 @@ git commit -m "feat(program-ui): show a rotation badge on slots with more than o
 
 **Context:** Per the confirmed decision at the top of this plan, this task extends the two docs that already cover program generation rather than creating the spec's literally-named new files, to avoid two overlapping docs for the same feature. Read both files first to match their existing heading structure, CSS classes, and tone before adding sections.
 
-- [ ] **Step 1: Read the existing docs to match their structure**
+- [x] **Step 1: Read the existing docs to match their structure**
 
 Read `docs/user/PROGRAM_BUILDER.html` and `docs/technical/PROGRAM_GENERATION_TECHNICAL.html` in full. Note the existing `<h2>` section order, the CSS classes in use (`.step`, `.faq-item`, `.tip`, `.endpoint`, `.code-block`, `.diagram`, `.troubleshooting-item`), and the nav anchor list in the technical doc's `<nav>` — new sections must slot into both without breaking the existing anchors.
 
-- [ ] **Step 2: Add a new user-facing section to `docs/user/PROGRAM_BUILDER.html`**
+- [x] **Step 2: Add a new user-facing section to `docs/user/PROGRAM_BUILDER.html`**
 
 Add a new `<h2>` section (placed after the existing template-selection walkthrough, before "Troubleshooting") titled something like "Fine-Tuning Your Program", written in the second-person, non-technical, analogy-driven style the skill requires (e.g. "we favor your preferred equipment but still mix in what balances your body"). Cover, in plain language and with no formulas:
 - What picking equipment preferences does (biases exercise choice, never removes an option entirely).
@@ -2547,7 +2547,7 @@ Add a new `<h2>` section (placed after the existing template-selection walkthrou
 - What the weekly variety setting does (how many different exercises rotate through an accessory slot across the weeks of the program) — and mention the new "🔁 rotates weekly" badge they'll see in their program preview.
 Add one `.faq-item` covering "Why did I get a barbell exercise when I said I prefer kettlebells?" (soft preference, not a filter — equipment feasibility and injury safety always come first).
 
-- [ ] **Step 3: Add a new technical section to `docs/technical/PROGRAM_GENERATION_TECHNICAL.html`**
+- [x] **Step 3: Add a new technical section to `docs/technical/PROGRAM_GENERATION_TECHNICAL.html`**
 
 Add a new `<h2 id="scoring-depth">` section (and a matching `<nav>` anchor) rendering spec §14 verbatim in the doc's existing `.diagram`/`.code-block`/table styling:
 - The end-to-end pipeline diagram (§14.1).
@@ -2558,14 +2558,14 @@ Add a new `<h2 id="scoring-depth">` section (and a matching `<nav>` anchor) rend
 - The `TemplateScorer`/`ExerciseScorer` protocol seam table from spec §9, framed as "what would change if a learned model replaced the heuristic."
 Update `docs/technical/index.html`'s quick-link card and `docs/README.md` if that file references program-generation docs, per the documentation skill's checklist.
 
-- [ ] **Step 4: Verify links and rendering**
+- [x] **Step 4: Verify links and rendering**
 
 Run: `grep -r 'href="' docs/user/PROGRAM_BUILDER.html docs/technical/PROGRAM_GENERATION_TECHNICAL.html`
 Expected: all internal links resolve to existing files (no broken anchors)
 
 Open both files in a browser (`open docs/user/PROGRAM_BUILDER.html`, `open docs/technical/PROGRAM_GENERATION_TECHNICAL.html`) and visually confirm the new sections render with the existing theme (navy/slate for user, blue for technical), are responsive, and the technical doc's nav scrolls to the new anchor.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/user/PROGRAM_BUILDER.html docs/technical/PROGRAM_GENERATION_TECHNICAL.html docs/technical/index.html docs/README.md

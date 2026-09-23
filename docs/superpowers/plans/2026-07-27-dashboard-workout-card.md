@@ -54,7 +54,7 @@ Task 1 delivers the component and its tests. Task 2 wires the dashboard and repa
   Task 2 relies on `onStartClick` being required and on the meta line rendering as
   `` `${programName} • Week ${weekNumber} • ${n} exercises • ${durationMin} min` ``.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/src/tests/components/WorkoutCard.test.tsx`:
 
@@ -153,13 +153,13 @@ describe('WorkoutCard', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `docker-compose exec frontend npm run test -- --run src/tests/components/WorkoutCard.test.tsx`
 
 Expected: FAIL. The current component renders exercise names and two buttons are not present but `getAllByRole('button')` returns the inner "Start Workout" button while the meta-line and eyebrow assertions fail on missing text.
 
-- [ ] **Step 3: Rewrite the component**
+- [x] **Step 3: Rewrite the component**
 
 Replace the entire contents of `frontend/src/components/WorkoutCard.tsx` with:
 
@@ -220,13 +220,13 @@ export function WorkoutCard({
 Note the two behavioural changes beyond styling: `Button` is no longer imported, and
 `onStartClick` lost its `?`.
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `docker-compose exec frontend npm run test -- --run src/tests/components/WorkoutCard.test.tsx`
 
 Expected: PASS, 6 tests.
 
-- [ ] **Step 5: Type-check and lint**
+- [x] **Step 5: Type-check and lint**
 
 Run:
 ```bash
@@ -236,7 +236,7 @@ docker-compose exec frontend npm run lint
 Expected: both clean. `type-check` will report an error in `DashboardPage.tsx` only if that
 file fails to pass `onStartClick` — it already passes it, so expect no errors here.
 
-- [ ] **Step 6: Commit** (only if the user has approved committing)
+- [x] **Step 6: Commit** (only if the user has approved committing)
 
 ```bash
 git add frontend/src/components/WorkoutCard.tsx frontend/src/tests/components/WorkoutCard.test.tsx
@@ -256,7 +256,7 @@ git commit -m "refactor(dashboard): make WorkoutCard a compact one-click summary
   the meta line reads `` `${programName} • Week ${weekNumber} • ${n} exercises • ${durationMin} min` ``.
 - Produces: nothing consumed by later tasks.
 
-- [ ] **Step 1: Update the failing dashboard assertion**
+- [x] **Step 1: Update the failing dashboard assertion**
 
 `frontend/src/tests/pages/DashboardPage.test.tsx` currently asserts
 `expect(screen.getByText(/My Program • Week 2/)).toBeInTheDocument();`. That text now lives in
@@ -274,14 +274,14 @@ Leave the rest of the file — the mocks, the `programData` fixture, and the
 `expect(screen.getByText('Week 2 Day A')).toBeInTheDocument();` assertion — untouched. The
 test's purpose (the card shows the program's current week, not always week 1) is preserved.
 
-- [ ] **Step 2: Run the dashboard test**
+- [x] **Step 2: Run the dashboard test**
 
 Run: `docker-compose exec frontend npm run test -- --run src/tests/pages/DashboardPage.test.tsx`
 
 Expected: PASS. `DashboardPage` already passes `onStartClick`, so no source change is needed to
 make it green — this step confirms the integration rather than driving new code.
 
-- [ ] **Step 3: Add a test that the dashboard card navigates in one click**
+- [x] **Step 3: Add a test that the dashboard card navigates in one click**
 
 Append to `frontend/src/tests/pages/DashboardPage.test.tsx`:
 
@@ -332,7 +332,7 @@ vi.mock('react-router-dom', async () => {
 });
 ```
 
-- [ ] **Step 4: Run the dashboard test to verify both cases pass**
+- [x] **Step 4: Run the dashboard test to verify both cases pass**
 
 Run: `docker-compose exec frontend npm run test -- --run src/tests/pages/DashboardPage.test.tsx`
 
@@ -341,7 +341,7 @@ time, move the `const navigateMock = vi.fn();` declaration above every `vi.mock`
 hoists `vi.mock` factories, but the factory body only runs on import, so a `const` declared
 before the mocks in source order is initialised in time.
 
-- [ ] **Step 5: Run the full frontend suite, lint, and type-check**
+- [x] **Step 5: Run the full frontend suite, lint, and type-check**
 
 Run:
 ```bash
@@ -351,7 +351,7 @@ docker-compose exec frontend npm run lint
 ```
 Expected: all pass, no new failures. Report any pre-existing failures rather than fixing them.
 
-- [ ] **Step 6: Verify in the running app**
+- [x] **Step 6: Verify in the running app**
 
 Run `docker-compose up` if not already running, log in as a user with an active program, and
 confirm on the dashboard that:
@@ -362,7 +362,7 @@ confirm on the dashboard that:
 - the "This Week" and "Your Stats" sections are now visible without scrolling on a laptop
   viewport.
 
-- [ ] **Step 7: Commit** (only if the user has approved committing)
+- [x] **Step 7: Commit** (only if the user has approved committing)
 
 ```bash
 git add frontend/src/tests/pages/DashboardPage.test.tsx

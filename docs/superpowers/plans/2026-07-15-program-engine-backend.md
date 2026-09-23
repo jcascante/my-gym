@@ -29,7 +29,7 @@
 **Interfaces:**
 - Produces: `ProgramTemplate`, `WorkoutProgram`, `Workout`, `WorkoutExercise` ORM models; `ProgramStatus` enum (`DRAFT`, `ACTIVE`, `ARCHIVED`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_program_models.py
@@ -82,12 +82,12 @@ async def test_template_and_program_persist(db_session: AsyncSession, test_user)
     assert found.constraints["swaps"] == {}
 ```
 
-- [ ] **Step 2: Run it and confirm it fails**
+- [x] **Step 2: Run it and confirm it fails**
 
 Run: `docker-compose exec backend pytest tests/test_program_models.py -v`
 Expected: FAIL — `ImportError: cannot import name 'ProgramTemplate'`.
 
-- [ ] **Step 3: Implement the models**
+- [x] **Step 3: Implement the models**
 
 ```python
 # backend/app/models/program.py
@@ -194,7 +194,7 @@ class WorkoutExercise(Base):
     workout: Mapped["Workout"] = relationship(back_populates="exercises")
 ```
 
-- [ ] **Step 4: Export from the models package**
+- [x] **Step 4: Export from the models package**
 
 ```python
 # backend/app/models/__init__.py  — add these to the existing exports
@@ -204,12 +204,12 @@ from app.models.program import (  # noqa: F401
 ```
 Append the four model names + `ProgramStatus` to the module's `__all__` if it defines one.
 
-- [ ] **Step 5: Run tests to confirm green**
+- [x] **Step 5: Run tests to confirm green**
 
 Run: `docker-compose exec backend pytest tests/test_program_models.py -v`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/app/models/program.py backend/app/models/__init__.py backend/tests/test_program_models.py
@@ -226,27 +226,27 @@ git commit -m "feat(program): add program template and program ORM models"
 
 **Interfaces:** none (schema only).
 
-- [ ] **Step 1: Autogenerate the migration**
+- [x] **Step 1: Autogenerate the migration**
 
 Run: `docker-compose exec backend alembic revision --autogenerate -m "add program tables"`
 Expected: a new file under `backend/migrations/versions/` creating `program_templates`, `workout_programs`, `workouts`, `workout_exercises`.
 
-- [ ] **Step 2: Review the generated file**
+- [x] **Step 2: Review the generated file**
 
 Confirm all four `op.create_table(...)` calls exist, FKs point to `users`, `program_templates`, `training_environments`, `exercises`, and JSON columns are present. Remove any spurious drops of unrelated tables.
 
-- [ ] **Step 3: Apply and verify up**
+- [x] **Step 3: Apply and verify up**
 
 Run: `docker-compose exec backend alembic upgrade head`
 Then: `docker-compose exec postgres psql -U postgres -d app_db -c "\dt"`
 Expected: the four new tables listed.
 
-- [ ] **Step 4: Verify down**
+- [x] **Step 4: Verify down**
 
 Run: `docker-compose exec backend alembic downgrade -1` then `alembic upgrade head`.
 Expected: clean down + re-up with no errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/migrations/versions/
@@ -265,7 +265,7 @@ git commit -m "feat(program): migration for program tables"
 **Interfaces:**
 - Produces: `SlotRule`, `SessionDef`, `SplitDef`, `ProgressionRef`, `RequiredInput`, `TemplateDefinition` (Pydantic). `TemplateDefinition.from_orm_template(t) -> TemplateDefinition`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_template_schema.py
@@ -293,12 +293,12 @@ def test_valid_template_definition_parses():
     assert td.split.sessions[0].slots[0].pattern == "horizontal_push"
 ```
 
-- [ ] **Step 2: Run and confirm failure**
+- [x] **Step 2: Run and confirm failure**
 
 Run: `docker-compose exec backend pytest tests/test_template_schema.py -v`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the schemas**
+- [x] **Step 3: Implement the schemas**
 
 ```python
 # backend/app/schemas/template.py
@@ -370,7 +370,7 @@ class TemplateDefinition(BaseModel):
 ```
 > Note: `schemes` are stored inside the template `split` JSON under a `"schemes"` key (see Task 9 seed). `from_orm_template` reads them from there.
 
-- [ ] **Step 4: Simplify `from_orm_template` to match the seed shape**
+- [x] **Step 4: Simplify `from_orm_template` to match the seed shape**
 
 Replace the `from_orm_template` body with the single supported source (schemes live in `split["schemes"]`):
 
@@ -387,7 +387,7 @@ Replace the `from_orm_template` body with the single supported source (schemes l
         )
 ```
 
-- [ ] **Step 5: Export and run tests**
+- [x] **Step 5: Export and run tests**
 
 Add to `backend/app/schemas/__init__.py`:
 ```python
@@ -397,7 +397,7 @@ from app.schemas.template import (  # noqa: F401
 ```
 Run: `docker-compose exec backend pytest tests/test_template_schema.py -v` → PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/app/schemas/template.py backend/app/schemas/__init__.py backend/tests/test_template_schema.py
@@ -415,7 +415,7 @@ git commit -m "feat(program): template definition schemas with validation"
 **Interfaces:**
 - Produces: `SetScheme` (dataclass: `sets:int, reps:int, load:float|None, rest_seconds:int, note:str|None`), `ProgressionModel` protocol with `key: str` and `resolve(base, week, params) -> SetScheme`, `SlotBase` (dataclass: `sets, reps_min, reps_max, rest_seconds, base_load`), `register(model)` and `get_model(key) -> ProgressionModel`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_progression_registry.py
@@ -439,9 +439,9 @@ def test_get_unknown_raises():
         get_model("nope")
 ```
 
-- [ ] **Step 2: Run and confirm failure** — `pytest tests/test_progression_registry.py -v` → FAIL (import error).
+- [x] **Step 2: Run and confirm failure** — `pytest tests/test_progression_registry.py -v` → FAIL (import error).
 
-- [ ] **Step 3: Implement base + registry**
+- [x] **Step 3: Implement base + registry**
 
 ```python
 # backend/app/services/program/progression/base.py
@@ -486,9 +486,9 @@ def get_model(key: str) -> ProgressionModel:
 ```
 Leave `backend/app/services/program/__init__.py` and `.../progression/__init__.py` empty for now.
 
-- [ ] **Step 4: Run tests → PASS.** `pytest tests/test_progression_registry.py -v`
+- [x] **Step 4: Run tests → PASS.** `pytest tests/test_progression_registry.py -v`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/program/ backend/tests/test_progression_registry.py
@@ -507,7 +507,7 @@ git commit -m "feat(program): progression model protocol and registry"
 - Consumes: `SlotBase`, `SetScheme` from `base`.
 - Produces: `LinearLoad` (key `"linear_load"`); params: `{"increment": float}` (default 2.5). Week 1 = base_load; each week adds `increment`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_progression_linear.py
@@ -529,9 +529,9 @@ def test_linear_handles_no_load():
     assert m.resolve(base, week=2, params={"increment": 2.5}).load is None
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```python
 # backend/app/services/program/progression/linear_load.py
@@ -550,9 +550,9 @@ class LinearLoad:
 register(LinearLoad())
 ```
 
-- [ ] **Step 4: Run tests → PASS.**
+- [x] **Step 4: Run tests → PASS.**
 
-- [ ] **Step 5: Commit** — `git commit -m "feat(program): linear load progression"`
+- [x] **Step 5: Commit** — `git commit -m "feat(program): linear load progression"`
 
 ---
 
@@ -565,7 +565,7 @@ register(LinearLoad())
 **Interfaces:**
 - Produces: `DoubleProgression` (key `"double_progression"`); params: `{"increment": float}`. Adds one rep per week from `reps_min` until `reps_max`; on the week that would exceed `reps_max`, reset to `reps_min` and add `increment` to load. Repeats each cycle.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_progression_double.py
@@ -584,9 +584,9 @@ def test_double_progression_cycle():
     assert (m.resolve(base, 7, p).reps, m.resolve(base, 7, p).load) == (8, 25.0)
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```python
 # backend/app/services/program/progression/double_progression.py
@@ -609,9 +609,9 @@ class DoubleProgression:
 register(DoubleProgression())
 ```
 
-- [ ] **Step 4: Run tests → PASS.**
+- [x] **Step 4: Run tests → PASS.**
 
-- [ ] **Step 5: Commit** — `git commit -m "feat(program): double progression"`
+- [x] **Step 5: Commit** — `git commit -m "feat(program): double progression"`
 
 ---
 
@@ -624,7 +624,7 @@ register(DoubleProgression())
 **Interfaces:**
 - Produces: `WeeklyUndulating` (key `"weekly_undulating"`); params: `{"waves": [{"reps": int, "intensity": float}], "increment": float}`. Rotates through `waves` by `(week-1) % len(waves)`; `load = base_load * intensity`, climbing `increment` each full wave cycle.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_progression_undulating.py
@@ -642,9 +642,9 @@ def test_undulating_rotates_waves():
     assert m.resolve(base, 3, p).load == 105.0       # +increment after one full wave
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```python
 # backend/app/services/program/progression/weekly_undulating.py
@@ -670,9 +670,9 @@ class WeeklyUndulating:
 register(WeeklyUndulating())
 ```
 
-- [ ] **Step 4: Run tests → PASS.**
+- [x] **Step 4: Run tests → PASS.**
 
-- [ ] **Step 5: Commit** — `git commit -m "feat(program): weekly undulating progression"`
+- [x] **Step 5: Commit** — `git commit -m "feat(program): weekly undulating progression"`
 
 ---
 
@@ -686,7 +686,7 @@ register(WeeklyUndulating())
 **Interfaces:**
 - Produces: `apply_deload(scheme: SetScheme, week: int, every: int | None, factor: float = 0.6) -> SetScheme`. On weeks where `week % every == 0`, multiply load by `factor` and tag `note="deload"`. `every=None` returns the scheme unchanged.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_progression_deload.py
@@ -702,9 +702,9 @@ def test_deload_every_fourth_week():
     assert apply_deload(s, week=4, every=None).load == 100.0
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```python
 # backend/app/services/program/progression/deload.py
@@ -720,7 +720,7 @@ def apply_deload(scheme: SetScheme, week: int, every: int | None, factor: float 
     )
 ```
 
-- [ ] **Step 4: Register all models on import**
+- [x] **Step 4: Register all models on import**
 
 ```python
 # backend/app/services/program/progression/__init__.py
@@ -733,9 +733,9 @@ from app.services.program.progression.base import (  # noqa: F401
 from app.services.program.progression.deload import apply_deload  # noqa: F401
 ```
 
-- [ ] **Step 5: Run tests → PASS.** `pytest tests/test_progression_deload.py -v`
+- [x] **Step 5: Run tests → PASS.** `pytest tests/test_progression_deload.py -v`
 
-- [ ] **Step 6: Commit** — `git commit -m "feat(program): deload modifier + register progression models"`
+- [x] **Step 6: Commit** — `git commit -m "feat(program): deload modifier + register progression models"`
 
 ---
 
@@ -748,7 +748,7 @@ from app.services.program.progression.deload import apply_deload  # noqa: F401
 **Interfaces:**
 - Produces: `PROGRAM_TEMPLATE_SEED: list[dict]` (the four templates from spec §12) and `async def seed_program_templates(db)` that upserts by `slug`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_seed_templates.py
@@ -770,9 +770,9 @@ async def test_seed_inserts_and_is_idempotent(db_session):
         TemplateDefinition.from_orm_template(r)  # every seed parses cleanly
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement the seed data**
+- [x] **Step 3: Implement the seed data**
 
 Create `backend/app/db/seed/program_templates.py` with four entries. Each entry's `split` carries a `"schemes"` key plus `"sessions"`. Full example for one template (repeat the shape for the others, varying split/goals/progression per spec §12 table):
 
@@ -829,7 +829,7 @@ PROGRAM_TEMPLATE_SEED: list[dict] = [
 ```
 > The four comment blocks describe the remaining three entries concretely; author them following the `full-body-x3` shape exactly (same keys, differing values as noted). Each session's slots must reference schemes defined in that template's `schemes` map.
 
-- [ ] **Step 4: Implement the seed script (idempotent upsert by slug)**
+- [x] **Step 4: Implement the seed script (idempotent upsert by slug)**
 
 ```python
 # backend/app/db/seed/seed_program_templates.py
@@ -867,19 +867,19 @@ if __name__ == "__main__":
 ```
 > Check `app/core/database.py` for the actual session-maker name; if it is not `async_session_maker`, use the existing exported maker (mirror `seed_exercises.py`).
 
-- [ ] **Step 5: Verify the seed helper name against `seed_exercises.py`**
+- [x] **Step 5: Verify the seed helper name against `seed_exercises.py`**
 
 Run: `docker-compose exec backend python -c "import app.db.seed.seed_exercises as s; print([n for n in dir(s) if 'session' in n.lower() or 'main' in n.lower()])"`
 Match the session-acquisition pattern used there.
 
-- [ ] **Step 6: Run tests → PASS.** `pytest tests/test_seed_templates.py -v`
+- [x] **Step 6: Run tests → PASS.** `pytest tests/test_seed_templates.py -v`
 
-- [ ] **Step 7: Run the seed against the dev DB**
+- [x] **Step 7: Run the seed against the dev DB**
 
 Run: `docker-compose exec backend python -m app.db.seed.seed_program_templates`
 Expected: no error; re-running does not duplicate.
 
-- [ ] **Step 8: Commit** — `git commit -m "feat(program): seed curated program templates"`
+- [x] **Step 8: Commit** — `git commit -m "feat(program): seed curated program templates"`
 
 ---
 
@@ -893,7 +893,7 @@ Expected: no error; re-running does not duplicate.
 - Consumes: `ProgramTemplate` rows, user profile fields, environment `equipment_tags`.
 - Produces: `MatchInput` (dataclass: `fitness_focus:str, experience_level:str, days_per_week:int, session_duration_min:int, environment_equipment:list[str]`), `TemplateMatch` (dataclass: `template_id:int, slug:str, name:str, fit_pct:int, factors:dict[str,float]`), `rank_templates(templates, inp, feasibility) -> list[TemplateMatch]` sorted desc, top 3. `feasibility` is a `dict[template_id, bool]` computed by the caller (Task 11 provides `template_is_feasible`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_matching.py
@@ -925,9 +925,9 @@ def test_infeasible_template_excluded():
     assert rank_templates(templates, inp, feasibility={1: False}) == []
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```python
 # backend/app/services/program/matching.py
@@ -978,9 +978,9 @@ def rank_templates(templates, inp: MatchInput, feasibility: dict[int, bool]) -> 
     return matches[:3]
 ```
 
-- [ ] **Step 4: Run tests → PASS.**
+- [x] **Step 4: Run tests → PASS.**
 
-- [ ] **Step 5: Commit** — `git commit -m "feat(program): template matching/ranking"`
+- [x] **Step 5: Commit** — `git commit -m "feat(program): template matching/ranking"`
 
 ---
 
@@ -998,7 +998,7 @@ def rank_templates(templates, inp: MatchInput, feasibility: dict[int, bool]) -> 
   - `template_is_feasible(sessions: list, all_exercises, equipment) -> bool` — true if every slot has ≥1 equipment-valid candidate.
   - `EXPERIENCE_ORDER = {"beginner":0,"intermediate":1,"advanced":2}`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_selection.py
@@ -1036,9 +1036,9 @@ def test_locked_overrides_selection():
     assert select_for_slot([a, b], rule, _ctx([]), locked_exercise_id=2, excluded_ids=set()).id == 2
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```python
 # backend/app/services/program/selection.py
@@ -1109,9 +1109,9 @@ def template_is_feasible(sessions, all_exercises, equipment) -> bool:
     return True
 ```
 
-- [ ] **Step 4: Run tests → PASS.**
+- [x] **Step 4: Run tests → PASS.**
 
-- [ ] **Step 5: Commit** — `git commit -m "feat(program): exercise selection + feasibility"`
+- [x] **Step 5: Commit** — `git commit -m "feat(program): exercise selection + feasibility"`
 
 ---
 
@@ -1129,7 +1129,7 @@ def template_is_feasible(sessions, all_exercises, equipment) -> bool:
   - `get_program(db, user_id, program_id) -> WorkoutProgram | None` (eager-loads `workouts.exercises`)
   - `save_program(db, program) -> WorkoutProgram`
 
-- [ ] **Step 1: Implement**
+- [x] **Step 1: Implement**
 
 ```python
 # backend/app/crud/program.py
@@ -1166,14 +1166,14 @@ async def save_program(db: AsyncSession, program: WorkoutProgram) -> WorkoutProg
     return program
 ```
 
-- [ ] **Step 2: Export** in `backend/app/crud/__init__.py`:
+- [x] **Step 2: Export** in `backend/app/crud/__init__.py`:
 ```python
 from app.crud.program import (  # noqa: F401
     get_program, get_template, list_active_templates, save_program,
 )
 ```
 
-- [ ] **Step 3: Commit** — `git commit -m "feat(program): program crud helpers"`
+- [x] **Step 3: Commit** — `git commit -m "feat(program): program crud helpers"`
 
 ---
 
@@ -1189,7 +1189,7 @@ from app.crud.program import (  # noqa: F401
   - `build_draft(template, definition, ctx, exercises, *, user_id, environment_id, days_per_week, duration_weeks, weight_unit, required_inputs) -> WorkoutProgram` (populates `.workouts[].exercises[]` in memory; caller persists).
   - `derive_week(program, definition, week) -> list[dict]` — for each workout, resolve each slot via the progression model + deload into `{workout, exercise_id, sets, reps, load, rest_seconds, note}`.
 
-- [ ] **Step 1: Write the failing test (drafting)**
+- [x] **Step 1: Write the failing test (drafting)**
 
 ```python
 # backend/tests/test_drafting.py
@@ -1213,9 +1213,9 @@ async def test_build_draft_fills_slots(sample_template_orm, sample_exercises):
 ```
 > Add `sample_template_orm` and `sample_exercises` fixtures to `conftest.py` (a single seeded template row + a handful of `Exercise` rows covering the template's patterns). Use the seed helpers from Tasks 9 and the exercise seed.
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement drafting**
+- [x] **Step 3: Implement drafting**
 
 ```python
 # backend/app/services/program/drafting.py
@@ -1263,7 +1263,7 @@ def build_draft(template, definition: TemplateDefinition, ctx: SelectionContext,
     return program
 ```
 
-- [ ] **Step 4: Implement preview/derive**
+- [x] **Step 4: Implement preview/derive**
 
 ```python
 # backend/app/services/program/preview.py
@@ -1293,7 +1293,7 @@ def derive_week(program, definition: TemplateDefinition, week: int) -> list[dict
     return days
 ```
 
-- [ ] **Step 5: Write the preview test**
+- [x] **Step 5: Write the preview test**
 
 ```python
 # backend/tests/test_preview.py
@@ -1322,9 +1322,9 @@ async def test_derive_week_applies_progression(sample_template_orm, sample_exerc
     assert load2 > load1  # progression increased load week over week
 ```
 
-- [ ] **Step 6: Run both test files → PASS.**
+- [x] **Step 6: Run both test files → PASS.**
 
-- [ ] **Step 7: Commit** — `git commit -m "feat(program): drafting and per-week derivation"`
+- [x] **Step 7: Commit** — `git commit -m "feat(program): drafting and per-week derivation"`
 
 ---
 
@@ -1342,7 +1342,7 @@ async def test_derive_week_applies_progression(sample_template_orm, sample_exerc
   - `apply_feedback(program, definition, action, ctx, exercises) -> WorkoutProgram` — mutates `program.constraints` and re-selects affected slots, never touching locked slots.
   - `alternatives_for_slot(program, definition, workout_exercise_id, ctx, exercises) -> list` of valid substitute exercises.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_adaptation.py
@@ -1387,9 +1387,9 @@ async def test_exclude_changes_exercise(sample_template_orm, sample_exercises):
 ```
 > `sample_exercises` must include ≥2 valid options for the first slot's pattern so `exclude` can pick a different one.
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement the feedback parser seam**
+- [x] **Step 3: Implement the feedback parser seam**
 
 ```python
 # backend/app/services/program/feedback_parser.py
@@ -1407,7 +1407,7 @@ class StructuredFeedbackParser:
         return FeedbackAction(**payload)
 ```
 
-- [ ] **Step 4: Implement adaptation**
+- [x] **Step 4: Implement adaptation**
 
 ```python
 # backend/app/services/program/adaptation.py
@@ -1498,9 +1498,9 @@ def alternatives_for_slot(program, definition, workout_exercise_id, ctx, exercis
     return [e for e in exercises if _matches_rule(e, rule) and _passes_filters(e, ctx) and e.id != ex.exercise_id]
 ```
 
-- [ ] **Step 5: Run tests → PASS.** `pytest tests/test_adaptation.py -v`
+- [x] **Step 5: Run tests → PASS.** `pytest tests/test_adaptation.py -v`
 
-- [ ] **Step 6: Commit** — `git commit -m "feat(program): feedback adaptation + parser seam"`
+- [x] **Step 6: Commit** — `git commit -m "feat(program): feedback adaptation + parser seam"`
 
 ---
 
@@ -1515,7 +1515,7 @@ def alternatives_for_slot(program, definition, workout_exercise_id, ctx, exercis
 **Interfaces:**
 - Produces: `ProgramTemplateNotFoundError`, `ProgramNotFoundError` (both `AppException`, 404). API schemas: `MatchRequest`, `TemplateMatchOut`, `DraftRequest`, `FeedbackRequest`, `ProgramPreviewOut`, `SlotPreviewOut`, `WorkoutPreviewOut`, `AlternativeOut`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # backend/tests/test_program_api_schemas.py
@@ -1535,9 +1535,9 @@ def test_draft_request_carries_required_inputs():
     assert r.required_inputs["squat_start"] == 80
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Add exceptions**
+- [x] **Step 3: Add exceptions**
 
 ```python
 # append to backend/app/core/exceptions.py
@@ -1554,7 +1554,7 @@ class ProgramNotFoundError(AppException):
 ```
 Re-export both from `backend/app/core/__init__.py` alongside the existing exception exports.
 
-- [ ] **Step 4: Add API schemas**
+- [x] **Step 4: Add API schemas**
 
 ```python
 # backend/app/schemas/program_api.py
@@ -1628,9 +1628,9 @@ class AlternativeOut(BaseModel):
 ```
 Export all from `backend/app/schemas/__init__.py`.
 
-- [ ] **Step 5: Run tests → PASS.**
+- [x] **Step 5: Run tests → PASS.**
 
-- [ ] **Step 6: Commit** — `git commit -m "feat(program): api schemas + program exceptions"`
+- [x] **Step 6: Commit** — `git commit -m "feat(program): api schemas + program exceptions"`
 
 ---
 
@@ -1651,7 +1651,7 @@ Export all from `backend/app/schemas/__init__.py`.
   - `POST /programs/{id}/accept` → `ProgramPreviewOut` (status active)
   - `GET /programs/{id}` → `ProgramPreviewOut`
 
-- [ ] **Step 1: Write the failing integration test**
+- [x] **Step 1: Write the failing integration test**
 
 ```python
 # backend/tests/test_programs_flow.py
@@ -1690,9 +1690,9 @@ async def test_full_flow(client, auth_headers, seeded_templates, seeded_exercise
 ```
 > Add fixtures to `conftest.py`: `auth_headers` (reuse `test_user_token`), `seeded_templates` (call `seed_program_templates`), `seeded_exercises` (seed a subset of the exercise library sufficient for the beginner full-body template), `user_environment` (a `TrainingEnvironment` for `test_user` with equipment covering the template).
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement the endpoints**
+- [x] **Step 3: Implement the endpoints**
 
 ```python
 # backend/app/api/v1/endpoints/programs.py
@@ -1832,13 +1832,13 @@ async def accept(program_id: int, user: User = Depends(get_current_user), db: As
 ```
 > Verify `app.crud.exercise` exposes an active-exercise lister; if the name differs from `list_exercises`, use the existing one. Ensure `get_current_user` eager-loads `user.profile` (it is a lazy relationship) — if not, load the profile explicitly inside `_ctx_for` via a crud call.
 
-- [ ] **Step 4: Run the flow test → PASS.** `pytest tests/test_programs_flow.py -v`
+- [x] **Step 4: Run the flow test → PASS.** `pytest tests/test_programs_flow.py -v`
 
-- [ ] **Step 5: Delete the obsolete stub test**
+- [x] **Step 5: Delete the obsolete stub test**
 
 Remove `backend/tests/test_programs_stub.py` (the 501 behavior no longer exists).
 
-- [ ] **Step 6: Run the whole suite + quality gates**
+- [x] **Step 6: Run the whole suite + quality gates**
 
 ```bash
 docker-compose exec backend pytest
@@ -1848,7 +1848,7 @@ docker-compose exec backend mypy app/
 ```
 Expected: all green.
 
-- [ ] **Step 7: Commit** — `git commit -m "feat(program): program generation endpoints (match/draft/feedback/accept)"`
+- [x] **Step 7: Commit** — `git commit -m "feat(program): program generation endpoints (match/draft/feedback/accept)"`
 
 ---
 

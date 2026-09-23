@@ -1,6 +1,6 @@
 # Program Engine Refactor — Phased Technical Plan
 
-> **Status: review draft — no implementation started.** Source proposal: [`Program_Engine_Improvement_Proposal.md`](../../Program_Engine_Improvement_Proposal.md). Companion reading: [`PROGRAM_MATCHING_SUMMARY.html`](./PROGRAM_MATCHING_SUMMARY.html) (current-state engine walkthrough).
+> **Status (2026-09-23): Phases 1–4 implemented and merged to `main` (PR #15, plus follow-ups #16–#29). Phase 5 deferred post-MVP.** The ground-truth deltas below describe the codebase *before* the refactor. Phase 4 caveats: the swap-log table the Bradley–Terry trainer reads (`exercise_swap_logs`) is not yet modeled, so learned ranking weights are not produced; the trainer writes a JSON artifact rather than mutating `engine.yaml`. See [`PHASE_4_ADAPTIVE_LOOP_PLAN.md`](./PHASE_4_ADAPTIVE_LOOP_PLAN.md). Source proposal: [`Program_Engine_Improvement_Proposal.md`](../../Program_Engine_Improvement_Proposal.md). Companion reading: [`PROGRAM_MATCHING_SUMMARY.html`](./PROGRAM_MATCHING_SUMMARY.html) (current-state engine walkthrough).
 
 ## Context
 
@@ -152,7 +152,7 @@ Each phase ships independently; later phases depend on earlier ones as noted. Al
 
 ---
 
-## Phase 5 — Authoring at scale (gated on Phases 1–4 stability)
+## Phase 5 — Authoring at scale (gated on Phases 1–4 stability) — *not started; deferred post-MVP*
 
 Sketch only; detailed planning deferred: form-based template builder; LLM-assisted authoring behind the §7.5 gate (schema validation → linter reachability → ~200-profile simulation gate → human review); per-segment learned weights; ILP assembler evaluation (Appendix D) if beam search plateaus in harness metrics; calibrated fit % restored to UI.
 

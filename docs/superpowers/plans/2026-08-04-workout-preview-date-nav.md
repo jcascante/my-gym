@@ -29,7 +29,7 @@
   - `addDays(dateStr: string, delta: number): string` — returns the ISO date `delta` days from `dateStr` (delta may be negative).
   - `programDateBounds(startDate: string, durationWeeks: number): { start: string; end: string }` — returns the program's first and last calendar day.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `frontend/src/tests/hooks/useSchedule.test.tsx`, after the existing `toIsoDate` import line, add `addDays, programDateBounds` to the import list:
 
@@ -65,12 +65,12 @@ describe('programDateBounds', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `cd frontend && npx vitest run src/tests/hooks/useSchedule.test.tsx`
 Expected: FAIL — `addDays` and `programDateBounds` are not exported from `@/hooks/useSchedule`.
 
-- [ ] **Step 3: Implement the helpers**
+- [x] **Step 3: Implement the helpers**
 
 In `frontend/src/hooks/useSchedule.ts`, add after the existing `weekRange` function (after line 25):
 
@@ -88,12 +88,12 @@ export function programDateBounds(
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/tests/hooks/useSchedule.test.tsx`
 Expected: PASS, all tests in the file.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/hooks/useSchedule.ts frontend/src/tests/hooks/useSchedule.test.tsx
@@ -115,7 +115,7 @@ git commit -m "feat: add addDays and programDateBounds date helpers"
 
 **Why this hook lives in `useSession.ts` and not `useSchedule.ts`:** `useSession.ts` already imports `sessionKeys` from `useSchedule.ts`. Putting the composing hook in `useSchedule.ts` instead would require `useSchedule.ts` to import `useSession.ts`, creating a circular import between the two files.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `frontend/src/tests/hooks/useSession.test.tsx`:
 
@@ -185,12 +185,12 @@ describe('useWorkoutForDate', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `cd frontend && npx vitest run src/tests/hooks/useSession.test.tsx`
 Expected: FAIL — `useWorkoutForDate` is not exported from `@/hooks/useSession`.
 
-- [ ] **Step 3: Implement the hook**
+- [x] **Step 3: Implement the hook**
 
 Replace the full contents of `frontend/src/hooks/useSession.ts` with:
 
@@ -237,12 +237,12 @@ export function useWorkoutForDate(date: string): WorkoutForDate {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/tests/hooks/useSession.test.tsx`
 Expected: PASS, both tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/hooks/useSession.ts frontend/src/tests/hooks/useSession.test.tsx
@@ -261,7 +261,7 @@ git commit -m "feat: add useWorkoutForDate hook resolving a date to session deta
 - Consumes: `useWorkoutForDate(date: string)` (Task 2); `addDays`, `programDateBounds`, `toIsoDate` from `frontend/src/hooks/useSchedule.ts` (Task 1 + existing); `useActiveProgram()` from `frontend/src/hooks/usePrograms.ts` (existing, returns a TanStack Query result over a `ProgramPreview`-shaped object with `start_date?: string | null` and `duration_weeks: number`).
 - Produces: `SessionDetailPage` default export, now rendered at route `/workout/:date` (wired in Task 4) instead of `/sessions/:sessionId`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Replace the full contents of `frontend/src/tests/pages/SessionDetailPage.test.tsx` with:
 
@@ -505,12 +505,12 @@ describe('SessionDetailPage', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `cd frontend && npx vitest run src/tests/pages/SessionDetailPage.test.tsx`
 Expected: FAIL — the current page reads `useParams<{ sessionId }>()` and calls `useSession`, not `useWorkoutForDate`/`useParams<{ date }>()`; rest-day and prev/next arrow assertions have nothing to match yet.
 
-- [ ] **Step 3: Rewrite the page**
+- [x] **Step 3: Rewrite the page**
 
 Replace the full contents of `frontend/src/pages/SessionDetailPage.tsx` with:
 
@@ -688,12 +688,12 @@ export default function SessionDetailPage() {
 
 The page only destructures `session`, `isLoading`, and `error` from the hook — `isRestDay` is redundant for rendering since `!session` already covers the rest-day branch (and stays correct even while `isRestDay` is momentarily out of sync during the loading transition).
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/tests/pages/SessionDetailPage.test.tsx`
 Expected: PASS, all eleven tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/pages/SessionDetailPage.tsx frontend/src/tests/pages/SessionDetailPage.test.tsx
@@ -711,7 +711,7 @@ git commit -m "feat: date-based workout preview with prev/next day navigation an
 - Consumes: `SessionDetailPage` default export (Task 3), now expecting a `date` route param.
 - Produces: route `/workout/:date` registered; `/sessions/:sessionId` (preview) route removed. `/sessions/:sessionId/track` (line 66, `WorkoutTrackingPage`) is untouched.
 
-- [ ] **Step 1: Update the route**
+- [x] **Step 1: Update the route**
 
 In `frontend/src/App.tsx`, change line 69 from:
 
@@ -725,12 +725,12 @@ to:
             <Route path="/workout/:date" element={<SessionDetailPage />} />
 ```
 
-- [ ] **Step 2: Run the full frontend test suite**
+- [x] **Step 2: Run the full frontend test suite**
 
 Run: `cd frontend && npx vitest run`
 Expected: `SessionDetailPage.test.tsx` and `useSession.test.tsx`/`useSchedule.test.tsx` still PASS (they mock `useParams`/hooks directly and don't depend on route registration). `DashboardPage.test.tsx` and `SchedulePage.test.tsx`/`ScheduleRow.test.tsx` are expected to FAIL at this point — their `navigateMock` assertions still expect `/sessions/:id` until Tasks 5 and 6 update them. Confirm the only failures are in those four files, for the reason above, before proceeding.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add frontend/src/App.tsx
@@ -749,7 +749,7 @@ git commit -m "feat: route the workout preview page by date instead of session i
 - Consumes: route `/workout/:date` (Task 4); `todaySession: ScheduleEntry` (existing, from `useTodaySession()`), which already carries `scheduled_date: string`.
 - Produces: n/a (leaf call site).
 
-- [ ] **Step 1: Update the failing test**
+- [x] **Step 1: Update the failing test**
 
 In `frontend/src/tests/pages/DashboardPage.test.tsx`, change line 79 from:
 
@@ -765,12 +765,12 @@ to:
 
 (`2026-07-27` is `entry.scheduled_date` defined at the top of that test file.)
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/tests/pages/DashboardPage.test.tsx`
 Expected: FAIL on the `'opens the session detail in one click'` test — actual call is still `/sessions/9`.
 
-- [ ] **Step 3: Update the call site**
+- [x] **Step 3: Update the call site**
 
 In `frontend/src/pages/DashboardPage.tsx`, change line 63 from:
 
@@ -784,12 +784,12 @@ to:
               onSelect={() => navigate(`/workout/${todaySession.scheduled_date}`)}
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `cd frontend && npx vitest run src/tests/pages/DashboardPage.test.tsx`
 Expected: PASS, all tests in the file.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/pages/DashboardPage.tsx frontend/src/tests/pages/DashboardPage.test.tsx
@@ -810,7 +810,7 @@ git commit -m "feat: navigate to the workout preview by date from the dashboard 
 - Consumes: route `/workout/:date` (Task 4).
 - Produces: `ScheduleRowProps.onSelect` signature changes from `(sessionId: number) => void` to `(scheduledDate: string) => void`. `ScheduleRow` has no other consumers besides `SchedulePage` (confirmed during design research), so this is a safe signature change.
 
-- [ ] **Step 1: Update the failing tests**
+- [x] **Step 1: Update the failing tests**
 
 In `frontend/src/tests/components/ScheduleRow.test.tsx`, change the `'calls onSelect...'` test (lines 46-53) from:
 
@@ -870,12 +870,12 @@ to:
   });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `cd frontend && npx vitest run src/tests/components/ScheduleRow.test.tsx src/tests/pages/SchedulePage.test.tsx`
 Expected: FAIL on both updated tests — current code still calls `onSelect`/`navigate` with the numeric session id.
 
-- [ ] **Step 3: Update `ScheduleRow`**
+- [x] **Step 3: Update `ScheduleRow`**
 
 In `frontend/src/components/ScheduleRow.tsx`, change the props interface (lines 4-8) from:
 
@@ -909,7 +909,7 @@ to:
       onClick={() => onSelect(entry.scheduled_date)}
 ```
 
-- [ ] **Step 4: Update `SchedulePage`'s call site**
+- [x] **Step 4: Update `SchedulePage`'s call site**
 
 In `frontend/src/pages/SchedulePage.tsx`, change line 93 from:
 
@@ -923,17 +923,17 @@ to:
                   onSelect={(date) => navigate(`/workout/${date}`)}
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/tests/components/ScheduleRow.test.tsx src/tests/pages/SchedulePage.test.tsx`
 Expected: PASS, all tests in both files.
 
-- [ ] **Step 6: Run the full frontend test suite**
+- [x] **Step 6: Run the full frontend test suite**
 
 Run: `cd frontend && npx vitest run`
 Expected: PASS, no failures anywhere (this is the point where Task 4's expected interim failures should now be resolved).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/src/components/ScheduleRow.tsx frontend/src/pages/SchedulePage.tsx frontend/src/tests/components/ScheduleRow.test.tsx frontend/src/tests/pages/SchedulePage.test.tsx
@@ -946,17 +946,17 @@ git commit -m "feat: navigate to the workout preview by date from the schedule r
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Run the TypeScript compiler**
+- [x] **Step 1: Run the TypeScript compiler**
 
 Run: `cd frontend && npx tsc --noEmit`
 Expected: no errors. Pay particular attention to `SessionDetailPage.tsx` — `session` is `SessionDetail | null` throughout, and every place it's read outside the `!session` guard must be within the branch where TypeScript has narrowed it to non-null (the `session.workout_name`/`session.slots`/etc. block, and the `canStart && session` guard on the "Start workout" button).
 
-- [ ] **Step 2: Run the linter**
+- [x] **Step 2: Run the linter**
 
 Run: `cd frontend && npx eslint src/pages/SessionDetailPage.tsx src/pages/DashboardPage.tsx src/pages/SchedulePage.tsx src/components/ScheduleRow.tsx src/hooks/useSchedule.ts src/hooks/useSession.ts src/App.tsx`
 Expected: no errors.
 
-- [ ] **Step 3: Commit any fixes**
+- [x] **Step 3: Commit any fixes**
 
 If Steps 1 or 2 required changes:
 

@@ -30,21 +30,21 @@
 
 **Why:** Plan 1 deleted the backend's `POST /programs` 501-stub endpoint when it replaced `app/api/v1/endpoints/programs.py` with the real engine. The old form (in `EnvironmentsPage`) called `createProgram()` which POSTed to that stub—it's now broken on this branch. Option 3: retire it cleanly: strip `createProgram()` from the API module (test removes its stub import), make `ProgramCreationForm` presentational-only (`onSubmit` callback required, no internal API call), and have `EnvironmentsPage`'s "Generate Program" button navigate to `/programs/new` (the wizard) instead of embedding the form.
 
-- [ ] **Step 1: Refactor `ProgramCreationForm.tsx`** — remove internal `createProgram()` call, drop unused fields (`preferred_days`, `start_date`, `focus_areas`, `available_weight_increments`, `progression_style`), keep only what the wizard needs (environment_id, days_per_week, session_duration_min, weight_unit). Add required `onSubmit: (values: MatchRequest) => void` prop. Remove result/error UI (let caller handle feedback).
+- [x] **Step 1: Refactor `ProgramCreationForm.tsx`** — remove internal `createProgram()` call, drop unused fields (`preferred_days`, `start_date`, `focus_areas`, `available_weight_increments`, `progression_style`), keep only what the wizard needs (environment_id, days_per_week, session_duration_min, weight_unit). Add required `onSubmit: (values: MatchRequest) => void` prop. Remove result/error UI (let caller handle feedback).
 
-- [ ] **Step 2: Update `ProgramCreationForm.test.tsx`** — remove tests asserting the old 501-stub behavior and internal POST; test that `onSubmit` callback is invoked with collected values. Verify the form is now a pure controlled component.
+- [x] **Step 2: Update `ProgramCreationForm.test.tsx`** — remove tests asserting the old 501-stub behavior and internal POST; test that `onSubmit` callback is invoked with collected values. Verify the form is now a pure controlled component.
 
-- [ ] **Step 3: Update `EnvironmentsPage.tsx`** — replace the `{ mode: 'generate' }` panel rendering a `<ProgramCreationForm />` with a `<Link to="/programs/new"><Button>Generate Program</Button></Link>` (or a direct button that navigates). Simplify `PanelState` to remove the `'generate'` mode.
+- [x] **Step 3: Update `EnvironmentsPage.tsx`** — replace the `{ mode: 'generate' }` panel rendering a `<ProgramCreationForm />` with a `<Link to="/programs/new"><Button>Generate Program</Button></Link>` (or a direct button that navigates). Simplify `PanelState` to remove the `'generate'` mode.
 
-- [ ] **Step 4: Update `EnvironmentsPage.test.tsx`** — remove tests for the old embedded-form flow; add a test that clicking the button navigates to `/programs/new` (or asserts the link's href).
+- [x] **Step 4: Update `EnvironmentsPage.test.tsx`** — remove tests for the old embedded-form flow; add a test that clicking the button navigates to `/programs/new` (or asserts the link's href).
 
-- [ ] **Step 5: Remove `createProgram()` from `frontend/src/api/programs.ts`** — keep all other exports (`matchTemplates`, `createDraft`, etc., added in Task 2); delete the old stub POST.
+- [x] **Step 5: Remove `createProgram()` from `frontend/src/api/programs.ts`** — keep all other exports (`matchTemplates`, `createDraft`, etc., added in Task 2); delete the old stub POST.
 
-- [ ] **Step 6: Clean up test coverage** — if `frontend/src/tests/api/programs.test.ts` has tests for `createProgram()`, remove them. Task 2 will add tests for the real program API functions.
+- [x] **Step 6: Clean up test coverage** — if `frontend/src/tests/api/programs.test.ts` has tests for `createProgram()`, remove them. Task 2 will add tests for the real program API functions.
 
-- [ ] **Step 7: Run tests** — `docker-compose exec frontend npm run test` should pass with old stub coverage gone and refactored form tests in place.
+- [x] **Step 7: Run tests** — `docker-compose exec frontend npm run test` should pass with old stub coverage gone and refactored form tests in place.
 
-- [ ] **Step 8: Commit** — `git commit -m "feat(program-ui): retire legacy form stub, make ProgramCreationForm presentational"`
+- [x] **Step 8: Commit** — `git commit -m "feat(program-ui): retire legacy form stub, make ProgramCreationForm presentational"`
 
 ---
 
@@ -57,7 +57,7 @@
 **Interfaces:**
 - Produces: `TemplateMatch`, `RequiredInput`, `SlotPreview`, `WorkoutPreview`, `ProgramPreview`, `MatchRequest`, `DraftRequest`, `FeedbackAction`, `Alternative`.
 
-- [ ] **Step 1: Create the types (mirror Plan 1 `program_api.py`)**
+- [x] **Step 1: Create the types (mirror Plan 1 `program_api.py`)**
 
 ```typescript
 // frontend/src/types/program.ts
@@ -96,7 +96,7 @@ export type FeedbackAction =
 export interface Alternative { id: number; name: string; slug: string }
 ```
 
-- [ ] **Step 2: Commit** — `git commit -m "feat(program-ui): program api types"`
+- [x] **Step 2: Commit** — `git commit -m "feat(program-ui): program api types"`
 
 ---
 
@@ -109,7 +109,7 @@ export interface Alternative { id: number; name: string; slug: string }
 **Interfaces:**
 - Produces: `matchTemplates`, `createDraft`, `getProgramPreview`, `submitFeedback`, `getSlotAlternatives`, `acceptProgram`.
 
-- [ ] **Step 1: Write the failing test (mock `apiClient`)**
+- [x] **Step 1: Write the failing test (mock `apiClient`)**
 
 ```typescript
 // frontend/src/tests/api/programs.test.ts
@@ -137,9 +137,9 @@ describe('programs api', () => {
 });
 ```
 
-- [ ] **Step 2: Run and confirm failure** — `docker-compose exec frontend npm run test -- programs.test.ts`
+- [x] **Step 2: Run and confirm failure** — `docker-compose exec frontend npm run test -- programs.test.ts`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```typescript
 // frontend/src/api/programs.ts
@@ -179,9 +179,9 @@ export async function acceptProgram(id: number): Promise<ProgramPreview> {
 }
 ```
 
-- [ ] **Step 4: Run tests → PASS.**
+- [x] **Step 4: Run tests → PASS.**
 
-- [ ] **Step 5: Commit** — `git commit -m "feat(program-ui): program api client functions"`
+- [x] **Step 5: Commit** — `git commit -m "feat(program-ui): program api client functions"`
 
 ---
 
@@ -195,7 +195,7 @@ export async function acceptProgram(id: number): Promise<ProgramPreview> {
 **Interfaces:**
 - Produces: `useMatchTemplates()`, `useCreateDraft()`, `useProgramPreview(id)`, `useSubmitFeedback(id)`, `useSlotAlternatives(id, weId, enabled)`, `useAcceptProgram(id)`.
 
-- [ ] **Step 1: Verify the provider exists**
+- [x] **Step 1: Verify the provider exists**
 
 Run: `grep -rn "QueryClientProvider" frontend/src`
 If absent, wrap the root in `frontend/src/main.tsx`:
@@ -205,7 +205,7 @@ const queryClient = new QueryClient();
 // <QueryClientProvider client={queryClient}> <App /> </QueryClientProvider>
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 ```tsx
 // frontend/src/tests/hooks/usePrograms.test.tsx
@@ -230,9 +230,9 @@ describe('useMatchTemplates', () => {
 });
 ```
 
-- [ ] **Step 3: Run and confirm failure.**
+- [x] **Step 3: Run and confirm failure.**
 
-- [ ] **Step 4: Implement the hooks**
+- [x] **Step 4: Implement the hooks**
 
 ```tsx
 // frontend/src/hooks/usePrograms.ts
@@ -281,9 +281,9 @@ export function useAcceptProgram(id: number) {
 }
 ```
 
-- [ ] **Step 5: Run tests → PASS.**
+- [x] **Step 5: Run tests → PASS.**
 
-- [ ] **Step 6: Commit** — `git commit -m "feat(program-ui): builder query hooks"`
+- [x] **Step 6: Commit** — `git commit -m "feat(program-ui): builder query hooks"`
 
 ---
 
@@ -298,7 +298,7 @@ export function useAcceptProgram(id: number) {
 - Consumes: `TemplateMatch[]`.
 - Produces: `<TemplateMatchList matches onSelect />`, `<TemplateMatchCard match selected onSelect />`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 // frontend/src/tests/components/TemplateMatchList.test.tsx
@@ -321,9 +321,9 @@ it('renders fit % and selects on click', async () => {
 });
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```tsx
 // frontend/src/components/TemplateMatchCard.tsx
@@ -372,9 +372,9 @@ export function TemplateMatchList({ matches, selectedId, onSelect }: {
 ```
 Export both from `src/components/index.ts`.
 
-- [ ] **Step 4: Run tests → PASS.**
+- [x] **Step 4: Run tests → PASS.**
 
-- [ ] **Step 5: Commit** — `git commit -m "feat(program-ui): template match list"`
+- [x] **Step 5: Commit** — `git commit -m "feat(program-ui): template match list"`
 
 ---
 
@@ -389,7 +389,7 @@ Export both from `src/components/index.ts`.
 - Consumes: `RequiredInput[]`.
 - Produces: `<RequiredInputsForm inputs onSubmit />` calling `onSubmit(values: Record<string, number|string>)`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 // frontend/src/tests/components/RequiredInputsForm.test.tsx
@@ -407,9 +407,9 @@ it('collects values and submits', async () => {
 });
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```tsx
 // frontend/src/components/RequiredInputsForm.tsx
@@ -445,9 +445,9 @@ export function RequiredInputsForm({ inputs, onSubmit }: {
 ```
 > Match `FormField`'s actual prop names by reading `src/components/FormField.tsx`; adjust `id`/`label`/`value`/`onChange` if they differ.
 
-- [ ] **Step 4: Run tests → PASS.**
+- [x] **Step 4: Run tests → PASS.**
 
-- [ ] **Step 5: Commit** — `git commit -m "feat(program-ui): required inputs form"`
+- [x] **Step 5: Commit** — `git commit -m "feat(program-ui): required inputs form"`
 
 ---
 
@@ -462,7 +462,7 @@ export function RequiredInputsForm({ inputs, onSubmit }: {
 - Consumes: `ProgramPreview`, `useSubmitFeedback`, `useSlotAlternatives`.
 - Produces: `<DraftProgramView program programId />` (self-contained: renders week tabs + sessions + slots, wires feedback). `<SlotFeedbackMenu slot onAction />`. `<ExerciseAlternativesModal programId weId onPick onClose />`.
 
-- [ ] **Step 1: Write the failing test (feedback menu emits actions)**
+- [x] **Step 1: Write the failing test (feedback menu emits actions)**
 
 ```tsx
 // frontend/src/tests/components/SlotFeedbackMenu.test.tsx
@@ -482,7 +482,7 @@ it('emits lock action', async () => {
 });
 ```
 
-- [ ] **Step 2: Write the failing test (draft view renders weeks + slots)**
+- [x] **Step 2: Write the failing test (draft view renders weeks + slots)**
 
 ```tsx
 // frontend/src/tests/components/DraftProgramView.test.tsx
@@ -516,9 +516,9 @@ it('shows session, slot, and locked badge', () => {
 });
 ```
 
-- [ ] **Step 3: Run and confirm both fail.**
+- [x] **Step 3: Run and confirm both fail.**
 
-- [ ] **Step 4: Implement the components**
+- [x] **Step 4: Implement the components**
 
 ```tsx
 // frontend/src/components/SlotFeedbackMenu.tsx
@@ -668,9 +668,9 @@ export function DraftProgramView({ program, programId }: { program: ProgramPrevi
 ```
 Export all six from `src/components/index.ts`.
 
-- [ ] **Step 5: Run both test files → PASS.**
+- [x] **Step 5: Run both test files → PASS.**
 
-- [ ] **Step 6: Commit** — `git commit -m "feat(program-ui): draft review + feedback components"`
+- [x] **Step 6: Commit** — `git commit -m "feat(program-ui): draft review + feedback components"`
 
 ---
 
@@ -685,7 +685,7 @@ Export all six from `src/components/index.ts`.
 - Consumes: `ProgramCreationForm`, `TemplateMatchList`, `RequiredInputsForm`, `DraftProgramView`, all hooks.
 - Produces: `/programs/new` wizard; steps `preferences → select → inputs → review`.
 
-- [ ] **Step 1: Write the failing test (step gating: match → select)**
+- [x] **Step 1: Write the failing test (step gating: match → select)**
 
 ```tsx
 // frontend/src/tests/pages/ProgramBuilderPage.test.tsx
@@ -724,9 +724,9 @@ it('advances from preferences to template selection', async () => {
 });
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement the Stepper + page**
+- [x] **Step 3: Implement the Stepper + page**
 
 ```tsx
 // frontend/src/components/Stepper.tsx
@@ -808,11 +808,11 @@ export default function ProgramBuilderPage() {
 ```
 > `ProgramCreationForm.onSubmit` must yield a `MatchRequest`-shaped object. Read `src/components/ProgramCreationForm.tsx` + `src/types/programCreation.ts`; add an adapter if its payload differs (map its fields → `MatchRequest`). Keep backward compatibility with its existing usage.
 
-- [ ] **Step 4: Check ProgramCreationForm integration**
+- [x] **Step 4: Check ProgramCreationForm integration**
 
 Before wiring the page: `ProgramCreationForm` is now refactored (Task 0) to require an `onSubmit` callback and to output `MatchRequest`-shaped values directly (environment_id, days_per_week, session_duration_min, weight_unit, duration_weeks). Verify its new prop signature and run `docker-compose exec frontend npm run test -- ProgramCreationForm.test.tsx` to confirm the form is ready.
 
-- [ ] **Step 5: Add routes to `App.tsx`**
+- [x] **Step 5: Add routes to `App.tsx`**
 
 ```tsx
 // add imports
@@ -825,9 +825,9 @@ import ProgramsListPage from '@/pages/ProgramsListPage';       // Task 8
 <Route path="/programs/:id" element={<ProgramPreviewPage />} />
 ```
 
-- [ ] **Step 6: Run tests → PASS.** (Routes referencing Task 8 pages will compile once Task 8 lands; if executing strictly in order, stub the two imports as empty components first, then implement in Task 8.)
+- [x] **Step 6: Run tests → PASS.** (Routes referencing Task 8 pages will compile once Task 8 lands; if executing strictly in order, stub the two imports as empty components first, then implement in Task 8.)
 
-- [ ] **Step 7: Commit** — `git commit -m "feat(program-ui): builder wizard page + routes"`
+- [x] **Step 7: Commit** — `git commit -m "feat(program-ui): builder wizard page + routes"`
 
 ---
 
@@ -842,7 +842,7 @@ import ProgramsListPage from '@/pages/ProgramsListPage';       // Task 8
 - Consumes: `useProgramPreview`, `getProgramPreview`.
 - Produces: `/programs` list, `/programs/:id` read-only preview (reuses `WeekTabs` + `SessionCard` in read-only mode — feedback menu hidden when `status !== 'draft'`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 // frontend/src/tests/pages/ProgramPreviewPage.test.tsx
@@ -873,9 +873,9 @@ it('renders an accepted program read-only', () => {
 });
 ```
 
-- [ ] **Step 2: Run and confirm failure.**
+- [x] **Step 2: Run and confirm failure.**
 
-- [ ] **Step 3: Implement (`ProgramPreviewPage` reuses read-only session rendering)**
+- [x] **Step 3: Implement (`ProgramPreviewPage` reuses read-only session rendering)**
 
 ```tsx
 // frontend/src/pages/ProgramPreviewPage.tsx
@@ -933,9 +933,9 @@ export default function ProgramsListPage() {
 ```
 > `ProgramsListPage` is intentionally minimal for MVP (no list endpoint in Plan 1). When a `GET /user/programs` endpoint exists, render `ProgramListCard`s from it. `ProgramListCard` can be created now as a presentational component and wired later. Note: `EnvironmentsPage` also updated in Task 0 — its "Generate Program" action now navigates to `/programs/new` instead of embedding `ProgramCreationForm`.
 
-- [ ] **Step 4: Run tests → PASS.**
+- [x] **Step 4: Run tests → PASS.**
 
-- [ ] **Step 5: Full quality gate**
+- [x] **Step 5: Full quality gate**
 
 ```bash
 docker-compose exec frontend npm run test
@@ -944,7 +944,7 @@ docker-compose exec frontend npm run type-check
 ```
 Expected: all green.
 
-- [ ] **Step 6: Commit** — `git commit -m "feat(program-ui): programs list + read-only preview pages"`
+- [x] **Step 6: Commit** — `git commit -m "feat(program-ui): programs list + read-only preview pages"`
 
 ---
 

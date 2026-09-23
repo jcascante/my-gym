@@ -3,7 +3,7 @@
 **Document type:** Technical & Product Proposal
 **Prepared by:** Expert Review Board (Movement Science · Physical Therapy · Applied Mathematics · Software & Infrastructure Architecture)
 **Date:** July 2026
-**Status:** For review and approval
+**Status:** Approved; Phases 1–4 implemented (see `docs/technical/PROGRAM_ENGINE_REFACTOR_PLAN.md`). Phase 5 deferred post-MVP.
 **Scope of reference:** `PROGRAM_MATCHING_SUMMARY` (matching algorithm, template authoring model, generation pipeline) and the underlying services in `backend/app/services/program/`
 
 ---

@@ -31,7 +31,7 @@
 **Interfaces:**
 - Produces: `workout_set_logs` table with no unique constraint on `(session_id, workout_exercise_id, set_number)` — a second `INSERT` for the same set now succeeds instead of raising an `IntegrityError`. Later tasks (2-4) rely on this.
 
-- [ ] **Step 1: Remove the constraint from the model**
+- [x] **Step 1: Remove the constraint from the model**
 
 In `backend/app/models/logging.py`, remove the `__table_args__` tuple (and the now-unused `UniqueConstraint` import) from `WorkoutSetLog`:
 
@@ -98,7 +98,7 @@ class WorkoutSetLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 ```
 
-- [ ] **Step 2: Write the Alembic migration**
+- [x] **Step 2: Write the Alembic migration**
 
 Current head is `b6e4f9a1c7d2` (the migration that originally added this constraint). Create `backend/alembic/versions/c3d9f7a1b5e8_drop_unique_set_number_per_session_exercise.py`:
 
@@ -131,7 +131,7 @@ def downgrade() -> None:
     )
 ```
 
-- [ ] **Step 3: Verify upgrade and downgrade against the real database**
+- [x] **Step 3: Verify upgrade and downgrade against the real database**
 
 This project's test suite builds its schema straight from the SQLAlchemy models (`Base.metadata.create_all`), not from Alembic migrations, so there's no existing pytest harness for migration up/down — verify manually against the Postgres container instead, per `CLAUDE.md`'s "always test up/down":
 
@@ -156,7 +156,7 @@ docker-compose exec backend alembic upgrade head
 
 Leave the database at head before continuing.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add backend/app/models/logging.py backend/alembic/versions/c3d9f7a1b5e8_drop_unique_set_number_per_session_exercise.py
@@ -175,7 +175,7 @@ git commit -m "feat(logging): drop the per-set uniqueness constraint"
 - Consumes: `WorkoutSetLog` model from Task 1 (no constraint, so duplicate `set_number` rows can now exist).
 - Produces: `_dedupe_latest_per_set(logs: list[WorkoutSetLog]) -> list[WorkoutSetLog]` — used by this task's two functions and by Task 3's new function.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `backend/tests/test_logging.py` (needs `from sqlalchemy import select` and `from app.models.logging import WorkoutSetLog` added to the existing imports at the top of the file):
 
@@ -235,7 +235,7 @@ async def test_get_set_logs_for_sessions_dedupes_a_corrected_set(
     assert logs[0].actual_weight == 65.0
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 ```bash
 docker-compose exec backend pytest tests/test_logging.py -k dedupe -v
@@ -243,7 +243,7 @@ docker-compose exec backend pytest tests/test_logging.py -k dedupe -v
 
 Expected: FAIL — both tests report `len(logs) == 2`, not `1` (no dedupe exists yet).
 
-- [ ] **Step 3: Add the dedupe helper and apply it**
+- [x] **Step 3: Add the dedupe helper and apply it**
 
 In `backend/app/crud/logging.py`, add the helper near the top (after imports) and use it in both query functions:
 
@@ -312,7 +312,7 @@ async def get_set_logs_for_sessions(
     return _dedupe_latest_per_set(list(result.scalars().all()))
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 ```bash
 docker-compose exec backend pytest tests/test_logging.py -v
@@ -320,7 +320,7 @@ docker-compose exec backend pytest tests/test_logging.py -v
 
 Expected: PASS — all tests in the file, including the two new ones and the pre-existing `test_get_set_logs` (which has no duplicates, so dedupe is a no-op for it).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/crud/logging.py backend/tests/test_logging.py
@@ -341,7 +341,7 @@ git commit -m "feat(logging): dedupe set-log reads to the latest value per set"
 
 This is the most important read path for the feature: `_session_detail` in `sessions.py` currently builds `logged_sets` from its own inline query (not through `get_set_logs`/`get_set_logs_for_sessions`), so Task 2 alone would leave this one path still returning duplicate rows to the frontend.
 
-- [ ] **Step 1: Add the new crud function**
+- [x] **Step 1: Add the new crud function**
 
 Append to `backend/app/crud/logging.py`:
 
@@ -366,7 +366,7 @@ async def get_set_logs_for_session(db: AsyncSession, session_id: int, user_id: i
     return _dedupe_latest_per_set(list(result.scalars().all()))
 ```
 
-- [ ] **Step 2: Use it from the session-detail endpoint**
+- [x] **Step 2: Use it from the session-detail endpoint**
 
 In `backend/app/api/v1/endpoints/sessions.py`, `_session_detail` currently builds `logs` with an inline query (around line 109-119):
 
@@ -392,7 +392,7 @@ Replace that whole block with:
 
 (`crud_logging` is already imported at the top of the file as `from app.crud import logging as crud_logging`; no import changes are needed — `WorkoutSetLog` and `select` are both still used elsewhere in this file.)
 
-- [ ] **Step 3: Run the existing session tests to confirm nothing broke**
+- [x] **Step 3: Run the existing session tests to confirm nothing broke**
 
 ```bash
 docker-compose exec backend pytest tests/test_sessions_api.py tests/test_session_model.py -v
@@ -400,7 +400,7 @@ docker-compose exec backend pytest tests/test_sessions_api.py tests/test_session
 
 Expected: PASS — all existing tests, unchanged in behavior since no duplicates existed before this feature.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add backend/app/crud/logging.py backend/app/api/v1/endpoints/sessions.py
@@ -417,7 +417,7 @@ git commit -m "refactor(sessions): read session detail's set logs through a dedu
 **Interfaces:**
 - Consumes: `POST /users/me/sessions/{id}/set-logs` (unchanged route) and `GET /users/me/sessions/{id}` (now backed by Task 3's `get_set_logs_for_session`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `backend/tests/test_sessions_api.py`:
 
@@ -449,7 +449,7 @@ async def test_correcting_a_logged_set_updates_the_session_detail(
     assert logged[0]["actual_rpe"] == 9.0
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Temporarily this test would only fail if run against a version of the code without Tasks 1-3 — since Task 1-3 are already implemented by this point in the plan, run it to confirm it PASSES immediately (there's no meaningful "red" state to observe once earlier tasks are done; this test exists to lock in the end-to-end behavior, not to drive new production code):
 
@@ -459,7 +459,7 @@ docker-compose exec backend pytest tests/test_sessions_api.py -k correcting -v
 
 Expected: PASS.
 
-- [ ] **Step 3: Run the full backend test suite**
+- [x] **Step 3: Run the full backend test suite**
 
 ```bash
 docker-compose exec backend pytest -v
@@ -467,7 +467,7 @@ docker-compose exec backend pytest -v
 
 Expected: PASS — everything, confirming Phase 1 is complete and non-regressive.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add backend/tests/test_sessions_api.py
@@ -491,7 +491,7 @@ git commit -m "test(sessions): cover correcting a logged set end-to-end"
   - `ExerciseProgress extends SlotPreview { completedSets: LoggedSetEntry[] }`
   - `useSessionProgress(slots, loggedSets?) -> { exercises: ExerciseProgress[]; totalSets: number; completedSetsTotal: number; completedExercises: number; progressPercentage: number; recordSet: (workoutExerciseId: number, setNumber: number, data: Omit<LoggedSetEntry, 'setNumber' | 'timestamp'>) => void }`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Replace the full contents of `frontend/src/tests/hooks/useSessionProgress.test.tsx`:
 
@@ -619,7 +619,7 @@ describe('useSessionProgress', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 ```bash
 npm run test -- src/tests/hooks/useSessionProgress.test.tsx
@@ -627,7 +627,7 @@ npm run test -- src/tests/hooks/useSessionProgress.test.tsx
 
 Expected: FAIL — the current hook has no `totalSets`/`completedSetsTotal` and `recordSet`'s signature doesn't accept `(workoutExerciseId, setNumber, data)`.
 
-- [ ] **Step 3: Rewrite the hook**
+- [x] **Step 3: Rewrite the hook**
 
 Replace the full contents of `frontend/src/hooks/useSessionProgress.ts`:
 
@@ -738,7 +738,7 @@ export function useSessionProgress(slots: SlotPreview[], loggedSets: LoggedSet[]
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 ```bash
 npm run test -- src/tests/hooks/useSessionProgress.test.tsx
@@ -746,7 +746,7 @@ npm run test -- src/tests/hooks/useSessionProgress.test.tsx
 
 Expected: PASS — all six tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/hooks/useSessionProgress.ts frontend/src/tests/hooks/useSessionProgress.test.tsx
@@ -766,7 +766,7 @@ git commit -m "feat(sessions): track every exercise's progress at once, not just
 - Consumes: `LoggedSetEntry` (from Task 5's `@/hooks/useSessionProgress`), `EffortMethod` (`@/types/programCreation`), `Button`/`FormField` (`./Button`, `./FormField`).
 - Produces (used by Task 7): `SetRow({ setNumber, effort_method, loggedSet?, onLogSet }) -> JSX.Element` where `onLogSet: (data: { weight?: number; reps?: number; effort: number; effort_method: EffortMethod }) => Promise<void> | void`. Rejecting `onLogSet` keeps the row in its input state instead of switching to the logged summary.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `frontend/src/components/SetRow.test.tsx`:
 
@@ -850,7 +850,7 @@ describe('SetRow', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 ```bash
 npm run test -- src/components/SetRow.test.tsx
@@ -858,7 +858,7 @@ npm run test -- src/components/SetRow.test.tsx
 
 Expected: FAIL with "Cannot find module './SetRow'" (the component doesn't exist yet).
 
-- [ ] **Step 3: Create the component**
+- [x] **Step 3: Create the component**
 
 Create `frontend/src/components/SetRow.tsx`:
 
@@ -1010,7 +1010,7 @@ export const SetRow: React.FC<SetRowProps> = ({ setNumber, effort_method, logged
 };
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 ```bash
 npm run test -- src/components/SetRow.test.tsx
@@ -1018,7 +1018,7 @@ npm run test -- src/components/SetRow.test.tsx
 
 Expected: PASS — all six tests.
 
-- [ ] **Step 5: Export it from the barrel**
+- [x] **Step 5: Export it from the barrel**
 
 In `frontend/src/components/index.ts`, add (alphabetically near the other exports, e.g. after `SessionStatusBadge`):
 
@@ -1028,7 +1028,7 @@ export { SetRow } from './SetRow';
 
 (Leave the existing `SetLogger`/`CompletedSets` exports in place for now — Task 9 removes them once `WorkoutTrackingPage` no longer references them.)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/src/components/SetRow.tsx frontend/src/components/SetRow.test.tsx frontend/src/components/index.ts
@@ -1048,7 +1048,7 @@ git commit -m "feat(sessions): add SetRow, a per-set input/summary row with tap-
 - Consumes: `ExerciseProgress`, `LoggedSetEntry` (Task 5's `@/hooks/useSessionProgress`), `SetRow` (Task 6), `formatSlotNote` (`@/utils/slotNote`).
 - Produces (used by Task 8): `ExerciseSection({ exercise, effort_method, isOpen, onToggle, onLogSet }) -> JSX.Element` where `onLogSet: (setNumber: number, data: {...}) => Promise<void> | void`. The root element carries `data-testid="exercise-section-{workout_exercise_id}"`, used by Task 8's tests to scope queries when more than one section is on screen at once.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `frontend/src/components/ExerciseSection.test.tsx`:
 
@@ -1139,7 +1139,7 @@ describe('ExerciseSection', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 ```bash
 npm run test -- src/components/ExerciseSection.test.tsx
@@ -1147,7 +1147,7 @@ npm run test -- src/components/ExerciseSection.test.tsx
 
 Expected: FAIL with "Cannot find module './ExerciseSection'".
 
-- [ ] **Step 3: Create the component**
+- [x] **Step 3: Create the component**
 
 Create `frontend/src/components/ExerciseSection.tsx`:
 
@@ -1234,7 +1234,7 @@ export const ExerciseSection: React.FC<ExerciseSectionProps> = ({
 };
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 ```bash
 npm run test -- src/components/ExerciseSection.test.tsx
@@ -1242,7 +1242,7 @@ npm run test -- src/components/ExerciseSection.test.tsx
 
 Expected: PASS — all five tests.
 
-- [ ] **Step 5: Export it from the barrel**
+- [x] **Step 5: Export it from the barrel**
 
 In `frontend/src/components/index.ts`, add:
 
@@ -1250,7 +1250,7 @@ In `frontend/src/components/index.ts`, add:
 export { ExerciseSection } from './ExerciseSection';
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/src/components/ExerciseSection.tsx frontend/src/components/ExerciseSection.test.tsx frontend/src/components/index.ts
@@ -1268,7 +1268,7 @@ git commit -m "feat(sessions): add ExerciseSection, a collapsible per-exercise s
 **Interfaces:**
 - Consumes: `useSessionProgress` (Task 5), `ExerciseSection` (Task 7), `Toast`/`Button`/`ReadinessModal`/`Spinner`/`Alert` (`@/components`), `logSessionSet`/`postSessionReadiness`/`completeSession` (`@/api/sessions`, unchanged).
 
-- [ ] **Step 1: Rewrite the page tests first**
+- [x] **Step 1: Rewrite the page tests first**
 
 Replace the full contents of `frontend/src/tests/pages/WorkoutTrackingPage.test.tsx`:
 
@@ -1516,7 +1516,7 @@ describe('WorkoutTrackingPage', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 ```bash
 npm run test -- src/tests/pages/WorkoutTrackingPage.test.tsx
@@ -1524,7 +1524,7 @@ npm run test -- src/tests/pages/WorkoutTrackingPage.test.tsx
 
 Expected: FAIL — the current page still renders the single-exercise wizard markup these tests don't expect.
 
-- [ ] **Step 3: Rewrite the page**
+- [x] **Step 3: Rewrite the page**
 
 Replace the full contents of `frontend/src/pages/WorkoutTrackingPage.tsx`:
 
@@ -1841,7 +1841,7 @@ export default function WorkoutTrackingPage() {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 ```bash
 npm run test -- src/tests/pages/WorkoutTrackingPage.test.tsx
@@ -1849,7 +1849,7 @@ npm run test -- src/tests/pages/WorkoutTrackingPage.test.tsx
 
 Expected: PASS — all eight tests.
 
-- [ ] **Step 5: Run the full frontend test suite, type-check, and lint**
+- [x] **Step 5: Run the full frontend test suite, type-check, and lint**
 
 ```bash
 npm run test
@@ -1859,7 +1859,7 @@ npm run lint
 
 Expected: PASS on all three (lint may still complain about the now-unused `SetLogger`/`CompletedSets` imports if anything still references them — Task 9 removes those).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/src/pages/WorkoutTrackingPage.tsx frontend/src/tests/pages/WorkoutTrackingPage.test.tsx
@@ -1878,7 +1878,7 @@ git commit -m "feat(sessions): drive workout tracking from collapsible, free-ord
 
 **Interfaces:** None — this task only removes now-dead code. `SetRow` (Task 6) already covers everything both components did; nothing else in the codebase imports either (`WorkoutTrackingPage` was their only consumer, rewritten in Task 8).
 
-- [ ] **Step 1: Confirm nothing else references them**
+- [x] **Step 1: Confirm nothing else references them**
 
 ```bash
 grep -rn "SetLogger\|CompletedSets" frontend/src
@@ -1886,13 +1886,13 @@ grep -rn "SetLogger\|CompletedSets" frontend/src
 
 Expected: only matches in `frontend/src/components/index.ts` (the two export lines) — no other file imports either component.
 
-- [ ] **Step 2: Delete the files**
+- [x] **Step 2: Delete the files**
 
 ```bash
 git rm frontend/src/components/SetLogger.tsx frontend/src/components/SetLogger.test.tsx frontend/src/components/CompletedSets.tsx
 ```
 
-- [ ] **Step 3: Remove their exports**
+- [x] **Step 3: Remove their exports**
 
 In `frontend/src/components/index.ts`, remove these two lines:
 
@@ -1901,7 +1901,7 @@ export { SetLogger } from './SetLogger';
 export { CompletedSets } from './CompletedSets';
 ```
 
-- [ ] **Step 4: Run the full frontend suite, type-check, and lint**
+- [x] **Step 4: Run the full frontend suite, type-check, and lint**
 
 ```bash
 npm run test
@@ -1911,7 +1911,7 @@ npm run lint
 
 Expected: PASS on all three, with zero references to the removed components anywhere.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/components/index.ts
